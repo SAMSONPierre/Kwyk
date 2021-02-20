@@ -4,7 +4,7 @@ import java.awt.Rectangle;
 
 public class View extends JFrame{
     private Model model;
-    private Control control;
+    protected Control control;
     
     View(Player player){
         this.model=new Model(this, player);
@@ -16,7 +16,10 @@ public class View extends JFrame{
         //mettre en plein ecran et interdire le changement de taille de la fenetre
         Rectangle r=GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
         this.setBounds(0, 0, r.width, r.height);
-        this.setResizable(false);       
+        this.setResizable(false);
+        
+        this.setLayout(null);//on definiera chaque layout individuellement
+        this.setTitle("Kwyk");
     }
     
     Model getModel(){

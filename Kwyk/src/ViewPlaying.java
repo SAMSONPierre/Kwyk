@@ -8,7 +8,6 @@ public class ViewPlaying extends View{
     
     ViewPlaying(Player player){
         super(player);
-        this.setLayout(null);
         
         //ajout des 3 tableaux, avec des marges de 20 (haut, bas et entre tableaux)
         //taille fixee
