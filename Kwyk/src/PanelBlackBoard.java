@@ -2,8 +2,8 @@ import java.awt.Color;
 import javax.swing.JPanel;
 
 public class PanelBlackBoard extends JPanel{
-    PanelBlackBoard(){
-        this.setBounds(20, 20, 400, 400);//taille 400*400 + marge de 20 avec haut et gauche
+    PanelBlackBoard(int heightButt){
+        this.setBounds(20, 20+heightButt, 400, 400);//marge=20 à gauche, 20+bauteur d un bouton en haut, taille 400*400
         this.setBackground(Color.BLACK);//fond noir
         
     }

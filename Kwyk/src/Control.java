@@ -20,6 +20,10 @@ public class Control {
         view.dispose();
     }
     
+    /******************
+    *      Login      *
+    ******************/
+    
     int checkLogin(String username, String password){//verification des identifiants
         int res=0;
         if(username.equals("default") || database.isEmpty() || !database.contains(username))
@@ -94,4 +98,26 @@ public class Control {
         }
     }
     
+    /******************
+    *   Switch page   *
+    ******************/
+    
+    void switchTraining(){
+        
+    }
+    
+    void switchChallenge(){
+        
+    }
+    
+    void switchCreate(){
+        
+    }
+    
+    void logout(){
+        this.save();
+        this.exitFrame();
+        this.view=new ViewLogin();
+        this.model=view.getModel();
+    }
 }

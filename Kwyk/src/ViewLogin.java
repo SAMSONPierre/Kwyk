@@ -1,4 +1,5 @@
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -30,6 +31,8 @@ public class ViewLogin extends View{
         createAccount=new JButton("Create Account");
         tryWithoutAccount=new JButton("Try without account");
         tryWithoutAccount.setFont(new Font("Arial", Font.ITALIC, 16));
+        error=new JLabel("");//vide au debut
+        error.setForeground(Color.red);//les erreurs seront ecrites en rouge
         
         //taille des composants
         Dimension textSize=new Dimension(150, username.getPreferredSize().height);//largeur, hauteur
@@ -60,11 +63,10 @@ public class ViewLogin extends View{
         center.setLayout(new GridBagLayout());
         GridBagConstraints constraints=new GridBagConstraints();//contraintes d ajout dans center
         
-        //en cas d erreur de identifiant/password
-        error=new JLabel("");//vide au debut
+        //en cas d erreur d username/password, s affiche tout en haut dans center
         center.add(error);
         
-        //username tout en haut dans center
+        //sinon username apparait tout en haut dans center
         JPanel line1=new JPanel();
         line1.add(new JLabel("Your username :"));
         line1.add(username);
