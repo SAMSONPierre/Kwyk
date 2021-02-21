@@ -46,7 +46,7 @@ public class Control {
                 ObjectInputStream ois=new ObjectInputStream(new FileInputStream(file));
                 Player player=(Player)ois.readObject();//celui qu on recupere depuis le fichier de sauvegarde
                 this.exitFrame();//quitte la fenetre courante
-                this.view=new ViewSummary(player);//pour en ouvrir une autre
+                this.view=new ViewSummaryTraining(player);//pour en ouvrir une autre
                 this.model=view.getModel();
                 ois.close();
             }
@@ -63,7 +63,7 @@ public class Control {
         database.add(username);//ajout dans la database
         database.add(password);
         this.exitFrame();//quitte la fenetre courante
-        this.view=new ViewSummary(player);//pour en ouvrir une autre
+        this.view=new ViewSummaryTraining(player);//pour en ouvrir une autre
         this.model=view.getModel();
         this.save();//on cree le fichier de sauvegarde qui lui est associe
     }
@@ -89,7 +89,7 @@ public class Control {
             ObjectInputStream ois=new ObjectInputStream(new FileInputStream(file));
             Player player=(Player)ois.readObject();//celui qu on recupere depuis le fichier de sauvegarde
             this.exitFrame();//quitte la fenetre courante
-            this.view=new ViewSummary(player);//pour en ouvrir une autre
+            this.view=new ViewSummaryTraining(player);//pour en ouvrir une autre
             this.model=view.getModel();
             ois.close();
         }
