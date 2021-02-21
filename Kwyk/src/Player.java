@@ -1,7 +1,9 @@
 public class Player {
-    final String name;
+    final String username;//compte par defaut a pour username "default"
+    final boolean canlSave;//on ne sauvegarde pas si compte par defaut
     
-    Player(String name){
-        this.name=name;
+    Player(String username){
+        this.username=username;
+        canlSave=!(username.equals("default"));
     }
 }
