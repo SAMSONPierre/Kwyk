@@ -1,5 +1,6 @@
 import java.awt.Color;
 
+//classe plus utile ?
 public class Board {//modele a reproduire
     Pixel[][]board;
     

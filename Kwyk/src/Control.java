@@ -20,6 +20,7 @@ public class Control {
         view.dispose();
     }
     
+    
     /******************
     *      Login      *
     ******************/
@@ -97,6 +98,7 @@ public class Control {
             System.out.println("Echec de reprise de sauvegarde");
         }
     }
+    
     
     /******************
     *   Switch page   *
