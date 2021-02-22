@@ -1,10 +1,10 @@
 import java.awt.Color;
 
 public class Brush{//pinceau
-    int x, y;//emplacement du pinceau
-    int angle=0;//par defaut, orientee "->" (angle 0°)
-    boolean drawing=true;//pinceau posé par defaut
-    Color color;
+    private int x, y;//emplacement du pinceau
+    private int angle=0;//par defaut, orientee "->" (angle 0°)
+    private boolean drawing=true;//pinceau posé par defaut
+    private Color color;
     
     Brush(int x, int y, Color color){
         this.x=x;
@@ -17,8 +17,14 @@ public class Brush{//pinceau
         this.angle=angle;
     }
     
-    void changeColor(Color color){
-        this.color=color;
+    
+    /*****************
+    *     Setter     *
+    *****************/
+    
+    void setPosition(int x, int y){
+        this.x=x;
+        this.y=y;
     }
     
     void changeAngle(int angle){
@@ -33,8 +39,32 @@ public class Brush{//pinceau
         this.drawing=true;
     }
     
-    void setPosition(int x, int y){
-        this.x=x;
-        this.y=y;
+    void changeColor(Color color){
+        this.color=color;
+    }
+    
+    
+    /*****************
+    *     Getter     *
+    *****************/
+    
+    int getX(){
+        return this.x;
+    }
+    
+    int getY(){
+        return this.y;
+    }
+    
+    int getAngle(){
+        return this.angle;
+    }
+    
+    boolean getDrawing(){
+        return this.drawing;
+    }
+    
+    Color getColor(){
+        return this.color;
     }
 }
