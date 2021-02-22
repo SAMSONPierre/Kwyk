@@ -12,7 +12,7 @@ public class Vector{
         this.color=color;
     }
     
-    Vector(){//utile pour initialiser un vecteur temporaire
+    Vector(){//pour initialiser un vecteur temporaire, et creer des vecteurs internes
         this(0, 0, 0, Color.BLACK);
     }
     
