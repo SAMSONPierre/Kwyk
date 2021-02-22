@@ -16,10 +16,15 @@ public class Vector{
         this(0, 0, 0, Color.BLACK);
     }
     
-    //fonctions de dessin
-    //..
+    //fonctions pour dessiner les vecteurs
+    //--------a faire--------
     
-    class VectorLine extends Vector{//ligne droite
+    
+    /*****************
+    * Classe interne *
+    *****************/
+    
+    class VectorLine extends Vector{//trait droit
         final int angle;//sur 360 degres (0° si le pinceau est comme ca "->", et ordre trigo)
 
         VectorLine(int x, int y, int angle, double distance, Color color){
@@ -41,8 +46,12 @@ public class Vector{
         }
     }
     
+    
+    //--------a faire--------
     class VectorArc extends Vector{//arc
-        //plus tard :)
+        //attributs en plus ?
+        
+        //constructeur a modifier
         VectorArc(int x, int y, double distance, Color color){
             super(x, y, distance, color);
         }
