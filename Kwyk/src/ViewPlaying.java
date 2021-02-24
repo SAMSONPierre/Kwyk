@@ -135,13 +135,17 @@ public class ViewPlaying extends ViewGame{
             this.setLayout(null);
             this.setBounds(x00, y00-ViewPlaying.this.getInsets().top, width, height);
 
-            CommandStart start=new CommandStart(20, 20);
+            CommandStart start=new CommandStart();
             commands.add(start);
             this.add(start);
 
             //test
             CommandFor forC=new CommandFor(width/2+20, 20);
             this.add(forC);
+            CommandFor forC2=new CommandFor(width/2+20, 100);
+            this.add(forC2);
+            CommandDrawLine draw=new CommandDrawLine(width/2+20, 60);
+            this.add(draw);
         }
 
         protected void paintComponent(Graphics g){
@@ -167,9 +171,11 @@ public class ViewPlaying extends ViewGame{
 
         abstract class Command extends JPanel implements MouseInputListener{
             final String name;//if, else, for, while, ...
+            final int defaultH=35;//hauteur par defaut d un bouton
             private Command next;
             private int mouseX, mouseY;
             private boolean isDragging=false;
+            private boolean brighter=false;
 
             Command(String name){
                 this.name=name;
@@ -179,45 +185,90 @@ public class ViewPlaying extends ViewGame{
             }
 
             abstract void execute();//chaque fonction l implemente
+            
+            void switchOn(){//allume le seul bloc a allumer
+                for(Command c : commands){
+                    if(c.brighter){
+                        c.setBackground(c.getBackground().brighter());
+                        return;
+                    }
+                }
+            }
+            
+            void switchOff(){//eteint le seul bloc a eteindre
+                for(Command c : commands){
+                    if(c.brighter){
+                        c.setBackground(c.getBackground().darker());
+                        c.brighter=false;
+                        return;
+                    }
+                }
+            }
 
-            public void mouseDragged(MouseEvent e){            
-                if(!isDragging){
+            public void mouseDragged(MouseEvent e){
+                unStick();//si on detache 
+                if(!isDragging){//set la position initiale de la souris dans le bloc
                     mouseX=e.getX();
                     mouseY=e.getY();
                     isDragging=true;
                 }
-                int x=e.getXOnScreen()-x00-mouseX;    
+                //drag this et ses next
+                int x=e.getXOnScreen()-x00-mouseX;
                 int y=e.getYOnScreen()-y00-mouseY;
                 this.setLocation(x, y);
+                Command tmp=this.next;
+                int distance=0;
+                while(tmp!=null){
+                    distance+=tmp.getHeight();
+                    tmp.setLocation(x, y+distance);
+                    tmp=tmp.next;
+                }
+                
+                //allume et eteint les blocs selon les cas
+                int nearby=closeCommand();
+                if(nearby!=-1){//proche d un bloc
+                    switchOff();//eteint tout
+                    commands.get(nearby).brighter=true;//allume le seul necessaire
+                }
+                else switchOff();//proche de personne, tout a eteindre
+                switchOn();//allume le bloc a allumer
             }
 
             public void mouseReleased(MouseEvent e){
                 isDragging=false;
                 unStick();
                 Command toStick=addToList();
-                if(toStick!=null){//accroche deux blocs
-                    this.setLocation(toStick.getLocation().x, toStick.getLocation().y+toStick.getPreferredSize().height);
-                }
-                System.out.println(commands.size());
-                System.out.println(commands.getFirst().next);
+                if(toStick!=null) stick(toStick);//accroche ensemble
             }
 
-            public void mouseClicked(MouseEvent e){}
-            public void mouseMoved(MouseEvent e){}
-            public void mouseEntered(MouseEvent e){}
+            public void mouseMoved(MouseEvent e){}            
             public void mousePressed(MouseEvent e){}
+            public void mouseClicked(MouseEvent e){}
+            public void mouseEntered(MouseEvent e){}
             public void mouseExited(MouseEvent e){}
 
             /*****************
             * Stick together *
             *****************/
 
+            void stick(Command toStick){
+                this.setLocation(toStick.getLocation().x, toStick.getLocation().y+toStick.getHeight());
+                Command tmp=this.next;
+                int distance=0;
+                while(tmp!=null){
+                    distance+=tmp.getHeight();
+                    tmp.setLocation(toStick.getLocation().x, toStick.getLocation().y+toStick.getHeight()+distance);
+                    tmp=tmp.next;
+                }
+                switchOff();
+            }
+            
             Command addToList(){//retourne Command a laquelle on doit coller
                 if(this.inWhiteBoard() && !commands.contains(this)) commands.add(this);//dans la liste des commandes
-                if(this.isNotNext()){
-                    int stickTo=closeCommand();//cherche apres qui se positionner
-                    if(stickTo!=-1){
-                        Command c=commands.get(stickTo);
+                if(this.isNotNext()){//next de personne
+                    int closeIndex=closeCommand();//cherche apres qui se positionner
+                    if(closeIndex!=-1){
+                        Command c=commands.get(closeIndex);
                         if(c.next==null) c.next=this;//place suivante libre
                         else{//deplacer le suivant
                             this.next=c.next;
@@ -244,20 +295,23 @@ public class ViewPlaying extends ViewGame{
             int closeCommand(){//this et c sont assez proches pour se coller
                 int i=0;
                 for(Command c : commands){
-                    if(this.closeHeight(c) && this.closeWidth(c)) return i;
+                    if(this.closeHeight(c) && this.closeWidth(c)){
+                        if(c.next==null) return i;
+                        return -1;//le bloc proche contient deja un next donc on ne peut pas les coller
+                    }
                     i++;
                 }
                 return -1;
             }
 
             boolean closeHeight(Command c){//distance entre bas de c et haut de this
-                int distance=this.getLocation().y-c.getLocation().y-c.getHeight();
-                return distance>0 && distance<10;
+                int distance=this.getLocation().y-c.getLocation().y-defaultH;
+                return distance>0 && distance<15;
             }
 
             boolean closeWidth(Command c){//distance entre cote gauche de this et celui de c
                 int distance=this.getLocation().x-c.getLocation().x;
-                return distance>-5 && distance<10;
+                return distance>-5 && distance<15;
             }
 
 
@@ -266,27 +320,26 @@ public class ViewPlaying extends ViewGame{
             ****************/
 
             void unStick(){//enleve this du next du bloc auquel il etait colle
-                if(!isNotNext() && closeCommand()==-1){//suivant d un bloc mais se detache
+                if(!isNotNext() && closeCommand()==-1)//suivant d un bloc mais se detache
                     whoseNext().next=null;
-                }
             }
 
             Command whoseNext(){//cherche Command qui contient this comme next
-                for(Command c : commands){
-                    if(c.next==this) return c;
-                }
+                for(Command c : commands) if(c.next==this) return c;
                 return null;//a priori jamais 
             }
         }
 
 
         class CommandStart extends Command{//bloc initial present que sur WhiteBoard
-            CommandStart(int x, int y){
+            CommandStart(){
                 super("start");
                 this.add(new JLabel("Start your code here !"));
-                this.setBounds(x, y, this.getPreferredSize().width, this.getPreferredSize().height);
+                this.setBounds(20, 20, this.getPreferredSize().width, super.defaultH);
                 this.setBackground(Color.GREEN.darker());
             }
+            
+            public void mouseDragged(MouseEvent e){}//empeche Start d etre deplacee
 
             void execute(){
                 super.next.execute();
@@ -303,7 +356,7 @@ public class ViewPlaying extends ViewGame{
                 this.add(new JLabel("Repeat "));
                 this.index=new JTextField("0");//par defaut a 0, c est le joueur qui choisit
                 this.add(index);
-                this.setBounds(x, y, this.getPreferredSize().width, this.getPreferredSize().height);
+                this.setBounds(x, y, this.getPreferredSize().width, super.defaultH);
                 //this.setBackground();
             }
 
@@ -319,7 +372,7 @@ public class ViewPlaying extends ViewGame{
         class CommandIf extends Command{//classe interne
             CommandIf(int x, int y){
                 super("if");
-                this.setBounds(x, y, this.getPreferredSize().width, this.getPreferredSize().height);
+                this.setBounds(x, y, this.getPreferredSize().width, super.defaultH);
             }
 
             void execute(){
@@ -337,7 +390,7 @@ public class ViewPlaying extends ViewGame{
 
             CommandDrawLine(int x, int y){
                 super("drawLine");
-                this.setBounds(x, y, this.getPreferredSize().width, this.getPreferredSize().height);
+                this.setBounds(x, y, this.getPreferredSize().width, super.defaultH);
             }
 
             void execute(){//ajout du trait dans le tableau de trait
@@ -356,7 +409,7 @@ public class ViewPlaying extends ViewGame{
         class CommandDrawArc extends Command{//classe interne
             CommandDrawArc(int x, int y){
                 super("drawArc");
-                this.setBounds(x, y, this.getPreferredSize().width, this.getPreferredSize().height);
+                this.setBounds(x, y, this.getPreferredSize().width, super.defaultH);
             }
 
             void execute(){
@@ -368,7 +421,7 @@ public class ViewPlaying extends ViewGame{
         class CommandRaiseBrush extends Command{//classe interne
             CommandRaiseBrush(int x, int y){
                 super("raiseBrush");
-                this.setBounds(x, y, this.getPreferredSize().width, this.getPreferredSize().height);
+                this.setBounds(x, y, this.getPreferredSize().width, super.defaultH);
             }
 
             void execute(){
@@ -380,7 +433,7 @@ public class ViewPlaying extends ViewGame{
         class CommandPutBrush extends Command{//classe interne
             CommandPutBrush(int x, int y){
                 super("putBrush");
-                this.setBounds(x, y, this.getPreferredSize().width, this.getPreferredSize().height);
+                this.setBounds(x, y, this.getPreferredSize().width, super.defaultH);
             }
 
             void execute(){
@@ -394,7 +447,7 @@ public class ViewPlaying extends ViewGame{
 
             CommandChangeAngle(int x, int y){
                 super("changeAngle");
-                this.setBounds(x, y, this.getPreferredSize().width, this.getPreferredSize().height);
+                this.setBounds(x, y, this.getPreferredSize().width, super.defaultH);
             }
 
             void execute(){
@@ -408,7 +461,7 @@ public class ViewPlaying extends ViewGame{
 
             CommandChangeColor(int x, int y){
                 super("changeColor");
-                this.setBounds(x, y, this.getPreferredSize().width, this.getPreferredSize().height);
+                this.setBounds(x, y, this.getPreferredSize().width, super.defaultH);
             }
 
             void execute(){
