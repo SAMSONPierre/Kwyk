@@ -122,4 +122,18 @@ public class Control {
         this.view=new ViewLogin();
         this.model=view.getModel();
     }
+    
+    
+    /********************
+    * Feature's buttons *
+    ********************/
+    
+    void run(){//execute Start, qui va executer les autres commandes
+        ((ViewPlaying)view).getStart();
+    }
+    
+    void stop(){
+        
+    }
+    
 }

@@ -44,4 +44,8 @@ public class ViewPlaying extends ViewGame{
         });
         features.add(seeGrid);
     }
+    
+    PanelDragDropBoard.Command getStart(){
+        return this.dragDrop.getStart();
+    }
 }

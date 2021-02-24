@@ -52,6 +52,10 @@ public class PanelDragDropBoard extends JPanel{
         g2.fillRect(width, 0, width/2, height);
     }
     
+    Command getStart(){//return start, toujours premier dans la liste de commandes
+        return commands.getFirst();
+    }
+    
     
     /******************
     *  Command class  *
