@@ -9,8 +9,7 @@ public class ViewPlaying extends ViewGame{
     final int heightFS;//hauteur de l ecran, sans getInsets().top=barre superieur de la fenetre
     final int widthFS;//largeur de l ecran
     private PanelBlackBoard blackBoard;//patron + visualisation du resultat du code
-    private PanelWhiteBoard whiteBoard;//ecriture du code avec blocs de commandes
-    private PanelCommandBoard commandBoard;//blocs de commande disponibles
+    private PanelDragDropBoard dragDrop;
     JPanel features=new JPanel();//panel avec tous les boutons sous BlackBoard
     
     ViewPlaying(Player player){
@@ -29,11 +28,9 @@ public class ViewPlaying extends ViewGame{
         
         //taille relative a l ecran
         int height=heightFS-40-buttonHeight;//40=marges haut+bas
-        int width=(widthFS-480)/2;//480=4 marges de colonne + taille blackBoard
-        whiteBoard=new PanelWhiteBoard(width, height, buttonHeight);
-        this.add(whiteBoard);
-        commandBoard=new PanelCommandBoard(width, height, buttonHeight);
-        this.add(commandBoard);
+        int width=widthFS-460;//460=3 marges de colonne + taille blackBoard
+        dragDrop=new PanelDragDropBoard(width, height, buttonHeight, getInsets().top);
+        this.add(dragDrop);
     }
     
     void addFeatures(){
