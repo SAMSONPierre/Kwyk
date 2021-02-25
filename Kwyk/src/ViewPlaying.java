@@ -5,17 +5,21 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.util.LinkedList;
+
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.event.MouseInputListener;
 
-//autres fonctionnalités (boutons) à mettre dans l espace en bas de BlackBoard (x€[20 ; 420] et y€[440+buttonHeight+getInsets().top ; height])
+//autres fonctionnalites (boutons) à mettre dans l espace en bas de BlackBoard (x€[20 ; 420] et y€[440+buttonHeight+getInsets().top ; height])
 public class ViewPlaying extends ViewGame{
     final int buttonHeight=super.getButtonHeight();//hauteur d un bouton
     final int heightFS;//hauteur de l ecran, sans getInsets().top=barre superieur de la fenetre
@@ -68,7 +72,7 @@ public class ViewPlaying extends ViewGame{
         return this.dragDrop.commands.getFirst();
     }
 
-    LinkedList getDessin(){//a appeler apres la fin de l empilement, pour comparer au patron et dessiner sur BlackBoard
+    LinkedList<Vector> getDessin(){//a appeler apres la fin de l empilement, pour comparer au patron et dessiner sur BlackBoard
         return dessin;
     }
     
@@ -146,6 +150,8 @@ public class ViewPlaying extends ViewGame{
             this.add(forC2);
             CommandDrawLine draw=new CommandDrawLine(width/2+20, 60);
             this.add(draw);
+            CommandIf ifC=new CommandIf(width/2+20, 140);
+            this.add(ifC);
         }
 
         protected void paintComponent(Graphics g){
@@ -369,15 +375,70 @@ public class ViewPlaying extends ViewGame{
 
 
         //--------a faire--------
-        class CommandIf extends Command{//classe interne
-            CommandIf(int x, int y){
+        class CommandIf extends Command implements ActionListener{//classe interne
+        	protected JComboBox<String> variableG, operateur;//a priori seulement deux listes deroulantes
+            protected JTextField variableD;//choix libre du joueur donc pas une liste
+           
+            protected String op; 
+            protected int varG,varD;
+            //e.g x < 100 <=> variableG(varG)="x", operateur="<", variableD(varD)="100"
+            
+        	CommandIf(int x, int y){
                 super("if");
+                this.add(new JLabel("If "));
+                
+                String[]variables={"x","y"}; //o
+                this.variableG=new JComboBox<String>(variables);
+                this.variableG.addActionListener(this);
+                
+                String[]tests= {"<",">","<=",">=","=="};
+                this.operateur=new JComboBox<String>(tests);
+                this.operateur.addActionListener(this);
+                
+                this.variableD=new JTextField("0");
+                
+                
+                this.add(variableG);
+                this.add(operateur);
+                this.add(variableD);
                 this.setBounds(x, y, this.getPreferredSize().width, super.defaultH);
             }
 
             void execute(){
-
+            	this.varD=Integer.parseInt(this.variableD.getText());
+            	if(evaluate(this.op)) {
+            		for(Command c:commands) c.execute();
+            	}
             }
+
+            boolean evaluate(String op) {
+            	switch(op) {
+            	case "<":
+            		return this.varG<this.varD;
+            	case "<=":
+            		return this.varG<=this.varD;
+            	case ">":
+            		return this.varG>this.varD;
+            	case ">=":
+            		return this.varG>=this.varD;
+            	case "==":
+            		return this.varG==this.varD;
+            	}
+            	return false;
+            }
+            
+			@SuppressWarnings("unchecked")
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				JComboBox<String> cb=(JComboBox<String>)e.getSource();
+				if(cb.equals(this.variableG)) {
+					this.varG=((String)cb.getSelectedItem()).equals("x")?ViewPlaying.this.brush.getX():ViewPlaying.this.brush.getY();
+				}
+				else if(cb.equals(this.operateur)) {
+					this.op=(String)cb.getSelectedItem();
+				}
+				
+			}
         }//fin classe interne If
 
 
