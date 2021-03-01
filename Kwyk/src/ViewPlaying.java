@@ -17,6 +17,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.event.MouseInputListener;
 
 //autres fonctionnalites (boutons) à mettre dans l espace en bas de BlackBoard (x€[20 ; 420] et y€[440+buttonHeight+getInsets().top ; height])
@@ -128,6 +129,7 @@ public class ViewPlaying extends ViewGame{
     public class PanelDragDropBoard extends JPanel{
         final int x00, y00, width, height;//position initiale, largeur, hauteur du panel
         private LinkedList<Command> commands=new LinkedList<Command>();//liste de commandes ayant ete drag sur whiteBoard
+        private int[] commandPositionY;//nom de leur position verticale, pour regenerer les commandes
 
         PanelDragDropBoard(){
             this.x00=440;
@@ -146,31 +148,36 @@ public class ViewPlaying extends ViewGame{
             this.add(start);
             
             //ajout dans CommandBoard
+            this.commandPositionY=new int[level.getAvailableCommands().length];
+            int i=0;
             int positionY=20;
             for(String c : level.getAvailableCommands()){//ajout commandes disponibles
-                switch(c){
-                    case "for":
-                        CommandFor forC=new CommandFor(width/2+20, positionY);
-                        this.add(forC);
-                        this.add(forC.hookV);
-                        this.add(forC.hookH);
-                        positionY+=forC.getHeight()+forC.hookV.getHeight()+forC.hookH.getHeight()+10;
-                        break;
-                    case "if":
-                        CommandIf ifC=new CommandIf(width/2+20, positionY);
-                        this.add(ifC);
-                        this.add(ifC.hookV);
-                        this.add(ifC.hookH);
-                        positionY+=ifC.getHeight()+ifC.hookV.getHeight()+ifC.hookH.getHeight()+10;
-                        break;
-                    case "drawLine":
-                        CommandDrawLine drawC=new CommandDrawLine(width/2+20, positionY);
-                        this.add(drawC);
-                        positionY+=drawC.getHeight()+10;
-                        break;
-                    //--------a continuer-------
-                }
+                this.commandPositionY[i++]=positionY;
+                positionY+=addCommand(c, positionY);
             }
+        }
+        
+        int addCommand(String name, int positionY){
+            switch(name){
+                case "for":
+                    CommandFor forC=new CommandFor(width/2+20, positionY);
+                    this.add(forC);
+                    this.add(forC.hookV);
+                    this.add(forC.hookH);
+                    return forC.getHeight()+forC.hookV.getHeight()+forC.hookH.getHeight()+10;
+                case "if":
+                    CommandIf ifC=new CommandIf(width/2+20, positionY);
+                    this.add(ifC);
+                    this.add(ifC.hookV);
+                    this.add(ifC.hookH);
+                    return ifC.getHeight()+ifC.hookV.getHeight()+ifC.hookH.getHeight()+10;
+                case "drawLine":
+                    CommandDrawLine drawC=new CommandDrawLine(width/2+20, positionY);
+                    this.add(drawC);
+                    return drawC.getHeight()+10;
+                //--------a continuer-------
+            }            
+            return 0;
         }
 
         protected void paintComponent(Graphics g){
@@ -242,6 +249,18 @@ public class ViewPlaying extends ViewGame{
             }
 
             
+            /****************************
+            *  Regeneration of Command  *
+            ****************************/
+            
+            int getPositionY(String name){
+                for(int i=0; i<level.getAvailableCommands().length; i++){
+                    if(name.equals(level.getAvailableCommands()[i])) return commandPositionY[i];
+                }
+                return -1;
+            }
+
+            
             /*****************
             * Stick together *
             *****************/
@@ -251,6 +270,10 @@ public class ViewPlaying extends ViewGame{
                     commands.add(this);
                     if(this instanceof CommandWithCommands)
                         commands.add(this.next);//ajout de HookH aussi
+                    
+                    //pour regenerer la commande utilisee
+                    addCommand(this.name, getPositionY(this.name));
+                    SwingUtilities.updateComponentTreeUI(ViewPlaying.this);//refresh affichage
                 }
                 int closeIndex=closeCommand();//cherche index du precedent
                 if(closeIndex!=-1){//s il existe
@@ -431,15 +454,14 @@ public class ViewPlaying extends ViewGame{
                 isDragging=false;
                 switchOff();//eteint tout
                 foundPrevious();//noue les liens avec precedent
-                
             }
             
             public void mouseMoved(MouseEvent e){}            
             public void mousePressed(MouseEvent e){}
             public void mouseClicked(MouseEvent e){//pour verification, a enlever apres
                 System.out.println(this.name);
-                if(this.next!=null) this.next.mouseClicked(e);
-                else System.out.println("null");
+                if(this.previous!=null) this.previous.mouseClicked(e);
+                else System.out.println("debut");
             }
             public void mouseEntered(MouseEvent e){}
             public void mouseExited(MouseEvent e){}
@@ -542,7 +564,6 @@ public class ViewPlaying extends ViewGame{
 
             CommandFor(int x, int y){
                 super("for", Color.ORANGE.darker(), x, y);
-                
                 this.add(new JLabel("   Repeat   "));
                 this.index=new JTextField(2);//par defaut a 0, c est le joueur qui choisit
                 this.add(index);
@@ -590,8 +611,7 @@ public class ViewPlaying extends ViewGame{
 
             void execute(){
             	this.varD=Integer.parseInt(this.variableD.getText());
-            	if(evaluate(this.op))
-                    super.execute();//execute Command apres hookH
+            	if(evaluate(this.op)) super.execute();//execute Command apres hookH
                 this.hookH.execute();
             }
 

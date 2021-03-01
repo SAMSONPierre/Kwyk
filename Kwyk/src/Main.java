@@ -9,7 +9,7 @@ public class Main {
         
         //Level(Player p, int x, int y, int angle, Color color, String[] c, Vector[] v)
         Player p=new Player("user");
-        String[]c={"for", "for", "if", "drawLine"};
+        String[]c={"for", "if", "drawLine"};
         Level l=new Level(p, 0, 0, 0, Color.BLUE, c, null);
         p.setLevel(l);
         EventQueue.invokeLater(()-> new Control(new ViewPlaying(p)));
