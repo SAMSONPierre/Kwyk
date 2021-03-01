@@ -1,6 +1,6 @@
 import java.awt.Color;
 
-public class Vector{
+class Vector{
     final int x, y;//coordonees de depart
     final double distance;
     final Color color;//couleur du trait
@@ -16,8 +16,9 @@ public class Vector{
         this(0, 0, 0, Color.BLACK);
     }
     
-    //fonctions pour dessiner les vecteurs
-    //--------a faire--------
+    boolean sameVector(Vector vector2){//jamais utilise normalement (override)
+        return false;
+    }
     
     
     /*****************
@@ -54,6 +55,11 @@ public class Vector{
         //constructeur a modifier
         VectorArc(int x, int y, double distance, Color color){
             super(x, y, distance, color);
+        }
+        
+        boolean sameVector(Vector vector2){
+            
+            return false;
         }
     }
 }

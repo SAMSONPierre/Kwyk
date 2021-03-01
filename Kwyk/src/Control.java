@@ -122,4 +122,30 @@ public class Control {
         this.view=new ViewLogin();
         this.model=view.getModel();
     }
+    
+    
+    /*****************
+    *   Play Level   *
+    *****************/
+    
+    void playLevel(Level level){//quand on appuie sur un bouton pour commencer un niveau
+        this.model.getPlayer().setLevel(level);
+        this.exitFrame();
+        this.view=new ViewPlaying(this.model.getPlayer());
+        this.model=view.getModel();
+    }
+    
+    
+    /********************
+    * Feature's buttons *
+    ********************/
+    
+    void run(){//execute Start, qui va executer les autres commandes
+        ((ViewPlaying)view).getStart();
+    }
+    
+    void stop(){
+        
+    }
+    
 }
