@@ -1,5 +1,6 @@
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
@@ -273,7 +274,7 @@ public class ViewPlaying extends ViewGame{
                     
                     //pour regenerer la commande utilisee
                     addCommand(this.name, getPositionY(this.name));
-                    SwingUtilities.updateComponentTreeUI(ViewPlaying.this);//refresh affichage
+                    SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
                 }
                 int closeIndex=closeCommand();//cherche index du precedent
                 if(closeIndex!=-1){//s il existe
@@ -420,6 +421,17 @@ public class ViewPlaying extends ViewGame{
                     updateHookVRec(list);
                 }
             }
+            
+            void setToForeground(){//this a l avant-plan quand on le drag
+                if(this instanceof CommandWithCommands){
+                    CommandWithCommands tmp=(CommandWithCommands)this;
+                    ViewPlaying.this.dragDrop.remove(tmp.hookV);
+                    ViewPlaying.this.dragDrop.add(tmp.hookV, 0);
+                }
+                ViewPlaying.this.dragDrop.remove(this);
+                ViewPlaying.this.dragDrop.add(this, 0);
+                if(this.next!=null) this.next.setToForeground();//appel recursif
+            }
 
 
             /*****************
@@ -432,6 +444,7 @@ public class ViewPlaying extends ViewGame{
                     mouseX=e.getX();//position initiale de souris
                     mouseY=e.getY();
                     isDragging=true;
+                    this.setToForeground();//mettre ce qu on drag a l avant-plan
                 }
                 
                 //drag this et ses next
