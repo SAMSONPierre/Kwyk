@@ -37,13 +37,12 @@ public class ViewPlaying extends ViewGame{
     private PanelDragDropBoard dragDrop;//fusion de WhiteBoard et CommandBoard
     private JPanel features=new JPanel();//panel avec tous les boutons sous BlackBoard
     private Level level;//niveau en cours
-    private LinkedList<Vector> dessin=new LinkedList<Vector>();//execution du code du joueur -> liste de traits
     
     ViewPlaying(Player player){
         super(player);
         Rectangle r=GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();//plein écran
         this.heightFS=r.height-this.getInsets().top;//getInsets().top=barre supérieur de la fenetre
-        this.widthFS=r.width;      
+        this.widthFS=r.width;
         this.level=player.getLevel();
         addBoard();//ajout des tableaux, avec des marges de 20 (haut, bas et entre tableaux)
         addFeatures();//ajout des fonctionnalites
@@ -73,10 +72,6 @@ public class ViewPlaying extends ViewGame{
     
     void run(){
         this.dragDrop.commands.getFirst().execute();//s execute si tout est bon (pas de champ vide)
-    }
-
-    LinkedList<Vector> getDessin(){//a appeler apres la fin de l empilement, pour comparer au patron et dessiner sur BlackBoard
-        return dessin;
     }
     
     
@@ -113,7 +108,7 @@ public class ViewPlaying extends ViewGame{
             Graphics2D g2=(Graphics2D)g;
             if(gridApparent) paintGrid(g);//grille apparente quand on le souhaite
             paintPattern(g2, level.getPattern());//patron
-            paintDessin(g2, dessin);//dessin du joueur, au debut vide
+            paintDessin(g2, level.getPlayerDraw());//dessin du joueur, au debut vide
             paintBrush(g2, x, y, angle, brushColor);//pinceau en dernier car rotation
         }
 
@@ -149,17 +144,9 @@ public class ViewPlaying extends ViewGame{
             }
         }
         
-        void paintBrush(Graphics2D g2, int x, int y, int angle, Color color){//dessin du pinceau
-            g2.setStroke(new BasicStroke(4));
-            g2.translate(x, y);
-            g2.rotate(Math.toRadians(-angle), 0, 0);//tourne autour du point initial
-            g2.setColor(color);
-            g2.draw(brush);
-        }
-        
-        void paintDessin(Graphics2D g2, LinkedList<Vector> dessin){
+        void paintDessin(Graphics2D g2, LinkedList<Vector> playerDraw){
             g2.setStroke(new BasicStroke(5));
-            for(Vector v : dessin){
+            for(Vector v : playerDraw){
                 g2.setColor(v.color);
                 if(v instanceof Vector.VectorLine){
                     Vector.VectorLine tmp=(Vector.VectorLine)v;
@@ -170,6 +157,14 @@ public class ViewPlaying extends ViewGame{
                     g2.drawArc(tmp.x1, tmp.y1, tmp.width, tmp.height, tmp.startAngle, tmp.scanAngle);
                 }
             }
+        }
+        
+        void paintBrush(Graphics2D g2, int x, int y, int angle, Color color){//dessin du pinceau
+            g2.setStroke(new BasicStroke(4));
+            g2.translate(x, y);
+            g2.rotate(Math.toRadians(-angle), 0, 0);//tourne autour du point initial
+            g2.setColor(color);
+            g2.draw(brush);
         }
         
         
@@ -261,7 +256,11 @@ public class ViewPlaying extends ViewGame{
                     CommandChangeColor colorC=new CommandChangeColor(width/2+20, positionY);
                     this.add(colorC);
                     return colorC.getHeight();
-            }            
+                case "moveTo":
+                    CommandMoveTo moveC=new CommandMoveTo(width/2+20, positionY);
+                    this.add(moveC);
+                    return moveC.getHeight();
+            }
             return 0;
         }
 
@@ -381,7 +380,7 @@ public class ViewPlaying extends ViewGame{
                     this.next.previous=end;
                 }
                 this.next=newNext;
-                newNext.previous=this;                
+                newNext.previous=this;
             }
 
             void stick(){//colle this a son precedent
@@ -556,7 +555,7 @@ public class ViewPlaying extends ViewGame{
                 foundPrevious();//noue les liens avec precedent
             }
             
-            public void mouseMoved(MouseEvent e){}            
+            public void mouseMoved(MouseEvent e){}
             public void mousePressed(MouseEvent e){}
             public void mouseClicked(MouseEvent e){//pour verification, a enlever apres
                 /*System.out.println(this.name);
@@ -576,7 +575,7 @@ public class ViewPlaying extends ViewGame{
             }
             
             void initialisePresentation(){
-                this.add(new JLabel("   Start your code here !   "));
+                this.add(new JLabel("  Start your code here !  "));
                 this.setBounds(20, 20, getPreferredSize().width, commandH);
             }
             
@@ -638,7 +637,7 @@ public class ViewPlaying extends ViewGame{
                             if(((CommandWithCommands)tmp).hookH==tmp.next) res+=commandH;
                         }
                         tmp=tmp.next;
-                    }                    
+                    }
                 }
                 hookV.setBounds(res, hookH);
             }
@@ -694,10 +693,10 @@ public class ViewPlaying extends ViewGame{
             }
             
             void initialisePresentation(){
-                this.add(new JLabel("   Repeat   "));
+                this.add(new JLabel("  Repeat   "));
                 this.index=new JTextField(3);//c est le joueur qui choisit
                 this.add(index);
-                this.add(new JLabel("   time   "));
+                this.add(new JLabel("  time   "));
             }
             
             boolean canExecute(){
@@ -727,7 +726,7 @@ public class ViewPlaying extends ViewGame{
             }
             
             void initialisePresentation(){
-                this.add(new JLabel("   If   "));
+                this.add(new JLabel("  If   "));
 
                 String[]variables={" x "," y "}; //o
                 this.variableG=new JComboBox<String>(variables);
@@ -743,7 +742,7 @@ public class ViewPlaying extends ViewGame{
                 this.add(variableG);
                 this.add(operateur);
                 this.add(variableD);
-                this.add(new JLabel("   "));//pour la presentation
+                this.add(new JLabel("  "));//pour la presentation
             }
 
             boolean evaluate(String op) {
@@ -798,9 +797,9 @@ public class ViewPlaying extends ViewGame{
             }
             
             void initialisePresentation(){
-                this.add(new JLabel("   Draw a line of  "));
+                this.add(new JLabel("  Draw a line of  "));
                 this.add(distance);
-                this.add(new JLabel("   pixels   "));
+                this.add(new JLabel("  pixels   "));
             }
             
             boolean canExecute(){
@@ -816,7 +815,7 @@ public class ViewPlaying extends ViewGame{
                 if(blackBoard.drawing){
                     Vector.VectorLine trait=v.new VectorLine(
                         blackBoard.x, blackBoard.y, p.x, p.y, blackBoard.brushColor);
-                    dessin.add(trait);
+                    level.addToDraw(trait);
                 }
                 
                 //nouvel emplacement du pinceau
@@ -842,11 +841,11 @@ public class ViewPlaying extends ViewGame{
             }
             
             void initialisePresentation(){
-                this.add(new JLabel("   Draw an arc with a radius of   "));
+                this.add(new JLabel("  Draw an arc with a radius of   "));
                 this.add(this.distance);
-                this.add(new JLabel("   pixels and an angle of    "));
+                this.add(new JLabel("  pixels and an angle of   "));
                 this.add(this.angle);
-                this.add(new JLabel("   degrees, on the   "));
+                this.add(new JLabel("  degrees, on the   "));
                 
                 rightLeft.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
@@ -858,7 +857,7 @@ public class ViewPlaying extends ViewGame{
                 rightLeft.addItem(" left ");
                 this.add(rightLeft);
                 
-                this.add(new JLabel("   "));//pour la presentation
+                this.add(new JLabel("  "));//pour la presentation
             }
             
             boolean canExecute(){
@@ -872,7 +871,7 @@ public class ViewPlaying extends ViewGame{
                     Vector tmp=new Vector();
                     Vector.VectorArc arc=tmp.new VectorArc(blackBoard.x, blackBoard.y,
                         h, h, blackBoard.angle, a, blackBoard.brushColor);
-                    dessin.add(arc);
+                    level.addToDraw(arc);
                 }
                 ViewPlaying.this.blackBoard.repaint();
                 if(next!=null) next.execute();
@@ -891,7 +890,7 @@ public class ViewPlaying extends ViewGame{
             }
             
             void initialisePresentation(){
-                this.add(new JLabel("   "));//pour la presentation
+                this.add(new JLabel("  "));//pour la presentation
                 
                 choiceBox.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
@@ -903,7 +902,7 @@ public class ViewPlaying extends ViewGame{
                 choiceBox.addItem(" Put ");
                 this.add(choiceBox);
                 
-                this.add(new JLabel("   the pen   "));
+                this.add(new JLabel("  the pen   "));
             }
             
             boolean canExecute(){
@@ -927,9 +926,9 @@ public class ViewPlaying extends ViewGame{
             }
             
             void initialisePresentation(){
-                this.add(new JLabel("   Change angle to   "));
+                this.add(new JLabel("  Change angle to   "));
                 this.add(this.angle);
-                this.add(new JLabel("   degrees   "));
+                this.add(new JLabel("  degrees   "));
             }
             
             boolean canExecute(){
@@ -957,7 +956,7 @@ public class ViewPlaying extends ViewGame{
             }
             
             void initialisePresentation(){
-                this.add(new JLabel("   Change color to   "));
+                this.add(new JLabel("  Change color to  "));
                 
                 colorChoice.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
@@ -975,7 +974,7 @@ public class ViewPlaying extends ViewGame{
                 colorChoice.setRenderer(new ColorComboRenderer());
                 this.add(this.colorChoice);
                 
-                this.add(new JLabel("   "));
+                this.add(new JLabel("  "));
             }
             
             public void actionPerformed(ActionEvent e){
@@ -1014,6 +1013,37 @@ public class ViewPlaying extends ViewGame{
                     setBackground(main);
                     super.paint(g);
                 }
+            }
+        }//fin de classe interne ChangeAngle
+
+
+        class CommandMoveTo extends Command{//classe interne
+            JTextField positionX=new JTextField(4);
+            JTextField positionY=new JTextField(4);
+
+            CommandMoveTo(int x, int y){
+                super("moveTo", Color.CYAN.darker());
+                initialisePresentation();
+                this.setBounds(x, y, getPreferredSize().width, commandH);
+            }
+            
+            void initialisePresentation(){
+                this.add(new JLabel("  Move pen to (  "));
+                this.add(this.positionX);
+                this.add(new JLabel("  ,  "));
+                this.add(this.positionY);
+                this.add(new JLabel("  )  "));
+            }
+            
+            boolean canExecute(){
+                return positionX.getText().length()!=0 && positionY.getText().length()!=0;
+            }
+
+            void execute(){
+                blackBoard.x=(Integer.parseInt(positionX.getText()));
+                blackBoard.y=(Integer.parseInt(positionY.getText()));
+                ViewPlaying.this.blackBoard.repaint();
+                if(next!=null) next.execute();
             }
         }//fin de classe interne ChangeAngle
 

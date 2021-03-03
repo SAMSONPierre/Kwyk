@@ -133,19 +133,5 @@ public class Control {
         this.exitFrame();
         this.view=new ViewPlaying(this.model.getPlayer());
         this.model=view.getModel();
-    }
-    
-    
-    /********************
-    * Feature's buttons *
-    ********************/
-    
-    void run(){//execute Start, qui va executer les autres commandes
-        ((ViewPlaying)view).run();
-    }
-    
-    void stop(){
-        
-    }
-    
+    }    
 }
