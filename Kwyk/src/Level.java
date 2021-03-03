@@ -3,20 +3,20 @@ import java.util.LinkedList;
 
 public class Level{
     private ViewPlaying viewPlaying;//la vue du niveau
-    private Brush brush;//le pinceau de BlackBoard
+    final int brushX, brushY, brushAngle;
+    final Color brushFirstColor;
     private String[] availableCommands;//nom des commandes disponibles
     private Vector[] pattern;//patron
     private LinkedList<Vector> playerDraw=new LinkedList<Vector>();
     
     Level(Player p, int x, int y, int angle, Color color, String[] nameOfC, Vector[] v){
         //this.viewPlaying=new ViewPlaying(p);//--> level=JButton qui active un ViewPlaying
-        this.brush=new Brush(x, y, angle, color);
+        this.brushX=x;
+        this.brushY=y;
+        this.brushAngle=angle;
+        this.brushFirstColor=color;
         this.availableCommands=nameOfC;
         this.pattern=v;
-    }
-    
-    Brush getBrush(){
-        return this.brush;
     }
     
     String[] getAvailableCommands(){
