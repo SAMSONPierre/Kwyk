@@ -9,7 +9,7 @@ public class Main {
         
         //Level(Player p, int x, int y, int angle, Color color, String[] c, Vector[] v)
         Player p=new Player("user");
-        String[]c={"for", "if", "drawLine", "changeColor"};
+        String[]c={"for", "if", "drawLine", "drawArc", "raisePutBrush", "changeAngle", "changeColor"};
         Vector[]v=new Vector[4];
         Vector tmp=new Vector();
         v[0]=tmp.new VectorLine(100, 200, 100, 300, Color.RED);

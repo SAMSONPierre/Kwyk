@@ -141,7 +141,7 @@ public class Control {
     ********************/
     
     void run(){//execute Start, qui va executer les autres commandes
-        ((ViewPlaying)view).getStart();
+        ((ViewPlaying)view).run();
     }
     
     void stop(){

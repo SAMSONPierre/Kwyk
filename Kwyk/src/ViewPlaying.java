@@ -6,20 +6,17 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.util.LinkedList;
-import javax.swing.BorderFactory;
 
 import javax.swing.JButton;
-import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -29,7 +26,6 @@ import javax.swing.ListCellRenderer;
 import javax.swing.SwingUtilities;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.LineBorder;
-import javax.swing.border.MatteBorder;
 import javax.swing.event.MouseInputListener;
 
 //autres fonctionnalites (boutons) à mettre dans l espace en bas de BlackBoard (x€[20 ; 420] et y€[440+buttonHeight+getInsets().top ; height])
@@ -41,7 +37,6 @@ public class ViewPlaying extends ViewGame{
     private PanelDragDropBoard dragDrop;//fusion de WhiteBoard et CommandBoard
     private JPanel features=new JPanel();//panel avec tous les boutons sous BlackBoard
     private Level level;//niveau en cours
-    
     private LinkedList<Vector> dessin=new LinkedList<Vector>();//execution du code du joueur -> liste de traits
     
     ViewPlaying(Player player){
@@ -76,8 +71,8 @@ public class ViewPlaying extends ViewGame{
         features.add(seeGrid);
     }
     
-    PanelDragDropBoard.Command getStart(){
-        return this.dragDrop.commands.getFirst();
+    void run(){
+        this.dragDrop.commands.getFirst().execute();//s execute si tout est bon (pas de champ vide)
     }
 
     LinkedList<Vector> getDessin(){//a appeler apres la fin de l empilement, pour comparer au patron et dessiner sur BlackBoard
@@ -96,7 +91,7 @@ public class ViewPlaying extends ViewGame{
         private Brush brush=new Brush();//fleche vide
         private int x, y;//par defaut a (0,0)==coin superieur gauche de blackBoard
         private int angle;//par defaut, orientee "->" (angle 0° sur le cercle trigo)
-        private Color color;
+        private Color brushColor;
         private boolean drawing=true;//pinceau posé par defaut
 
         PanelBlackBoard(){
@@ -105,7 +100,7 @@ public class ViewPlaying extends ViewGame{
             this.x=level.brushX;
             this.y=level.brushY;
             this.angle=level.brushAngle;
-            this.color=level.brushFirstColor;
+            this.brushColor=level.brushFirstColor;
         }
         
         
@@ -118,7 +113,25 @@ public class ViewPlaying extends ViewGame{
             Graphics2D g2=(Graphics2D)g;
             if(gridApparent) paintGrid(g);//grille apparente quand on le souhaite
             paintPattern(g2, level.getPattern());//patron
-            paintBrush(g2, x, y, angle, color);//pinceau
+            paintDessin(g2, dessin);//dessin du joueur, au debut vide
+            paintBrush(g2, x, y, angle, brushColor);//pinceau en dernier car rotation
+        }
+
+        void paintGrid(Graphics g) {//dessin de la grille
+            g.setColor(Color.gray.darker());
+            g.drawLine(100, 20, 100, 400);
+            g.drawLine(200, 20, 200, 400);
+            g.drawLine(300, 20, 300, 400);
+            g.drawLine(30, 100, 400, 100);
+            g.drawLine(30, 200, 400, 200);
+            g.drawLine(30, 300, 400, 300);
+            g.drawString("0", 5, 15);
+            g.drawString("100", 90, 15);
+            g.drawString("200", 190, 15);
+            g.drawString("300", 290, 15);
+            g.drawString("100", 3, 105);
+            g.drawString("200", 3, 205);
+            g.drawString("300", 3, 305);
         }
         
         void paintPattern(Graphics2D g2, Vector[] pattern){//dessin du patron
@@ -135,73 +148,28 @@ public class ViewPlaying extends ViewGame{
                 }
             }
         }
-
-        void paintGrid(Graphics g) {//dessin de la grille
-            g.setColor(Color.gray);
-            g.drawLine(100, 20, 100, 400);
-            g.drawLine(200, 20, 200, 400);
-            g.drawLine(300, 20, 300, 400);
-            g.drawLine(30, 100, 400, 100);
-            g.drawLine(30, 200, 400, 200);
-            g.drawLine(30, 300, 400, 300);
-            g.drawString("0", 5, 15);
-            g.drawString("100", 90, 15);
-            g.drawString("200", 190, 15);
-            g.drawString("300", 290, 15);
-            g.drawString("100", 3, 105);
-            g.drawString("200", 3, 205);
-            g.drawString("300", 3, 305);
-        }
         
         void paintBrush(Graphics2D g2, int x, int y, int angle, Color color){//dessin du pinceau
             g2.setStroke(new BasicStroke(4));
             g2.translate(x, y);
-            g2.rotate(Math.toRadians(angle), 0, 0);//tourne autour du point initial
+            g2.rotate(Math.toRadians(-angle), 0, 0);//tourne autour du point initial
             g2.setColor(color);
             g2.draw(brush);
         }
         
-        
-        /*******************
-        *   Setter brush   *
-        *******************/
-        
-        void changePosition(int x, int y){
-            this.x=x;
-            this.y=y;
-        }
-        
-        void changeX(int x){
-            this.x=x;
-        }
-        
-        void changeY(int y){
-            this.y=y;
-        }
-        
-        void changeOrientation(int angle){
-            this.angle=angle;
-        }
-        
-        void changeColor(Color color){
-            this.color=color;
-        }
-        
-        void changeDrawing(boolean b){
-            this.drawing=b;
-        }
-        
-        
-        /*******************
-        *   Getter brush   *
-        *******************/
-        
-        int getBrushX(){
-            return this.x;
-        }
-        
-        int getBrushY(){
-            return this.y;
+        void paintDessin(Graphics2D g2, LinkedList<Vector> dessin){
+            g2.setStroke(new BasicStroke(5));
+            for(Vector v : dessin){
+                g2.setColor(v.color);
+                if(v instanceof Vector.VectorLine){
+                    Vector.VectorLine tmp=(Vector.VectorLine)v;
+                    g2.drawLine(tmp.x1, tmp.y1, tmp.x2, tmp.y2);
+                }
+                else if(v instanceof Vector.VectorArc){
+                    Vector.VectorArc tmp=(Vector.VectorArc)v;
+                    g2.drawArc(tmp.x1, tmp.y1, tmp.width, tmp.height, tmp.startAngle, tmp.scanAngle);
+                }
+            }
         }
         
         
@@ -274,14 +242,25 @@ public class ViewPlaying extends ViewGame{
                     this.add(ifC.hookH);
                     return ifC.getHeight()+ifC.hookV.getHeight()+ifC.hookH.getHeight()+10;
                 case "drawLine":
-                    CommandDrawLine drawC=new CommandDrawLine(width/2+20, positionY);
-                    this.add(drawC);
-                    return drawC.getHeight()+10;
+                    CommandDrawLine drawLineC=new CommandDrawLine(width/2+20, positionY);
+                    this.add(drawLineC);
+                    return drawLineC.getHeight()+10;
+                case "drawArc":
+                    CommandDrawArc drawArcC=new CommandDrawArc(width/2+20, positionY);
+                    this.add(drawArcC);
+                    return drawArcC.getHeight()+10;
+                case "raisePutBrush":
+                    CommandRaisePutBrush raisePutC=new CommandRaisePutBrush(width/2+20, positionY);
+                    this.add(raisePutC);
+                    return raisePutC.getHeight()+10;
+                case "changeAngle":
+                    CommandChangeAngle changeAngleC=new CommandChangeAngle(width/2+20, positionY);
+                    this.add(changeAngleC);
+                    return changeAngleC.getHeight()+10;
                 case "changeColor":
                     CommandChangeColor colorC=new CommandChangeColor(width/2+20, positionY);
                     this.add(colorC);
                     return colorC.getHeight();
-                //--------a continuer-------
             }            
             return 0;
         }
@@ -326,6 +305,10 @@ public class ViewPlaying extends ViewGame{
                 this.addMouseMotionListener(this);
                 this.addMouseListener(this);
             }
+            
+            abstract void initialisePresentation();
+            
+            abstract boolean canExecute();
 
             abstract void execute();//chaque fonction l implemente
 
@@ -576,9 +559,10 @@ public class ViewPlaying extends ViewGame{
             public void mouseMoved(MouseEvent e){}            
             public void mousePressed(MouseEvent e){}
             public void mouseClicked(MouseEvent e){//pour verification, a enlever apres
-                System.out.println(this.name);
+                /*System.out.println(this.name);
                 if(this.previous!=null) this.previous.mouseClicked(e);
-                else System.out.println("debut");
+                else System.out.println("debut");*/
+                this.execute();
             }
             public void mouseEntered(MouseEvent e){}
             public void mouseExited(MouseEvent e){}
@@ -588,16 +572,28 @@ public class ViewPlaying extends ViewGame{
         class CommandStart extends Command{//bloc initial present que sur WhiteBoard
             CommandStart(){
                 super("start", Color.GREEN.darker());
+                initialisePresentation();
+            }
+            
+            void initialisePresentation(){
                 this.add(new JLabel("   Start your code here !   "));
                 this.setBounds(20, 20, getPreferredSize().width, commandH);
-                this.setBackground(Color.GREEN.darker());
-            }
-
-            void execute(){
-                super.next.execute();
             }
             
             public void mouseDragged(MouseEvent e){}//empeche Start d etre deplacee
+            
+            boolean canExecute(){//verifie qu il n y a pas de champs vide
+                Command tmp=this.next;
+                while(tmp!=null){
+                    if(!(tmp.canExecute())) return false;
+                    tmp=tmp.next;
+                }
+                return true;
+            }
+
+            void execute(){
+                if(canExecute() && next!=null) next.execute();
+            }
         }//fin classe interne Start
 
 
@@ -615,6 +611,12 @@ public class ViewPlaying extends ViewGame{
                 hookH=new HookHorizontal(color, x, y+2*commandH);//apres hookV
                 this.next=hookH;
                 hookH.previous=this;
+            }
+            
+            void initialisePresentation(){}//implementer par ses enfants
+            
+            boolean canExecute(){//implementer pas ses enfants
+                return false;
             }
             
             void execute(){
@@ -667,12 +669,18 @@ public class ViewPlaying extends ViewGame{
                 super("hookHorizontal", color);
                 this.setBounds(x, y, commandW, commandH/2);
             }
+            
+            void initialisePresentation(){}//n a pas de presentation
+            
+            boolean canExecute(){
+                return true;
+            }
+
+            public void mouseDragged(MouseEvent e){}//ne peut pas etre dragged seul
 
             public void execute(){
                 if(next!=null) next.execute();
             }
-
-            public void mouseDragged(MouseEvent e){}//ne peut pas etre dragged seul
         }//fin classe HookHorizontal
 
 
@@ -681,11 +689,19 @@ public class ViewPlaying extends ViewGame{
 
             CommandFor(int x, int y){
                 super("for", Color.ORANGE.darker(), x, y);
+                initialisePresentation();
+                this.setBounds(x, y, getPreferredSize().width, commandH);
+            }
+            
+            void initialisePresentation(){
                 this.add(new JLabel("   Repeat   "));
-                this.index=new JTextField(2);//par defaut a 0, c est le joueur qui choisit
+                this.index=new JTextField(3);//c est le joueur qui choisit
                 this.add(index);
                 this.add(new JLabel("   time   "));
-                this.setBounds(x, y, getPreferredSize().width, commandH);
+            }
+            
+            boolean canExecute(){
+                return index.getText().length()!=0;
             }
 
             void execute(){
@@ -706,6 +722,11 @@ public class ViewPlaying extends ViewGame{
             
             CommandIf(int x, int y){
                 super("if", Color.PINK.darker(), x, y);
+                initialisePresentation();
+                this.setBounds(x, y, getPreferredSize().width, commandH);
+            }
+            
+            void initialisePresentation(){
                 this.add(new JLabel("   If   "));
 
                 String[]variables={" x "," y "}; //o
@@ -716,20 +737,13 @@ public class ViewPlaying extends ViewGame{
                 this.operateur=new JComboBox<String>(tests);
                 this.operateur.addActionListener(this);
 
-                this.variableD=new JTextField(2);
+                this.variableD=new JTextField(4);
 
 
                 this.add(variableG);
                 this.add(operateur);
                 this.add(variableD);
                 this.add(new JLabel("   "));//pour la presentation
-                this.setBounds(x, y, getPreferredSize().width, commandH);
-            }
-
-            void execute(){
-            	this.varD=Integer.parseInt(this.variableD.getText());
-            	if(evaluate(this.op)) super.execute();//execute Command apres hookH
-                this.hookH.execute();
             }
 
             boolean evaluate(String op) {
@@ -757,6 +771,16 @@ public class ViewPlaying extends ViewGame{
                     this.op=(String)cb.getSelectedItem();
                 }
             }
+            
+            boolean canExecute(){
+                return variableD.getText().length()!=0;
+            }
+
+            void execute(){
+            	this.varD=Integer.parseInt(this.variableD.getText());
+            	if(evaluate(this.op)) super.execute();//execute Command apres hookH
+                this.hookH.execute();
+            }
         }//fin classe interne If
 
 
@@ -765,122 +789,209 @@ public class ViewPlaying extends ViewGame{
         *****************/
 
         class CommandDrawLine extends Command{//classe interne
-            private JTextField distance=new JTextField(2);
+            private JTextField distance=new JTextField(4);
 
             CommandDrawLine(int x, int y){
                 super("drawLine", Color.CYAN.darker());
+                initialisePresentation();
+                this.setBounds(x, y, getPreferredSize().width, commandH);
+            }
+            
+            void initialisePresentation(){
                 this.add(new JLabel("   Draw a line of  "));
                 this.add(distance);
                 this.add(new JLabel("   pixels   "));
-                this.setBounds(x, y, getPreferredSize().width, commandH);
+            }
+            
+            boolean canExecute(){
+                return distance.getText().length()!=0;
             }
 
             void execute(){
+                int hypotenuse=Integer.parseInt(distance.getText());
+                Vector v=new Vector();//pour creer objet interne
+                Point p=v.destinationLine(blackBoard.x, blackBoard.y, blackBoard.angle, hypotenuse);
+                
                 //ajout du vecteur dans le dessin du joueur
                 if(blackBoard.drawing){
-                    Vector tmp=new Vector();//pour creer objet interne
-                    int x2=0;
-                    int y2=0;
-                    Vector.VectorLine trait=tmp.new VectorLine(
-                        blackBoard.x, blackBoard.y, x2, y2, blackBoard.color);
+                    Vector.VectorLine trait=v.new VectorLine(
+                        blackBoard.x, blackBoard.y, p.x, p.y, blackBoard.brushColor);
                     dessin.add(trait);
                 }
                 
                 //nouvel emplacement du pinceau
-                //--------a faire--------
-                
+                blackBoard.x=p.x;
+                blackBoard.y=p.y;
+                ViewPlaying.this.blackBoard.repaint();
                 
                 if(next!=null) next.execute();
             }
         }//fin classe interne DrawLine
 
 
-        //--------a faire--------
-        class CommandDrawArc extends Command{//classe interne            
+        class CommandDrawArc extends Command{//classe interne   
+            private JTextField distance=new JTextField(4);//hauteur et largeur
+            private JTextField angle=new JTextField(4);//scanAngle
+            private JComboBox rightLeft=new JComboBox();
+            private int sens=1;//1=gauche, -1=droite
+            
             CommandDrawArc(int x, int y){
                 super("drawArc", Color.CYAN.darker());
+                initialisePresentation();
                 this.setBounds(x, y, getPreferredSize().width, commandH);
             }
+            
+            void initialisePresentation(){
+                this.add(new JLabel("   Draw an arc with a radius of   "));
+                this.add(this.distance);
+                this.add(new JLabel("   pixels and an angle of    "));
+                this.add(this.angle);
+                this.add(new JLabel("   degrees, on the   "));
+                
+                rightLeft.addItemListener(new ItemListener(){
+                    public void itemStateChanged(ItemEvent e){
+                        if(e.getStateChange()==ItemEvent.SELECTED)
+                            if(rightLeft.getSelectedItem().toString().equals(" right ")) sens=-1;
+                    }
+                });
+                rightLeft.addItem(" right ");
+                rightLeft.addItem(" left ");
+                this.add(rightLeft);
+                
+                this.add(new JLabel("   "));//pour la presentation
+            }
+            
+            boolean canExecute(){
+                return distance.getText().length()!=0 && angle.getText().length()!=0;
+            }
 
-            void execute(){
+            void execute(){//-----probleme avec coordonnees de depart (repere orthonorme bas droit...)----
                 if(blackBoard.drawing){
-                    
+                    int h=Integer.parseInt(distance.getText())*2;
+                    int a=Integer.parseInt(angle.getText())*sens;
+                    Vector tmp=new Vector();
+                    Vector.VectorArc arc=tmp.new VectorArc(blackBoard.x, blackBoard.y,
+                        h, h, blackBoard.angle, a, blackBoard.brushColor);
+                    dessin.add(arc);
                 }
-                
-                
+                ViewPlaying.this.blackBoard.repaint();
                 if(next!=null) next.execute();
             }
         }//fin classe interne DrawArc
 
 
         class CommandRaisePutBrush extends Command{//classe interne
-            private JComboBox<String> choiceBox;
-            private boolean choiceRes;
+            private JComboBox choiceBox=new JComboBox();
+            private boolean choiceRes;//raise=false, put=true
             
             CommandRaisePutBrush(int x, int y){
                 super("raisePutBrush", Color.CYAN.darker());
-                String[] choice={"Raise", "Put"};
-                this.choiceBox=new JComboBox<String>(choice);
-                this.add(choiceBox);
-                this.add(new JLabel("   the pen   "));
+                initialisePresentation();
                 this.setBounds(x, y, getPreferredSize().width, commandH);
+            }
+            
+            void initialisePresentation(){
+                this.add(new JLabel("   "));//pour la presentation
+                
+                choiceBox.addItemListener(new ItemListener(){
+                    public void itemStateChanged(ItemEvent e){
+                        if(e.getStateChange()==ItemEvent.SELECTED)
+                            choiceRes=choiceBox.getSelectedItem().toString().equals(" Put ");
+                    }
+                });
+                choiceBox.addItem(" Raise ");
+                choiceBox.addItem(" Put ");
+                this.add(choiceBox);
+                
+                this.add(new JLabel("   the pen   "));
+            }
+            
+            boolean canExecute(){
+                return true;
             }
 
             void execute(){
                 blackBoard.drawing=choiceRes;
                 if(next!=null) next.execute();
             }
-            
-            public void actionPerformed(ActionEvent e){
-                if(e.getSource()==this.choiceBox)
-                    choiceRes=((String)choiceBox.getSelectedItem()).equals("Raise");
-            }
         }//fin classe interne RaiseBrush
 
 
         class CommandChangeAngle extends Command{//classe interne
-            JTextField angle=new JTextField();//meilleur moyen de choisir l angle ? --------a faire--------
+            JTextField angle=new JTextField(4);//meilleur moyen de choisir l angle ? --------a faire--------
 
             CommandChangeAngle(int x, int y){
                 super("changeAngle", Color.CYAN.darker());
+                initialisePresentation();
                 this.setBounds(x, y, getPreferredSize().width, commandH);
+            }
+            
+            void initialisePresentation(){
+                this.add(new JLabel("   Change angle to   "));
+                this.add(this.angle);
+                this.add(new JLabel("   degrees   "));
+            }
+            
+            boolean canExecute(){
+                return angle.getText().length()!=0;
             }
 
             void execute(){
                 blackBoard.angle=(Integer.parseInt(angle.getText()));
+                ViewPlaying.this.blackBoard.repaint();
                 if(next!=null) next.execute();
             }
         }//fin de classe interne ChangeAngle
 
 
-        class CommandChangeColor extends Command{//classe interne
+        class CommandChangeColor extends Command implements ActionListener{//classe interne
             private JComboBox colorChoice=new JComboBox();
-            final Color[] palette={Color.BLUE, Color.CYAN, Color.GREEN, Color.MAGENTA,
-                Color.ORANGE, Color.RED, Color.WHITE, Color.YELLOW};
-            private Color colorRes;
+            final Color[] palette={Color.BLUE, Color.CYAN, Color.GREEN,
+                Color.MAGENTA, Color.RED, Color.WHITE, Color.YELLOW};
+            private Color colorRes=level.brushFirstColor;
 
             CommandChangeColor(int x, int y){
                 super("changeColor", Color.CYAN.darker());
+                initialisePresentation();
+                this.setBounds(x, y, getPreferredSize().width, commandH);
+            }
+            
+            void initialisePresentation(){
                 this.add(new JLabel("   Change color to   "));
                 
-                for(int i=0; i<8; i++) colorChoice.addItem(palette[i]);
+                colorChoice.addItemListener(new ItemListener(){
+                    public void itemStateChanged(ItemEvent e){
+                        if(e.getStateChange()==ItemEvent.SELECTED){
+                            for(int i=0; i<7; i++){
+                                if(palette[i].equals(colorChoice.getSelectedItem())){
+                                    colorRes=palette[i];
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                });
+                for(int i=0; i<7; i++) colorChoice.addItem(palette[i]);
                 colorChoice.setRenderer(new ColorComboRenderer());
                 this.add(this.colorChoice);
                 
                 this.add(new JLabel("   "));
-                this.setBounds(x, y, getPreferredSize().width, commandH);
             }
             
             public void actionPerformed(ActionEvent e){
                 if(e.getSource()==this.colorChoice){
-                    for(Color c : palette){
-                        if(colorChoice.getSelectedItem().equals(c)) colorRes=c;
-                    }
+                    colorRes=palette[colorChoice.getSelectedIndex()];
+                    System.out.println(colorChoice.getSelectedIndex());
                 }
+            }
+            
+            boolean canExecute(){
+                return true;
             }
 
             void execute(){
-                blackBoard.color=colorRes;
+                blackBoard.brushColor=colorRes;
+                ViewPlaying.this.blackBoard.repaint();
                 if(next!=null) next.execute();
             }
             
