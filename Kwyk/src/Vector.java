@@ -1,4 +1,5 @@
 import java.awt.Color;
+import java.awt.Point;
 
 class Vector{
     final int x1, y1;//coordonees de depart
@@ -16,6 +17,36 @@ class Vector{
     
     boolean sameVector(Vector vector2){//jamais utilise normalement (override)
         return false;
+    }
+
+    Point destinationLine(int x1, int y1, int angle, int distance){
+        if(angle>=270){
+            angle=360-angle;
+            int x2=x1+(int)(distance*Math.cos(Math.toRadians(angle)));
+            int y2=y1+(int)(distance*Math.sin(Math.toRadians(angle)));
+            return new Point(x2, y2);
+        }
+        if(angle>=180){
+            angle=270-angle;
+            int x2=x1-(int)(distance*Math.sin(Math.toRadians(angle)));
+            int y2=y1+(int)(distance*Math.cos(Math.toRadians(angle)));
+            return new Point(x2, y2);
+        }
+        if(angle>=90){
+            angle=180-angle;
+            int x2=x1-(int)(distance*Math.cos(Math.toRadians(angle)));
+            int y2=y1-(int)(distance*Math.sin(Math.toRadians(angle)));
+            return new Point(x2, y2);
+        }
+        int x2=x1+(int)(distance*Math.cos(Math.toRadians(angle)));
+        int y2=y1-(int)(distance*Math.sin(Math.toRadians(angle)));
+        return new Point(x2, y2);
+    }
+    
+    Point destinationArc(){//----------a faire----------
+        int x2=0;
+        int y2=0;
+        return new Point(x2,y2);
     }
     
     
@@ -44,7 +75,6 @@ class Vector{
     }
     
     
-    //--------a faire--------
     class VectorArc extends Vector{//arc
         final int width, height, startAngle, scanAngle;
         
