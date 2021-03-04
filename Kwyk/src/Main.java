@@ -1,5 +1,6 @@
 import java.awt.Color;
 import java.awt.EventQueue;
+import java.io.IOException;
 
 public class Main {
     public static void main(String[]a){
@@ -9,7 +10,7 @@ public class Main {
         
         //Level(Player p, int x, int y, int angle, Color color, String[] c, Vector[] v)
         Player p=new Player("user");
-        String[]c={"for", "if", "drawLine", "drawArc", "raisePutBrush", "changeAngle", "changeColor"};
+        String[]c={"for", "if", "drawLine", "drawArc", "raisePutBrush", "changeAngle", "changeColor","moveTo"};
         Vector[]v=new Vector[4];
         Vector tmp=new Vector();
         v[0]=tmp.new VectorLine(100, 200, 100, 300, Color.RED);
@@ -19,6 +20,12 @@ public class Main {
         
         Level l=new Level(p, 100, 100, 90, Color.BLUE, c, v);
         p.setLevel(l);
-        EventQueue.invokeLater(()-> new Control(new ViewPlaying(p)));
+        EventQueue.invokeLater(()-> {
+			try {
+				new Control(new ViewPlaying(p));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		});
     }
 }

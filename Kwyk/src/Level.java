@@ -27,6 +27,10 @@ public class Level{
         return this.pattern;
     }
     
+    LinkedList<Vector> getPlayerDraw(){
+        return this.playerDraw;
+    }
+    
     void addToDraw(Vector vector){
         this.playerDraw.add(vector);
     }
