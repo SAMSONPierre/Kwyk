@@ -17,7 +17,7 @@ public class Main {
         v[2]=tmp.new VectorLine(300, 300, 300, 200, Color.RED);
         v[3]=tmp.new VectorLine(300, 200, 100, 200, Color.RED);
         
-        Level l=new Level(p, 100, 100, 90, Color.BLUE, c, v);
+        Level l=new Level(p, 200, 200, 0, Color.BLUE, c, v);
         p.setLevel(l);
         EventQueue.invokeLater(()-> new Control(new ViewPlaying(p)));
     }

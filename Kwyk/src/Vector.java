@@ -19,7 +19,8 @@ class Vector{
         return false;
     }
 
-    Point destinationLine(int x1, int y1, int angle, int distance){
+    Point destinationLine(int x1, int y1, int angle, int distance){//trigo
+        angle%=360;
         if(angle>=270){
             angle=360-angle;
             int x2=x1+(int)(distance*Math.cos(Math.toRadians(angle)));
@@ -43,11 +44,29 @@ class Vector{
         return new Point(x2, y2);
     }
     
-    Point destinationArc(){//----------a faire----------
-        int x2=0;
-        int y2=0;
-        return new Point(x2,y2);
-    }
+    /*Point destinationArc(int x1, int y1, int distance, int startA, int scanA){//trigo*2
+        if(startA>=270){
+            startA=startA-270;
+            int x0=x1-(int)(distance*Math.sin(Math.toRadians(startA)));
+            int y0=y1-(int)(distance*Math.cos(Math.toRadians(startA)));
+            return destinationLine(x0, y0, scanA+startA, distance);
+        }
+        if(startA>=180){
+            startA=startA-180;
+            int x0=x1+(int)(distance*Math.cos(Math.toRadians(startA)));
+            int y0=y1-(int)(distance*Math.sin(Math.toRadians(startA)));
+            return destinationLine(x0, y0, scanA+startA, distance);
+        }
+        if(startA>=90){
+            startA=startA-90;
+            int x0=x1+(int)(distance*Math.sin(Math.toRadians(startA)));
+            int y0=y1+(int)(distance*Math.cos(Math.toRadians(startA)));
+            return destinationLine(x0, y0, scanA+startA, distance);
+        }
+        int x0=x1-(int)(distance*Math.cos(Math.toRadians(startA)));
+        int y0=y1-(int)(distance*Math.sin(Math.toRadians(startA)));
+        return destinationLine(x0, y0, scanA+startA, distance);
+    }*/
     
     
     /*****************
@@ -76,13 +95,12 @@ class Vector{
     
     
     class VectorArc extends Vector{//arc
-        final int width, height, startAngle, scanAngle;
+        final int width, startAngle, scanAngle;
         
         //constructeur a modifier
-        VectorArc(int x1, int y1, int width, int height, int startA, int scanA, Color color){
+        VectorArc(int x1, int y1, int width, int startA, int scanA, Color color){
             super(x1, y1, color);
             this.width=width;
-            this.height=height;
             this.startAngle=startA;
             this.scanAngle=scanA;
         }
@@ -92,7 +110,7 @@ class Vector{
                 VectorArc v2=(VectorArc)vector2;
                 boolean same=(x1==v2.x1 && y1==v2.y1 && startAngle==v2.startAngle);
                 boolean reverse=(startAngle==(v2.startAngle+v2.scanAngle)%360);
-                return (same || reverse) && width==v2.width && height==v2.height
+                return (same || reverse) && width==v2.width
                     && scanAngle==v2.scanAngle && color.equals(v2.color);
             }
             //----------a faire----------
