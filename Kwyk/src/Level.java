@@ -3,7 +3,6 @@ import java.io.Serializable;
 import java.util.LinkedList;
 
 public class Level implements Serializable{
-    private ViewPlaying viewPlaying;//la vue du niveau
     final int brushX, brushY, brushAngle;
     final Color brushFirstColor;
     private int numberOfCommands;
@@ -13,7 +12,6 @@ public class Level implements Serializable{
     private LinkedList<Vector> playerDraw=new LinkedList<Vector>();
     
     Level(Player p, int x, int y, int angle, Color color, int nbOfC, String name, String[] nameOfC, LinkedList<Vector> v){
-        //this.viewPlaying=new ViewPlaying(p);//--> level=JButton qui active un ViewPlaying
         this.brushX=x;
         this.brushY=y;
         this.brushAngle=angle;
@@ -24,8 +22,7 @@ public class Level implements Serializable{
         this.pattern=v;
     }
     
-    Level(Player p, int nbOfC, String name, String[] nameOfC, LinkedList<Vector> v){
-        //this.viewPlaying=new ViewPlaying(p);//--> level=JButton qui active un ViewPlaying
+    Level(Player p, int nbOfC, String name, String[] nameOfC, LinkedList<Vector> v){//pour submit
         this.brushX=200;
         this.brushY=200;
         this.brushAngle=0;
@@ -36,15 +33,14 @@ public class Level implements Serializable{
         this.pattern=v;
     }
     
-    Level(Player p){        
-        //this.viewPlaying=new ViewPlaying(p);//--> level=JButton qui active un ViewPlaying
+    Level(Player p){//pour creer des niveaux      
         this.brushX=200;
         this.brushY=200;
         this.brushAngle=0;
         this.brushFirstColor=Color.WHITE;
         this.numberOfCommands=0;
         this.name="editor";
-        String[] c={"for", "if", "drawLine", "drawArc", "raisePutBrush", "changeAngle", "changeColor", "moveTo"};
+        String[] c={"for", "if", "drawLine", "drawArc", "raisePutBrush", "shiftAngle", "changeColor", "moveTo", "addAngle"};
         this.availableCommands=c;
         this.pattern=new LinkedList<Vector>();
     }
@@ -55,6 +51,23 @@ public class Level implements Serializable{
     
     LinkedList<Vector> getPattern(){
         return this.pattern;
+    }
+    
+    LinkedList<Vector> getSimplifyPattern(){//pour un niveau cree
+        LinkedList<Vector> res=new LinkedList<Vector>();
+        for(Vector v : this.playerDraw){
+            if(notInList(res, v)){
+                res.add(v);
+            }
+        }
+        return res;
+    }
+    
+    boolean notInList(LinkedList<Vector> list, Vector v){
+        for(Vector vList : list){
+            if(v.sameVector(vList)) return false;
+        }
+        return true;
     }
     
     LinkedList<Vector> getPlayerDraw(){
@@ -82,20 +95,5 @@ public class Level implements Serializable{
             if(!found) return false;//il manque un trait au moins
         }
         return this.playerDraw.isEmpty();//si traits restant==rtaits en trop
-    }
-    
-    LinkedList<Vector> getSimplifyPattern(){//pour niveau cree
-        LinkedList<Vector> res=new LinkedList<Vector>();
-        for(Vector v : this.playerDraw){
-            if(notInList(res, v)) res.add(v);
-        }
-        return res;
-    }
-    
-    boolean notInList(LinkedList<Vector> list, Vector v){
-        for(Vector vList : list){
-            if(v.sameVector(vList)) return false;
-        }
-        return true;
     }
 }

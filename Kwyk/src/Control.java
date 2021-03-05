@@ -1,12 +1,15 @@
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.LinkedList;
+import javax.imageio.ImageIO;
 
 public class Control implements Serializable{
     private Model model;
@@ -112,11 +115,15 @@ public class Control implements Serializable{
     }
     
     void switchChallenge(){
-        
+        this.exitFrame();
+        this.view=new ViewSummaryChallenge(this.model.getPlayer());
+        this.model=view.getModel();
     }
     
-    void switchCreate(){
-        
+    void switchCreate() throws IOException{
+        this.exitFrame();
+        Level level=new Level(this.model.getPlayer());
+        playLevel(level, true);
     }
     
     void logout(){
@@ -144,10 +151,21 @@ public class Control implements Serializable{
     *******************/
     
     void submit(String name){
+        if(name==null) return;
     	ViewPlaying tmp=(ViewPlaying)this.view;
     	LinkedList<Vector> newPattern=model.getPlayer().getLevel().getSimplifyPattern();
     	int numberOfCommands=tmp.getNumberOfCommands();
     	String[] commandsAvailable=tmp.getCommandsArray();
+        Rectangle screenRect=new Rectangle(tmp.getX()+tmp.getInsets().left+20,
+                tmp.getY()+tmp.getInsets().top+tmp.buttonHeight+20, 400, 400);
+        BufferedImage capture;
+        try{
+            capture=new Robot().createScreenCapture(screenRect);
+            ImageIO.write(capture, "png", new File("preview/"+name+".png"));
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }        
     	Level newLvl=new Level(model.getPlayer(),numberOfCommands,name,commandsAvailable,newPattern);
     	try{
             String saveFile="levels/"+name+".lvl";
@@ -173,13 +191,7 @@ public class Control implements Serializable{
             Level lvl=(Level)ois.readObject();
             playLevel(lvl, isCreating);
         }
-        catch(FileNotFoundException e){
-            e.printStackTrace();
-	}
-        catch(IOException e){
-            e.printStackTrace();
-	}
-        catch(ClassNotFoundException e){
+        catch(Exception e){
             e.printStackTrace();
 	}
     }
