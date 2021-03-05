@@ -35,6 +35,10 @@ public class Level{
         this.playerDraw.add(vector);
     }
     
+    void initializePlayerDraw(){
+        this.playerDraw.removeAll(playerDraw);
+    }
+    
     boolean compare(){//a la fin, pour verifier si dessin correct
         for(Vector patternV : this.pattern){//on prend chaque trait du patron
             boolean found=false;

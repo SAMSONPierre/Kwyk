@@ -1,6 +1,7 @@
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.LinkedList;
@@ -128,7 +129,7 @@ public class Control {
     *   Play Level   *
     *****************/
     
-    void playLevel(Level level){//quand on appuie sur un bouton pour commencer un niveau
+    void playLevel(Level level) throws IOException{//quand on appuie sur un bouton pour commencer un niveau
         this.model.getPlayer().setLevel(level);
         this.exitFrame();
         this.view=new ViewPlaying(this.model.getPlayer());

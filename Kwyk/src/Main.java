@@ -1,5 +1,6 @@
 import java.awt.Color;
 import java.awt.EventQueue;
+import java.io.IOException;
 
 public class Main {
     public static void main(String[]a){
@@ -19,6 +20,13 @@ public class Main {
         
         Level l=new Level(p, 200, 200, 0, Color.BLUE, c, v);
         p.setLevel(l);
-        EventQueue.invokeLater(()-> new Control(new ViewPlaying(p)));
+        EventQueue.invokeLater(()->{
+            try{
+                new Control(new ViewPlaying(p));
+            }
+            catch(IOException e){
+                e.printStackTrace();
+            }
+        });
     }
 }
