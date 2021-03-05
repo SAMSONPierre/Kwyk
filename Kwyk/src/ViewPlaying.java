@@ -22,6 +22,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
@@ -39,14 +40,14 @@ public class ViewPlaying extends ViewGame{
     private JPanel features=new JPanel();//panel avec tous les boutons sous BlackBoard
     private Level level;//niveau en cours
     
-    ViewPlaying(Player player) throws IOException{
+    ViewPlaying(Player player, boolean isCreating) throws IOException{
         super(player);
         Rectangle r=GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();//plein écran
         this.heightFS=r.height-this.getInsets().top;//getInsets().top=barre supérieur de la fenetre
         this.widthFS=r.width;
         this.level=player.getLevel();
         addBoard();//ajout des tableaux, avec des marges de 20 (haut, bas et entre tableaux)
-        addFeatures();//ajout des fonctionnalites
+        addFeatures(isCreating);//ajout des fonctionnalites
     }
     
     void addBoard() throws IOException{
@@ -56,10 +57,11 @@ public class ViewPlaying extends ViewGame{
         this.add(dragDrop);//taille relative a l ecran
     }
     
-    void addFeatures(){
+    void addFeatures(boolean isCreating){
         features.setBounds(20, 440+buttonHeight, 400, heightFS-460-buttonHeight);
         this.add(features);
         
+        //voir la grille:
         JButton seeGrid=new JButton("See grid");
         seeGrid.addActionListener((event)->{
             blackBoard.gridApparent=!blackBoard.gridApparent;
@@ -67,21 +69,49 @@ public class ViewPlaying extends ViewGame{
         });
         features.add(seeGrid);
         
+        //actionner le code
         JButton run=new JButton("Run");
         run.addActionListener((event)->this.run());
         features.add(run);
         
+        //arreter le code
         JButton stop=new JButton("Stop");
         stop.addActionListener((event)->{
-        	
+        	//------a faire------
         });
         features.add(stop);
+        
+        //creer un niveau -> que pour la page Create
+        if(isCreating){
+            JButton submit=new JButton("Submit");
+            submit.addActionListener((event)->{
+                String name=JOptionPane.showInputDialog(this,"Level's name ?", null);	
+                super.control.submit(name);
+            });
+            features.add(submit);
+        }
+        
+        //---que pour le test, a supprimer une fois le sommaire fonctionnel---
+        JButton load=new JButton("Load");
+        load.addActionListener((event)->{
+            String name=JOptionPane.showInputDialog(this,"Level's name ?", null);	
+            super.control.load(name, true);
+        });
+        features.add(load);
     }
     
     void run(){
         this.level.initializePlayerDraw();//vide le dessin du joueur
         this.blackBoard.brush.resetBrush();//remet le pinceau a l'emplacement initial
         this.dragDrop.commands.getFirst().execute();//s execute si tout est bon (pas de champ vide)
+    }
+    
+    int getNumberOfCommands(){
+        return dragDrop.getNumberOfCommands();
+    }
+    
+    String[] getCommandsArray(){
+        return dragDrop.listToTab(dragDrop.getCommands());
     }
     
     
@@ -118,8 +148,8 @@ public class ViewPlaying extends ViewGame{
             if(gridApparent) paintGrid(g);//grille apparente quand on le souhaite
             Graphics2D g2=(Graphics2D)g;
             g2.setStroke(new BasicStroke(4));
-            for(Vector v : level.getPattern()) paintVector(g2, v);//patron
-            for(Vector v : level.getPlayerDraw()) paintVector(g2, v);//dessin du joueur, au debut vide
+            for(Vector v : level.getPattern()) paintVector(g2, v, true);//patron
+            for(Vector v : level.getPlayerDraw()) paintVector(g2, v, false);//dessin du joueur, au debut vide
             paintBrush(g2, x, y, angle, brushColor);//pinceau en dernier car rotation
         }
 
@@ -134,8 +164,9 @@ public class ViewPlaying extends ViewGame{
             g.drawString("0", 5, 15);
         }
         
-        void paintVector(Graphics2D g2, Vector v){
-            g2.setColor(v.color.darker());
+        void paintVector(Graphics2D g2, Vector v, boolean darker){
+            if(darker) g2.setColor(v.color.darker());
+            else g2.setColor(v.color);
             if(v instanceof Vector.VectorLine){
                 Vector.VectorLine tmp=(Vector.VectorLine)v;
                 g2.drawLine(tmp.x1, tmp.y1, tmp.x2, tmp.y2);
@@ -261,6 +292,40 @@ public class ViewPlaying extends ViewGame{
                     return moveC.getHeight()+10;
             }
             return 0;
+        }
+        
+        int getNumberOfCommands(){
+            int res=0;
+            Command tmp=this.commands.getFirst().next;//deuxieme commande du code du joueur
+            while(tmp!=null){
+                if(!(tmp instanceof CommandWithCommands)) res++;//un cwc a toujours un hookH donc 2 commandes
+                tmp=tmp.next;
+            }
+            return res;
+        }
+        
+        boolean notAdd(LinkedList<Command> list, Command test){
+            for(Command c : list){
+                if(c.name.equals(test.name)) return false;//deja dans la liste
+            }
+            return true;//pas dans la liste
+        }
+        
+        LinkedList<Command> getCommands(){
+            LinkedList<Command> res=new LinkedList<Command>();
+            Command tmp=this.commands.getFirst().next;
+            while(tmp!=null){
+                if(notAdd(res, tmp)) res.add(tmp);
+                tmp=tmp.next;
+            }
+            return res;
+        }
+        
+        String[] listToTab(LinkedList<Command> list){
+            int size=list.size();
+            String[] res=new String[size];
+            for(int i=0; i<size; i++) res[i]=list.get(i).name;
+            return res;
         }
 
         protected void paintComponent(Graphics g){
