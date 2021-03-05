@@ -1,11 +1,14 @@
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.LinkedList;
 
-public class Control {
+public class Control implements Serializable{
     private Model model;
     private View view;
     private LinkedList<String> database=new LinkedList<String>();//pair=username, impair=password
@@ -52,7 +55,7 @@ public class Control {
                 ois.close();
             }
             catch(Exception e) {
-                System.out.println("Echec de reprise de sauvegarde");
+                System.out.println("Fail to retake user's account.");
             }
         }
         else ((ViewLogin)view).errorLogin();//affichage du message d erreur
@@ -79,7 +82,7 @@ public class Control {
                 oos.close();
             }
             catch(Exception e){
-                System.out.println("Echec de sauvegarde");
+                System.out.println("Fail to save.");
             }
         }
     }
@@ -95,7 +98,7 @@ public class Control {
             ois.close();
         }
         catch(Exception e) {
-            System.out.println("Echec de reprise de sauvegarde");
+            System.out.println("Fail to retake default account.");
         }
     }
     
@@ -128,24 +131,56 @@ public class Control {
     *   Play Level   *
     *****************/
     
-    void playLevel(Level level){//quand on appuie sur un bouton pour commencer un niveau
+    void playLevel(Level level, boolean isCreating) throws IOException{//quand on appuie sur un bouton pour commencer un niveau
         this.model.getPlayer().setLevel(level);
         this.exitFrame();
-        this.view=new ViewPlaying(this.model.getPlayer());
+        this.view=new ViewPlaying(this.model.getPlayer(), isCreating);
         this.model=view.getModel();
     }
     
     
-    /********************
-    * Feature's buttons *
-    ********************/
+    /*******************
+    * Submit new level *
+    *******************/
     
-    void run(){//execute Start, qui va executer les autres commandes
-        ((ViewPlaying)view).getStart();
+    void submit(String name){
+    	ViewPlaying tmp=(ViewPlaying)this.view;
+    	LinkedList<Vector> newPattern=model.getPlayer().getLevel().getSimplifyPattern();
+    	int numberOfCommands=tmp.getNumberOfCommands();
+    	String[] commandsAvailable=tmp.getCommandsArray();
+    	Level newLvl=new Level(model.getPlayer(),numberOfCommands,name,commandsAvailable,newPattern);
+    	try{
+            String saveFile="levels/"+name+".lvl";
+            File file=new File(saveFile);
+            ObjectOutputStream oos=new ObjectOutputStream(new FileOutputStream(file));
+            oos.writeObject(newLvl);
+            oos.close();
+        }
+        catch(Exception e){
+            System.out.println("Fail to submit.");
+        }
     }
     
-    void stop(){
-        
-    }
     
+    /*****************
+    *   Load level   *
+    *****************/
+    
+    void load(String name, boolean isCreating){
+    	try{
+            FileInputStream fis=new FileInputStream("levels/"+name+".lvl");
+            ObjectInputStream ois=new ObjectInputStream(fis);
+            Level lvl=(Level)ois.readObject();
+            playLevel(lvl, isCreating);
+        }
+        catch(FileNotFoundException e){
+            e.printStackTrace();
+	}
+        catch(IOException e){
+            e.printStackTrace();
+	}
+        catch(ClassNotFoundException e){
+            e.printStackTrace();
+	}
+    }
 }
