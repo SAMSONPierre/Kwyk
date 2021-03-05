@@ -103,7 +103,12 @@ public class ViewPlaying extends ViewGame{
     void run(){
         this.level.initializePlayerDraw();//vide le dessin du joueur
         this.blackBoard.brush.resetBrush();//remet le pinceau a l'emplacement initial
-        this.dragDrop.commands.getFirst().execute();//s execute si tout est bon (pas de champ vide)
+        this.dragDrop.commands.getFirst().execute(true);//s execute si tout est bon (pas de champ vide)
+        //if(level.compare()) JOptionPane.showMessageDialog(this, "Victory !");
+    }
+    
+    void victoryMessage(){
+        if(level.compare()) JOptionPane.showMessageDialog(this, "Victory !");
     }
     
     int getNumberOfCommands(){
@@ -195,10 +200,11 @@ public class ViewPlaying extends ViewGame{
             }
             
             void resetBrush() {
-            	PanelBlackBoard.this.x=level.brushX;
+                PanelBlackBoard.this.x=level.brushX;
             	PanelBlackBoard.this.y=level.brushY;
             	PanelBlackBoard.this.angle=level.brushAngle;
             	PanelBlackBoard.this.brushColor=level.brushFirstColor;
+            	PanelBlackBoard.this.drawing=true;
             	moveTo(-18,-5);
             	lineTo(2,-5);
             	lineTo(1,-12);
@@ -278,10 +284,10 @@ public class ViewPlaying extends ViewGame{
                     CommandRaisePutBrush raisePutC=new CommandRaisePutBrush(width/2+20, positionY);
                     this.add(raisePutC);
                     return raisePutC.getHeight()+10;
-                case "changeAngle":
-                    CommandChangeAngle changeAngleC=new CommandChangeAngle(width/2+20, positionY);
-                    this.add(changeAngleC);
-                    return changeAngleC.getHeight()+10;
+                case "shiftAngle":
+                    CommandShiftAngle shiftAngleC=new CommandShiftAngle(width/2+20, positionY);
+                    this.add(shiftAngleC);
+                    return shiftAngleC.getHeight()+10;
                 case "changeColor":
                     CommandChangeColor colorC=new CommandChangeColor(width/2+20, positionY);
                     this.add(colorC);
@@ -290,6 +296,10 @@ public class ViewPlaying extends ViewGame{
                     CommandMoveTo moveC=new CommandMoveTo(width/2+20, positionY);
                     this.add(moveC);
                     return moveC.getHeight()+10;
+                case "addAngle":
+                    CommandAddAngle addAngleC=new CommandAddAngle(width/2+20, positionY);
+                    this.add(addAngleC);
+                    return addAngleC.getHeight()+10;
             }
             return 0;
         }
@@ -397,7 +407,7 @@ public class ViewPlaying extends ViewGame{
             
             abstract void initializeDisplay();
             abstract boolean canExecute();
-            abstract void execute();//chaque fonction les implemente
+            abstract void execute(boolean executeNext);//chaque fonction les implemente
 
             
             /******************
@@ -689,8 +699,7 @@ public class ViewPlaying extends ViewGame{
             public void mouseMoved(MouseEvent e){}
             public void mousePressed(MouseEvent e){}
             public void mouseClicked(MouseEvent e){//pour verification, a enlever apres
-                //if(this.canExecute()) this.execute();
-                for(Command c : commands) System.out.println(c.name);
+                //if(this.canExecute()) this.execute(true);
             }
             public void mouseEntered(MouseEvent e){}
             public void mouseExited(MouseEvent e){}
@@ -719,8 +728,8 @@ public class ViewPlaying extends ViewGame{
                 return true;
             }
 
-            void execute(){
-                if(canExecute() && next!=null) next.execute();
+            void execute(boolean executeNext){///execute toujours le suivant
+                if(executeNext && canExecute() && next!=null) next.execute(executeNext);
             }
         }//fin classe interne Start
 
@@ -748,11 +757,11 @@ public class ViewPlaying extends ViewGame{
                 return true;
             }
             
-            void execute(){
+            void execute(boolean executeNext){
                 Command tmp=this.next;
                 while(tmp!=this.hookH){
-                    tmp.execute();
-                    tmp=tmp.next;
+                    tmp.execute(false);//execute du next manuellement
+                    tmp=tmp.next;//en incrementant tmp
                 }
             }//sera complete par ses enfants
             
@@ -815,8 +824,9 @@ public class ViewPlaying extends ViewGame{
                 return true;
             }
 
-            public void execute(){
-                if(next!=null) next.execute();
+            public void execute(boolean executeNext){
+                if(executeNext && next!=null) next.execute(true);
+                else if(next==null) victoryMessage();
             }
         }//fin classe HookHorizontal
 
@@ -841,9 +851,9 @@ public class ViewPlaying extends ViewGame{
                 return super.canExecute() && index.getText().length()!=0;
             }
 
-            void execute(){
-                for(int i=0; i<Integer.parseInt(index.getText()); i++) super.execute();
-                this.hookH.execute();
+            void execute(boolean executeNext){
+                for(int i=0; i<Integer.parseInt(index.getText()); i++) super.execute(false);
+                this.hookH.execute(true);
             }
         }//fin classe interne For
 
@@ -909,10 +919,10 @@ public class ViewPlaying extends ViewGame{
                 return super.canExecute() && variableD.getText().length()!=0;
             }
 
-            void execute(){
+            void execute(boolean executeNext){
             	this.varD=Integer.parseInt(this.variableD.getText());
-            	if(evaluate(this.op)) super.execute();//execute Command apres hookH
-                this.hookH.execute();
+            	if(evaluate(this.op)) super.execute(false);//execute Command apres hookH
+                this.hookH.execute(true);
             }
         }//fin classe interne If
 
@@ -940,7 +950,7 @@ public class ViewPlaying extends ViewGame{
                 return distance.getText().length()!=0;
             }
 
-            void execute(){
+            void execute(boolean executeNext){
                 int hypotenuse=Integer.parseInt(distance.getText());
                 Vector v=new Vector();//pour creer objet interne
                 Point p=v.destinationLine(blackBoard.x, blackBoard.y, blackBoard.angle, hypotenuse);
@@ -957,7 +967,8 @@ public class ViewPlaying extends ViewGame{
                 blackBoard.y=p.y;
                 ViewPlaying.this.blackBoard.repaint();
                 
-                if(next!=null) next.execute();
+                if(executeNext && next!=null) next.execute(true);
+                else if(next==null) victoryMessage();
             }
         }//fin classe interne DrawLine
 
@@ -996,7 +1007,7 @@ public class ViewPlaying extends ViewGame{
                 return radius.getText().length()!=0 && angleScan.getText().length()!=0;
             }
 
-            void execute(){
+            void execute(boolean executeNext){
                 int rad=Integer.parseInt(radius.getText());
                 int angleS=Integer.parseInt(angleScan.getText());
                 Vector v=new Vector();
@@ -1021,7 +1032,8 @@ public class ViewPlaying extends ViewGame{
                 blackBoard.angle=(angleS*sens+blackBoard.angle)%360;
                 ViewPlaying.this.blackBoard.repaint();
                 
-                if(next!=null) next.execute();
+                if(executeNext && next!=null) next.execute(true);
+                else if(next==null) victoryMessage();
             }
         }//fin classe interne DrawArc
 
@@ -1055,24 +1067,25 @@ public class ViewPlaying extends ViewGame{
                 return true;
             }
 
-            void execute(){
+            void execute(boolean executeNext){
                 blackBoard.drawing=choiceRes;
-                if(next!=null) next.execute();
+                if(executeNext && next!=null) next.execute(true);
+                else if(next==null) victoryMessage();
             }
         }//fin classe interne RaisePutBrush
 
 
-        class CommandChangeAngle extends Command{//classe interne
+        class CommandShiftAngle extends Command{//classe interne
             JTextField angle=new JTextField(3);//meilleur moyen de choisir l angle ? --------a faire--------
 
-            CommandChangeAngle(int x, int y){
-                super("changeAngle", Color.LIGHT_GRAY.darker());
+            CommandShiftAngle(int x, int y){
+                super("shiftAngle", Color.LIGHT_GRAY.darker());
                 initializeDisplay();
                 this.setBounds(x, y, getPreferredSize().width, commandH);
             }
             
             void initializeDisplay(){
-                this.add(new JLabel("  Change angle to  "));
+                this.add(new JLabel("  Shift angle to  "));
                 this.add(this.angle);
                 this.add(new JLabel("  "));
             }
@@ -1081,12 +1094,13 @@ public class ViewPlaying extends ViewGame{
                 return angle.getText().length()!=0;
             }
 
-            void execute(){
+            void execute(boolean executeNext){
                 blackBoard.angle=(Integer.parseInt(angle.getText()));
                 ViewPlaying.this.blackBoard.repaint();
-                if(next!=null) next.execute();
+                if(executeNext && next!=null) next.execute(true);
+                else if(next==null) victoryMessage();
             }
-        }//fin de classe interne ChangeAngle
+        }//fin de classe interne ShiftAngle
 
 
         class CommandChangeColor extends Command{//classe interne
@@ -1126,10 +1140,11 @@ public class ViewPlaying extends ViewGame{
                 return true;
             }
 
-            void execute(){
+            void execute(boolean executeNext){
                 blackBoard.brushColor=colorRes;
                 ViewPlaying.this.blackBoard.repaint();
-                if(next!=null) next.execute();
+                if(executeNext && next!=null) next.execute(true);
+                else if(next==null) victoryMessage();
             }
             
             
@@ -1176,13 +1191,43 @@ public class ViewPlaying extends ViewGame{
                 return positionX.getText().length()!=0 && positionY.getText().length()!=0;
             }
 
-            void execute(){
+            void execute(boolean executeNext){
                 blackBoard.x=(Integer.parseInt(positionX.getText()));
                 blackBoard.y=(Integer.parseInt(positionY.getText()));
                 ViewPlaying.this.blackBoard.repaint();
-                if(next!=null) next.execute();
+                if(executeNext && next!=null) next.execute(true);
+                else if(next==null) victoryMessage();
             }
         }//fin de classe interne MoveTo
+
+
+        class CommandAddAngle extends Command{//classe interne
+            private JTextField angle=new JTextField(3);
+
+            CommandAddAngle(int x, int y){
+                super("addAngle", Color.LIGHT_GRAY.darker());
+                initializeDisplay();
+                this.setBounds(x, y, getPreferredSize().width, commandH);
+            }
+            
+            void initializeDisplay(){
+                this.add(new JLabel("  Add  "));
+                this.add(this.angle);
+                this.add(new JLabel("  to angle  "));
+            }
+            
+            boolean canExecute(){
+                return angle.getText().length()!=0;
+            }
+
+            void execute(boolean executeNext){
+                blackBoard.angle+=(Integer.parseInt(angle.getText()));
+                blackBoard.angle%=360;
+                ViewPlaying.this.blackBoard.repaint();
+                if(executeNext && next!=null) next.execute(true);
+                else if(next==null) victoryMessage();
+            }
+        }//fin de classe interne AddAngle
 
 
         //autre classe de dessin...

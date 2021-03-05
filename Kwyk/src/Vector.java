@@ -1,7 +1,8 @@
 import java.awt.Color;
 import java.awt.Point;
+import java.io.Serializable;
 
-class Vector{
+class Vector implements Serializable{
     final int x1, y1;//coordonees de depart
     final Color color;//couleur du trait
     
@@ -83,9 +84,9 @@ class Vector{
         boolean sameVector(Vector vector2){
             if(vector2 instanceof VectorArc){
                 VectorArc v2=(VectorArc)vector2;
-                boolean same=(x1==v2.x1 && y1==v2.y1 && startAngle==v2.startAngle);
-                boolean reverse=(startAngle==(v2.startAngle+v2.scanAngle)%360);
-                return (same || reverse) && diameter==v2.diameter
+                boolean sameAngle=startAngle==v2.startAngle
+                    || startAngle==(v2.startAngle+v2.scanAngle)%360;
+                return sameAngle && x1==v2.x1 && y1==v2.y1 && diameter==v2.diameter
                     && scanAngle==v2.scanAngle && color.equals(v2.color);
             }
             return false;
