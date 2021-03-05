@@ -380,8 +380,8 @@ public class ViewPlaying extends ViewGame{
                     ((CommandWithCommands)this).hookV.removeHV();
                 }
                 PanelDragDropBoard.this.remove(this);
-                if(commands.contains(this)) commands.remove(this);
-                //else addCommand(this.name, getPositionY(this.name));
+                if(commands.contains(this)) commands.remove(this);//sur whiteBoard
+                else addCommand(this.name, getPositionY(this.name));
                 SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
                 bin.loadBin("images/closedBin.png");
                 if(this.next!=null) this.next.deleteSteps();
@@ -610,7 +610,10 @@ public class ViewPlaying extends ViewGame{
                 isDragging=false;
                 switchOff();//eteint tout
                 try{
-                    if(this.toDelete()) this.deleteSteps();
+                    if(this.toDelete()){
+                        this.deleteSteps();
+                        return;//sinon peut ajouter this a commands car appel a foundPrevious
+                    }
                 }
                 catch(IOException e1){
                     System.out.println("Couldn't delete command");
@@ -621,7 +624,8 @@ public class ViewPlaying extends ViewGame{
             public void mouseMoved(MouseEvent e){}
             public void mousePressed(MouseEvent e){}
             public void mouseClicked(MouseEvent e){//pour verification, a enlever apres
-                if(this.canExecute()) this.execute();
+                //if(this.canExecute()) this.execute();
+                for(Command c : commands) System.out.println(c.name);
             }
             public void mouseEntered(MouseEvent e){}
             public void mouseExited(MouseEvent e){}
