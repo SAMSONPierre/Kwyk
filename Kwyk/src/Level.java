@@ -5,9 +5,9 @@ import java.util.LinkedList;
 public class Level implements Serializable{
     final int brushX, brushY, brushAngle;
     final Color brushFirstColor;
-    private int numberOfCommands;
-    private String name;
-    private String[] availableCommands;//nom des commandes disponibles
+    final int numberOfCommands;
+    final String name;
+    final String[] availableCommands;//nom des commandes disponibles
     private LinkedList<Vector> pattern=new LinkedList<Vector>();//patron
     private LinkedList<Vector> playerDraw=new LinkedList<Vector>();
     
