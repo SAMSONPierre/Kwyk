@@ -3,30 +3,38 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
-import java.awt.GridLayout;
+import java.awt.GraphicsEnvironment;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.io.File;
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
 public class ViewSummaryChallenge extends ViewGame{//sommaire des defis
+	final int buttonHeight=super.getButtonHeight();//hauteur d un bouton
+    final int heightFS;//hauteur de l ecran, sans getInsets().top=barre superieur de la fenetre
+    final int widthFS;//largeur de l ecran
+    
     ViewSummaryChallenge(Player player){
         super(player);
-        this.setLayout(new GridLayout(5, 5, 20, 20));
+        Rectangle r=GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();//plein écran
+        this.heightFS=r.height;//getInsets().top=barre supérieur de la fenetre
+        this.widthFS=r.width;
         listeNiveau();
     }
     
     void listeNiveau(){
         JPanel summary=new JPanel();
         summary.setLayout(new FlowLayout());
-        File[] arrayLevels=nombreNiveau("levels/");
+        summary.setBounds(0,50+buttonHeight,widthFS,heightFS);
+        File[] arrayLevels=nombreNiveau("levels/challenge/");
         for(int i=0; i<arrayLevels.length; i++){
             try{
                 String name=arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length()-4);
-                Image img=ImageIO.read(new File("preview/"+name+".png"));
+                Image img=ImageIO.read(new File("preview/challenge/"+name+".png"));
                 CustomJButton jb=new CustomJButton(name, img);
-                jb.addActionListener((event)->super.control.load(name, false));
+                jb.addActionListener((event)->super.control.load("challenge/"+name, false));
                 jb.setPreferredSize(new Dimension(200, 200));
                 summary.add(jb);
             }

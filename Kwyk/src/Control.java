@@ -111,7 +111,9 @@ public class Control implements Serializable{
     ******************/
     
     void switchTraining(){
-        
+    	this.exitFrame();
+        this.view=new ViewSummaryTraining(this.model.getPlayer());
+        this.model=view.getModel();
     }
     
     void switchChallenge(){
@@ -161,14 +163,14 @@ public class Control implements Serializable{
         BufferedImage capture;
         try{
             capture=new Robot().createScreenCapture(screenRect);
-            ImageIO.write(capture, "png", new File("preview/"+name+".png"));
+            ImageIO.write(capture, "png", new File("preview/challenge/"+name+".png"));
         }
         catch(Exception e){
             e.printStackTrace();
         }        
     	Level newLvl=new Level(model.getPlayer(),numberOfCommands,name,commandsAvailable,newPattern);
     	try{
-            String saveFile="levels/"+name+".lvl";
+            String saveFile="levels/challenge/"+name+".lvl";
             File file=new File(saveFile);
             ObjectOutputStream oos=new ObjectOutputStream(new FileOutputStream(file));
             oos.writeObject(newLvl);
