@@ -3,7 +3,6 @@ import java.awt.FlowLayout;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
 import java.io.IOException;
-
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -25,13 +24,12 @@ public class ViewGame extends View{//a une barre de controle superieur en plus
         challenge.addActionListener((event)->super.control.switchChallenge());
         create=new JButton("Create");
         create.addActionListener((event)->{
-			try {
-				super.control.switchCreate();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		});
+            try {
+                super.control.switchCreate();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
         logout=new JButton("Log out");
         logout.addActionListener((event)->super.control.logout());
         

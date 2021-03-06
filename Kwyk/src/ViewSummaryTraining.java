@@ -3,25 +3,17 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
-import java.awt.GraphicsEnvironment;
 import java.awt.Image;
-import java.awt.Rectangle;
 import java.io.File;
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
-//--------a faire--------
 public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
-	final int buttonHeight=super.getButtonHeight();//hauteur d un bouton
-    final int heightFS;//hauteur de l ecran, sans getInsets().top=barre superieur de la fenetre
-    final int widthFS;//largeur de l ecran
+    final int buttonHeight=super.getButtonHeight();//hauteur d un bouton
     
     ViewSummaryTraining(Player player){
         super(player);
-        Rectangle r=GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();//plein écran
-        this.heightFS=r.height;//getInsets().top=barre supérieur de la fenetre
-        this.widthFS=r.width;
         listeNiveau();
     }
     

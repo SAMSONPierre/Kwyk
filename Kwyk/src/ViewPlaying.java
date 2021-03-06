@@ -4,10 +4,8 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GraphicsEnvironment;
 import java.awt.GridBagLayout;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseEvent;
@@ -33,8 +31,6 @@ import javax.swing.event.MouseInputListener;
 
 public class ViewPlaying extends ViewGame{
     final int buttonHeight=super.getButtonHeight();//hauteur d un bouton
-    final int heightFS;//hauteur de l ecran, sans getInsets().top=barre superieur de la fenetre
-    final int widthFS;//largeur de l ecran
     private PanelBlackBoard blackBoard;//patron + visualisation du resultat du code
     private PanelDragDropBoard dragDrop;//fusion de WhiteBoard et CommandBoard
     private JPanel features=new JPanel();//panel avec tous les boutons sous BlackBoard
@@ -42,9 +38,6 @@ public class ViewPlaying extends ViewGame{
     
     ViewPlaying(Player player, boolean isCreating) throws IOException{
         super(player);
-        Rectangle r=GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();//plein écran
-        this.heightFS=r.height-this.getInsets().top;//getInsets().top=barre supérieur de la fenetre
-        this.widthFS=r.width;
         this.level=player.getLevel();
         addBoard();//ajout des tableaux, avec des marges de 20 (haut, bas et entre tableaux)
         addFeatures(isCreating);//ajout des fonctionnalites
