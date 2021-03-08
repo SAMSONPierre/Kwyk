@@ -27,7 +27,7 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
                 String name=arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length()-4);
                 Image img=ImageIO.read(new File("preview/training/"+name+".png"));
                 CustomJButton jb=new CustomJButton(name, img);
-                jb.addActionListener((event)->super.control.load("training/"+name, false));
+                jb.addActionListener((event)->super.control.load("training/"+name));
                 jb.setPreferredSize(new Dimension(200, 200));
                 summary.add(jb);
             }
@@ -45,7 +45,7 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
     }
     
     
-    class CustomJButton extends JButton{
+    /*class CustomJButton extends JButton{
         private String text;
         private Image image;
         
@@ -65,5 +65,5 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
                 g.drawString(text, (getWidth()-width)/2, (getHeight()+70)/2);
             }
         }
-    }
+    }*/
 }

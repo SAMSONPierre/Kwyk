@@ -186,12 +186,12 @@ public class Control implements Serializable{
     *   Load level   *
     *****************/
     
-    void load(String name, boolean isCreating){
+    void load(String name){
     	try{
             FileInputStream fis=new FileInputStream("levels/"+name+".lvl");
             ObjectInputStream ois=new ObjectInputStream(fis);
             Level lvl=(Level)ois.readObject();
-            playLevel(lvl, isCreating);
+            playLevel(lvl, false);
         }
         catch(Exception e){
             e.printStackTrace();

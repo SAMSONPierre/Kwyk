@@ -27,7 +27,7 @@ public class ViewSummaryChallenge extends ViewGame{//sommaire des defis
                 String name=arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length()-4);
                 Image img=ImageIO.read(new File("preview/challenge/"+name+".png"));
                 CustomJButton jb=new CustomJButton(name, img);
-                jb.addActionListener((event)->super.control.load("challenge/"+name, false));
+                jb.addActionListener((event)->super.control.load("challenge/"+name));
                 jb.setPreferredSize(new Dimension(200, 200));
                 summary.add(jb);
             }

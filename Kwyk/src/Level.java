@@ -40,7 +40,8 @@ public class Level implements Serializable{
         this.brushFirstColor=Color.WHITE;
         this.numberOfCommands=0;
         this.name="editor";
-        String[] c={"for", "if", "drawLine", "drawArc", "raisePutBrush", "shiftAngle", "changeColor", "moveTo", "addAngle"};
+        String[] c={"for", "if", "function", "drawLine", "drawArc", "raisePutBrush",
+            "shiftAngle", "changeColor", "moveTo", "addAngle"};
         this.availableCommands=c;
         this.pattern=new LinkedList<Vector>();
     }
