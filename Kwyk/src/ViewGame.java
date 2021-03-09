@@ -2,6 +2,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
+import java.io.File;
 import java.io.IOException;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -70,5 +71,11 @@ public class ViewGame extends View{//a une barre de controle superieur en plus
     
     int getButtonHeight(){
         return create.getPreferredSize().height;
+    }
+    
+    File[] nombreNiveau(String path){
+        File file=new File(path);
+        File[] files=file.listFiles();
+        return files;
     }
 }

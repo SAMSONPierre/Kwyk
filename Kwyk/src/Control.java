@@ -110,9 +110,9 @@ public class Control implements Serializable{
     *   Switch page   *
     ******************/
     
-    void switchTraining(){
+    void switchTraining(String name){
     	this.exitFrame();
-        this.view=new ViewSummaryTraining(this.model.getPlayer());
+        this.view=new ViewSummaryTraining(this.model.getPlayer(), name);
         this.model=view.getModel();
     }
     
@@ -152,7 +152,7 @@ public class Control implements Serializable{
     * Submit new level *
     *******************/
     
-    void submit(String name){
+    void submit(String name, Level level){
         if(name==null) return;
     	ViewPlaying tmp=(ViewPlaying)this.view;
     	LinkedList<Vector> newPattern=model.getPlayer().getLevel().getSimplifyPattern();
@@ -168,7 +168,8 @@ public class Control implements Serializable{
         catch(Exception e){
             e.printStackTrace();
         }        
-    	Level newLvl=new Level(model.getPlayer(),numberOfCommands,name,commandsAvailable,newPattern);
+    	Level newLvl=new Level(model.getPlayer(),level.brushX,level.brushY,level.brushAngle,
+            level.brushFirstColor,numberOfCommands,name,commandsAvailable,newPattern);
     	try{
             String saveFile="levels/challenge/"+name+".lvl";
             File file=new File(saveFile);

@@ -25,6 +25,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingUtilities;
@@ -38,7 +39,7 @@ public class ViewPlaying extends ViewGame{
     private PanelDragDropBoard dragDrop;//fusion de WhiteBoard et CommandBoard
     private JPanel features=new JPanel();//panel avec tous les boutons sous BlackBoard
     private Level level;//niveau en cours
-    private JLabel limite;
+    private JProgressBar limite;
     
     
     ViewPlaying(Player player, boolean isCreating) throws IOException{
@@ -85,14 +86,19 @@ public class ViewPlaying extends ViewGame{
             JButton submit=new JButton("Submit");
             submit.addActionListener((event)->{
                 String name=JOptionPane.showInputDialog(this,"Level's name ?", null);	
-                super.control.submit(name);
+                super.control.submit(name, level);
             });
             features.add(submit);
         }
         
         //limite des commandes si on est dans un niveau
         if(!isCreating) {
-            limite=new JLabel(this.getNumberFromHead()+"/"+this.level.numberOfCommands);
+            limite=new JProgressBar(0, level.numberOfCommands){
+                public String getString(){//presentation apparente
+                    return getValue()+"/"+level.numberOfCommands;
+                }
+            };
+            limite.setStringPainted(true);
             features.add(limite);
         }
         
@@ -113,15 +119,32 @@ public class ViewPlaying extends ViewGame{
     }
     
     void victoryMessage(){
-        if(level.compare()) JOptionPane.showMessageDialog(this, "Victory !");
+        if(level.compare()){
+            int lvl=Integer.parseInt(level.name.charAt(0)+"");
+            getModel().getPlayer().currentLevel[getNumberOfDirectory(level.name)][lvl]=true;
+            JOptionPane.showMessageDialog(this, "Victory !");
+        }
+    }
+    
+    String[] getCommandsArray(){
+        return dragDrop.listToTab(dragDrop.getCommands());
     }
     
     int getNumberFromHead(){
         return dragDrop.getNumberFromHead();
     }
     
-    String[] getCommandsArray(){
-        return dragDrop.listToTab(dragDrop.getCommands());
+    int getNumberOfDirectory(String name){
+        File[] arrayLevels=nombreNiveau("levels/training/");
+        for(int i=0; i<arrayLevels.length; i++){
+            File[] arrayLevels2=nombreNiveau("levels/training/"+arrayLevels[i].getName());
+            for(int j=0; j<arrayLevels2.length; j++){
+                String str=arrayLevels2[j].getName().substring(0, arrayLevels2[j].getName().length()-4);
+                if(str.equals(level.name)) return i;
+            }
+
+        }
+        return 0;
     }
     
     
@@ -290,12 +313,12 @@ public class ViewPlaying extends ViewGame{
                     CommandRaisePutBrush raisePutC=new CommandRaisePutBrush(width/2+20, positionY);
                     this.add(raisePutC);
                     return raisePutC.getHeight()+10;
-                case "shiftAngle":
-                    CommandShiftAngle shiftAngleC=new CommandShiftAngle(width/2+20, positionY);
+                case "setAngle":
+                    CommandSetAngle shiftAngleC=new CommandSetAngle(width/2+20, positionY);
                     this.add(shiftAngleC);
                     return shiftAngleC.getHeight()+10;
-                case "changeColor":
-                    CommandChangeColor colorC=new CommandChangeColor(width/2+20, positionY);
+                case "setColor":
+                    CommandSetColor colorC=new CommandSetColor(width/2+20, positionY);
                     this.add(colorC);
                     return colorC.getHeight()+10;
                 case "moveTo":
@@ -734,7 +757,7 @@ public class ViewPlaying extends ViewGame{
                 try{
                     if(this.toDelete()){
                         this.deleteSteps();
-                        if(limite!=null) limite.setText(getNumberFromHead()+"/"+level.numberOfCommands);
+                        if(limite!=null) limite.setValue(getNumberFromHead());
                         return;//sinon peut ajouter this a commands car appel a foundPrevious
                     }
                 }
@@ -744,7 +767,7 @@ public class ViewPlaying extends ViewGame{
                 newDrag();
                 if(limite!=null){//pas en train de creer
                     if(getNumberFromHead()+getNumberFromThis()<=level.numberOfCommands) foundPrevious();
-                    limite.setText(getNumberFromHead()+"/"+level.numberOfCommands);
+                    limite.setValue(getNumberFromHead());
                 }
                 else foundPrevious();//noue les liens avec precedent
             }
@@ -1037,7 +1060,7 @@ public class ViewPlaying extends ViewGame{
         
         class CommandFunctionInit extends CommandWithCommands implements MouseListener{
             protected JLabel nameFunction;
-            private CustomJButton changeName=new CustomJButton("", null);//pop up pour changer
+            private CustomJButton changeName=new CustomJButton("", null, true);//pop up pour changer
             private LinkedList<CommandFunctionCall> caller=new LinkedList<CommandFunctionCall>();
             
             CommandFunctionInit(String name, int x, int y){
@@ -1245,17 +1268,17 @@ public class ViewPlaying extends ViewGame{
         }//fin classe interne RaisePutBrush
 
 
-        class CommandShiftAngle extends Command{//classe interne
+        class CommandSetAngle extends Command{//classe interne
             JTextField angle=new JTextField(3);//meilleur moyen de choisir l angle ? --------a faire--------
 
-            CommandShiftAngle(int x, int y){
-                super("shiftAngle", Color.LIGHT_GRAY.darker());
+            CommandSetAngle(int x, int y){
+                super("setAngle", Color.LIGHT_GRAY.darker());
                 initializeDisplay();
                 this.setBounds(x, y, getPreferredSize().width, commandH);
             }
             
             void initializeDisplay(){
-                this.add(new JLabel("  Shift angle to  "));
+                this.add(new JLabel("  Set angle to  "));
                 this.add(this.angle);
                 this.add(new JLabel("  "));
             }
@@ -1276,19 +1299,19 @@ public class ViewPlaying extends ViewGame{
         }//fin de classe interne ShiftAngle
 
 
-        class CommandChangeColor extends Command{//classe interne
+        class CommandSetColor extends Command{//classe interne
             private JComboBox colorChoice=new JComboBox();
             final Color[] palette={Color.BLUE,Color.CYAN,Color.GREEN,Color.MAGENTA,Color.RED,Color.WHITE,Color.YELLOW};
             private Color colorRes=level.brushFirstColor;
 
-            CommandChangeColor(int x, int y){
-                super("changeColor", Color.LIGHT_GRAY.darker());
+            CommandSetColor(int x, int y){
+                super("setColor", Color.LIGHT_GRAY.darker());
                 initializeDisplay();
                 this.setBounds(x, y, getPreferredSize().width+5, commandH);
             }
             
             void initializeDisplay(){
-                this.add(new JLabel("  Change color to  "));
+                this.add(new JLabel("  Set color to  "));
                 
                 colorChoice.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
