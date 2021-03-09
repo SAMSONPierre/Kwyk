@@ -156,7 +156,7 @@ public class Control implements Serializable{
         if(name==null) return;
     	ViewPlaying tmp=(ViewPlaying)this.view;
     	LinkedList<Vector> newPattern=model.getPlayer().getLevel().getSimplifyPattern();
-    	int numberOfCommands=tmp.getNumberOfCommands();
+    	int numberOfCommands=tmp.getNumberFromHead();
     	String[] commandsAvailable=tmp.getCommandsArray();
         Rectangle screenRect=new Rectangle(tmp.getX()+tmp.getInsets().left+20,
                 tmp.getY()+tmp.getInsets().top+tmp.buttonHeight+20, 400, 400);

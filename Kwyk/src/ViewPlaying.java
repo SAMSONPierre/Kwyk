@@ -90,19 +90,19 @@ public class ViewPlaying extends ViewGame{
             features.add(submit);
         }
         
-      //limite des commandes si on est dans un niveau
+        //limite des commandes si on est dans un niveau
         if(!isCreating) {
-        	limite = new JLabel(this.getNumberOfCommands() + "/" + this.level.numberOfCommands);
+            limite=new JLabel(this.getNumberFromHead()+"/"+this.level.numberOfCommands);
             features.add(limite);
         }
         
         //---que pour le test, a supprimer une fois le sommaire fonctionnel---
-        JButton load=new JButton("Load");
+        /*JButton load=new JButton("Load");
         load.addActionListener((event)->{
             String name=JOptionPane.showInputDialog(this,"Level's name ?", null);	
             super.control.load(name);
         });
-        features.add(load);
+        features.add(load);*/
     }
     
     void run(){
@@ -116,8 +116,8 @@ public class ViewPlaying extends ViewGame{
         if(level.compare()) JOptionPane.showMessageDialog(this, "Victory !");
     }
     
-    int getNumberOfCommands(){
-        return dragDrop.getNumberOfCommands();
+    int getNumberFromHead(){
+        return dragDrop.getNumberFromHead();
     }
     
     String[] getCommandsArray(){
@@ -307,11 +307,14 @@ public class ViewPlaying extends ViewGame{
                     this.add(addAngleC);
                     return addAngleC.getHeight()+10;
                 default://fonction
-                    CommandFunctionInit functionC=new CommandFunctionInit(name, width/2+20, positionY);
-                    this.add(functionC);
-                    this.add(functionC.hookV);
-                    this.add(functionC.hookH);
-                    return functionC.getHeight()+functionC.hookV.getHeight()+functionC.hookH.getHeight()+10;
+                    if(!(name.equals("hookHorizontal"))){
+                        CommandFunctionInit functionC=new CommandFunctionInit(name, width/2+20, positionY);
+                        this.add(functionC);
+                        this.add(functionC.hookV);
+                        this.add(functionC.hookH);
+                        return functionC.getHeight()+functionC.hookV.getHeight()+functionC.hookH.getHeight()+10;
+                    }
+                    return 0;//on ne cree pas de hookHorizontal seul
             }
         }
         
@@ -321,7 +324,7 @@ public class ViewPlaying extends ViewGame{
             init.caller.add(callC);
         }
         
-        int getNumberOfCommands(){
+        int getNumberFromHead(){
             int res=0;
             Command tmp=this.commands.getFirst().next;//deuxieme commande du code du joueur
             while(tmp!=null){
@@ -411,7 +414,7 @@ public class ViewPlaying extends ViewGame{
             final int commandH=35, commandW=70;//hauteur d une commande, largeur par defaut de hookH
             protected Command next, previous;//next a executer, previous pour ajuster l affichage
             private int mouseX, mouseY;//position initiale de la souris au moment du drag
-            private boolean isDragging, brighter,max;//drag ; a allumer -> default=false
+            private boolean isDragging, brighter;//drag ; a allumer -> default=false
             
             Command(String name, Color color){
                 this.name=name;
@@ -484,15 +487,31 @@ public class ViewPlaying extends ViewGame{
                 SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
                 bin.loadBin("images/closedBin.png");
                 if(this.next!=null) this.next.deleteSteps();
-                if(limite !=null) {
-                	limite.setText(getNumberOfCommands()+"/"+level.numberOfCommands);
-                }
             }
             
             
             /****************************
             *  Regeneration of Command  *
             ****************************/
+            
+            void newDrag(){//nouvelle commande qu on drag pour la premiere fois
+                if(inWhiteBoard() && !commands.contains(this)){//premier drag sur whiteBoard
+                    commands.add(this);
+                    if(this instanceof CommandWithCommands) commands.add(this.next);//ajout de HookH aussi
+                    //pour regenerer commande utilisee :
+                    if(this instanceof CommandFunctionCall){
+                        CommandFunctionInit init=((CommandFunctionCall)this).function;
+                        addCommandCall(init, getPositionY(init.name));
+                    }
+                    else addCommand(this.name, getPositionY(this.name));
+                    SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
+                }
+            }
+
+            boolean inWhiteBoard(){//est dans whiteBoard
+                Point p=this.getLocation();
+                return (p.x>0 && p.x<width/2 && p.y>0 && p.y<height);
+            }
             
             int getPositionY(String name){
                 for(int i=0; i<level.getAvailableCommands().length; i++){
@@ -507,17 +526,6 @@ public class ViewPlaying extends ViewGame{
             *****************/
             
             void foundPrevious(){//reformation des liens previous/next
-                if(inWhiteBoard() && !commands.contains(this)){//premier drag sur whiteBoard
-                    commands.add(this);
-                    if(this instanceof CommandWithCommands) commands.add(this.next);//ajout de HookH aussi
-                    //pour regenerer commande utilisee :
-                    if(this instanceof CommandFunctionCall){
-                        CommandFunctionInit init=((CommandFunctionCall)this).function;
-                        addCommandCall(init, getPositionY(init.name));
-                    }
-                    else addCommand(this.name, getPositionY(this.name));
-                    SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
-                }
                 int closeIndex=closeCommand();//cherche index du precedent
                 if(closeIndex!=-1){//s il existe
                     Command thisPrevious=commands.get(closeIndex);
@@ -547,11 +555,6 @@ public class ViewPlaying extends ViewGame{
                     this.setLocation(positionX, previous.getLocation().y+previous.getHeight());
                 }
                 if(this.next!=null) this.next.stick();
-            }
-
-            boolean inWhiteBoard(){//est dans whiteBoard
-                Point p=this.getLocation();
-                return (p.x>0 && p.x<width/2 && p.y>0 && p.y<height);
             }
 
             int closeCommand(){//this et c sont assez proches pour se coller
@@ -681,6 +684,16 @@ public class ViewPlaying extends ViewGame{
             /*****************
             * Mouse Override *
             *****************/
+            
+            int getNumberFromThis(){//nombre de commandes qu on drag
+                int res=0;
+                Command tmp=this;
+                while(tmp!=null){
+                    if(!(tmp instanceof CommandWithCommands)) res++;
+                    tmp=tmp.next;
+                }
+                return res;
+            }
 
             public void mouseDragged(MouseEvent e){
                 if(!isDragging){//ce qu on fait au premier click
@@ -699,7 +712,7 @@ public class ViewPlaying extends ViewGame{
                 
                 //allume et eteint les blocs selon les cas
                 int nearby=closeCommand();
-                if(nearby!=-1){//proche d un bloc
+                if(nearby!=-1 && getNumberFromThis()+getNumberFromHead()<=level.numberOfCommands){//proche d un bloc et attachable
                     switchOff();//eteint tout
                     commands.get(nearby).brighter=true;//allume le seul necessaire
                 }
@@ -718,27 +731,22 @@ public class ViewPlaying extends ViewGame{
             public void mouseReleased(MouseEvent e){
                 isDragging=false;
                 switchOff();//eteint tout
-                
                 try{
                     if(this.toDelete()){
                         this.deleteSteps();
+                        if(limite!=null) limite.setText(getNumberFromHead()+"/"+level.numberOfCommands);
                         return;//sinon peut ajouter this a commands car appel a foundPrevious
                     }
                 }
                 catch(IOException e1){
                     System.out.println("Couldn't delete command");
                 }
-                if(limite !=null) {
-                	if(!(getNumberOfCommands() >= level.numberOfCommands)){
-                    	foundPrevious();//noue les liens avec precedent
-                    }
-                	limite.setText(getNumberOfCommands()+"/"+level.numberOfCommands);
+                newDrag();
+                if(limite!=null){//pas en train de creer
+                    if(getNumberFromHead()+getNumberFromThis()<=level.numberOfCommands) foundPrevious();
+                    limite.setText(getNumberFromHead()+"/"+level.numberOfCommands);
                 }
-                else {
-                	foundPrevious();//noue les liens avec precedent
-                }
-                
-                
+                else foundPrevious();//noue les liens avec precedent
             }
             
             public void mouseMoved(MouseEvent e){}
@@ -1064,7 +1072,7 @@ public class ViewPlaying extends ViewGame{
                 for(CommandFunctionCall c : caller) c.initializeDisplay();
             }
             
-            void foundPrevious(){//override : pas de previous ou next au hookH
+            void newDrag(){//override : pas de previous ou next au hookH
                 if(inWhiteBoard() && !commands.contains(this)){
                     commands.add(this);
                     addCommandCall(this, getPositionY(this.name));//pour generer bloc d appel
