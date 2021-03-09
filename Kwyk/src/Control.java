@@ -156,7 +156,7 @@ public class Control implements Serializable{
         if(name==null) return;
     	ViewPlaying tmp=(ViewPlaying)this.view;
     	LinkedList<Vector> newPattern=model.getPlayer().getLevel().getSimplifyPattern();
-    	int numberOfCommands=tmp.getNumberOfCommands();
+    	int numberOfCommands=tmp.getNumberFromHead();
     	String[] commandsAvailable=tmp.getCommandsArray();
         Rectangle screenRect=new Rectangle(tmp.getX()+tmp.getInsets().left+20,
                 tmp.getY()+tmp.getInsets().top+tmp.buttonHeight+20, 400, 400);
@@ -186,12 +186,12 @@ public class Control implements Serializable{
     *   Load level   *
     *****************/
     
-    void load(String name, boolean isCreating){
+    void load(String name){
     	try{
             FileInputStream fis=new FileInputStream("levels/"+name+".lvl");
             ObjectInputStream ois=new ObjectInputStream(fis);
             Level lvl=(Level)ois.readObject();
-            playLevel(lvl, isCreating);
+            playLevel(lvl, false);
         }
         catch(Exception e){
             e.printStackTrace();

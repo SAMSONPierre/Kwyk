@@ -5,10 +5,12 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagLayout;
+import java.awt.Image;
 import java.awt.Point;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -16,6 +18,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.LinkedList;
 import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -35,6 +38,8 @@ public class ViewPlaying extends ViewGame{
     private PanelDragDropBoard dragDrop;//fusion de WhiteBoard et CommandBoard
     private JPanel features=new JPanel();//panel avec tous les boutons sous BlackBoard
     private Level level;//niveau en cours
+    private JLabel limite;
+    
     
     ViewPlaying(Player player, boolean isCreating) throws IOException{
         super(player);
@@ -74,6 +79,7 @@ public class ViewPlaying extends ViewGame{
         });
         features.add(stop);
         
+        
         //creer un niveau -> que pour la page Create
         if(isCreating){
             JButton submit=new JButton("Submit");
@@ -84,13 +90,19 @@ public class ViewPlaying extends ViewGame{
             features.add(submit);
         }
         
+        //limite des commandes si on est dans un niveau
+        if(!isCreating) {
+            limite=new JLabel(this.getNumberFromHead()+"/"+this.level.numberOfCommands);
+            features.add(limite);
+        }
+        
         //---que pour le test, a supprimer une fois le sommaire fonctionnel---
-        JButton load=new JButton("Load");
+        /*JButton load=new JButton("Load");
         load.addActionListener((event)->{
             String name=JOptionPane.showInputDialog(this,"Level's name ?", null);	
-            super.control.load(name, true);
+            super.control.load(name);
         });
-        features.add(load);
+        features.add(load);*/
     }
     
     void run(){
@@ -104,13 +116,14 @@ public class ViewPlaying extends ViewGame{
         if(level.compare()) JOptionPane.showMessageDialog(this, "Victory !");
     }
     
-    int getNumberOfCommands(){
-        return dragDrop.getNumberOfCommands();
+    int getNumberFromHead(){
+        return dragDrop.getNumberFromHead();
     }
     
     String[] getCommandsArray(){
         return dragDrop.listToTab(dragDrop.getCommands());
     }
+    
     
     
     /**********************  Classes internes  **********************/
@@ -141,7 +154,7 @@ public class ViewPlaying extends ViewGame{
         * Drawing & Paint *
         ******************/
 
-        protected void paintComponent(Graphics g) {
+        protected void paintComponent(Graphics g){
             super.paintComponent(g);
             if(gridApparent) paintGrid(g);//grille apparente quand on le souhaite
             Graphics2D g2=(Graphics2D)g;
@@ -151,7 +164,7 @@ public class ViewPlaying extends ViewGame{
             paintBrush(g2, x, y, angle, brushColor);//pinceau en dernier car rotation
         }
 
-        void paintGrid(Graphics g) {//dessin de la grille
+        void paintGrid(Graphics g){//dessin de la grille
             g.setColor(Color.gray.darker());
             for(int i=100; i<400; i+=100){
                 g.drawLine(i, 20, i, 400);
@@ -293,11 +306,25 @@ public class ViewPlaying extends ViewGame{
                     CommandAddAngle addAngleC=new CommandAddAngle(width/2+20, positionY);
                     this.add(addAngleC);
                     return addAngleC.getHeight()+10;
+                default://fonction
+                    if(!(name.equals("hookHorizontal"))){
+                        CommandFunctionInit functionC=new CommandFunctionInit(name, width/2+20, positionY);
+                        this.add(functionC);
+                        this.add(functionC.hookV);
+                        this.add(functionC.hookH);
+                        return functionC.getHeight()+functionC.hookV.getHeight()+functionC.hookH.getHeight()+10;
+                    }
+                    return 0;//on ne cree pas de hookHorizontal seul
             }
-            return 0;
         }
         
-        int getNumberOfCommands(){
+        void addCommandCall(CommandFunctionInit init, int positionY){
+            CommandFunctionCall callC=new CommandFunctionCall(init, width/2+20, positionY);
+            this.add(callC);
+            init.caller.add(callC);
+        }
+        
+        int getNumberFromHead(){
             int res=0;
             Command tmp=this.commands.getFirst().next;//deuxieme commande du code du joueur
             while(tmp!=null){
@@ -432,9 +459,12 @@ public class ViewPlaying extends ViewGame{
             ******************/
             
             boolean toDelete(){//quand pres de la poubelle
-            	int distanceH=bin.getLocation().y-bin.getHeight()-this.getLocation().y;
-            	int distanceW=bin.getLocation().x-this.getLocation().x;
-            	return distanceH>-70 && distanceH<15 && distanceW>-this.getWidth()/3 && distanceW<this.getWidth();
+                if(!(this instanceof CommandFunctionInit)){//ne supprime pas initialisateur de fonction
+                    int distanceH=bin.getLocation().y-bin.getHeight()-this.getLocation().y;
+                    int distanceW=bin.getLocation().x-this.getLocation().x;
+                    return distanceH>-70 && distanceH<15 && distanceW>-this.getWidth()/3 && distanceW<this.getWidth();
+                }
+                return false;
             }
             
             void updateBinState() throws IOException{
@@ -449,6 +479,10 @@ public class ViewPlaying extends ViewGame{
                 }
                 PanelDragDropBoard.this.remove(this);
                 if(commands.contains(this)) commands.remove(this);//sur whiteBoard
+                else if(this instanceof CommandFunctionCall){
+                    CommandFunctionCall tmp=(CommandFunctionCall)this;
+                    addCommandCall(tmp.function, getPositionY(tmp.function.name));
+                }
                 else addCommand(this.name, getPositionY(this.name));
                 SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
                 bin.loadBin("images/closedBin.png");
@@ -459,6 +493,25 @@ public class ViewPlaying extends ViewGame{
             /****************************
             *  Regeneration of Command  *
             ****************************/
+            
+            void newDrag(){//nouvelle commande qu on drag pour la premiere fois
+                if(inWhiteBoard() && !commands.contains(this)){//premier drag sur whiteBoard
+                    commands.add(this);
+                    if(this instanceof CommandWithCommands) commands.add(this.next);//ajout de HookH aussi
+                    //pour regenerer commande utilisee :
+                    if(this instanceof CommandFunctionCall){
+                        CommandFunctionInit init=((CommandFunctionCall)this).function;
+                        addCommandCall(init, getPositionY(init.name));
+                    }
+                    else addCommand(this.name, getPositionY(this.name));
+                    SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
+                }
+            }
+
+            boolean inWhiteBoard(){//est dans whiteBoard
+                Point p=this.getLocation();
+                return (p.x>0 && p.x<width/2 && p.y>0 && p.y<height);
+            }
             
             int getPositionY(String name){
                 for(int i=0; i<level.getAvailableCommands().length; i++){
@@ -473,12 +526,6 @@ public class ViewPlaying extends ViewGame{
             *****************/
             
             void foundPrevious(){//reformation des liens previous/next
-                if(inWhiteBoard() && !commands.contains(this)){//premier drag sur whiteBoard
-                    commands.add(this);
-                    if(this instanceof CommandWithCommands) commands.add(this.next);//ajout de HookH aussi
-                    addCommand(this.name, getPositionY(this.name));//pour regenerer commande utilisee
-                    SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
-                }
                 int closeIndex=closeCommand();//cherche index du precedent
                 if(closeIndex!=-1){//s il existe
                     Command thisPrevious=commands.get(closeIndex);
@@ -510,20 +557,17 @@ public class ViewPlaying extends ViewGame{
                 if(this.next!=null) this.next.stick();
             }
 
-            boolean inWhiteBoard(){//est dans whiteBoard
-                Point p=this.getLocation();
-                return (p.x>0 && p.x<width/2 && p.y>0 && p.y<height);
-            }
-
             int closeCommand(){//this et c sont assez proches pour se coller
-                int i=0;
-                for(Command c : commands){
-                    if(c instanceof CommandWithCommands){
-                        if(this.closeHeight(c) && this.closeWidthIntern((CommandWithCommands)c))
-                            return i;
+                if(!(this instanceof CommandFunctionInit)){//initialisateur de fonction sans previous
+                    int i=0;
+                    for(Command c : commands){
+                        if(c instanceof CommandWithCommands){
+                            if(this.closeHeight(c) && this.closeWidthIntern((CommandWithCommands)c))
+                                return i;
+                        }
+                        else if(this.closeHeight(c) && this.closeWidth(c)) return i;
+                        i++;
                     }
-                    else if(this.closeHeight(c) && this.closeWidth(c)) return i;
-                    i++;
                 }
                 return -1;
             }
@@ -640,6 +684,16 @@ public class ViewPlaying extends ViewGame{
             /*****************
             * Mouse Override *
             *****************/
+            
+            int getNumberFromThis(){//nombre de commandes qu on drag
+                int res=0;
+                Command tmp=this;
+                while(tmp!=null){
+                    if(!(tmp instanceof CommandWithCommands)) res++;
+                    tmp=tmp.next;
+                }
+                return res;
+            }
 
             public void mouseDragged(MouseEvent e){
                 if(!isDragging){//ce qu on fait au premier click
@@ -658,7 +712,7 @@ public class ViewPlaying extends ViewGame{
                 
                 //allume et eteint les blocs selon les cas
                 int nearby=closeCommand();
-                if(nearby!=-1){//proche d un bloc
+                if(nearby!=-1 && getNumberFromThis()+getNumberFromHead()<=level.numberOfCommands){//proche d un bloc et attachable
                     switchOff();//eteint tout
                     commands.get(nearby).brighter=true;//allume le seul necessaire
                 }
@@ -680,13 +734,19 @@ public class ViewPlaying extends ViewGame{
                 try{
                     if(this.toDelete()){
                         this.deleteSteps();
+                        if(limite!=null) limite.setText(getNumberFromHead()+"/"+level.numberOfCommands);
                         return;//sinon peut ajouter this a commands car appel a foundPrevious
                     }
                 }
                 catch(IOException e1){
                     System.out.println("Couldn't delete command");
                 }
-                foundPrevious();//noue les liens avec precedent
+                newDrag();
+                if(limite!=null){//pas en train de creer
+                    if(getNumberFromHead()+getNumberFromThis()<=level.numberOfCommands) foundPrevious();
+                    limite.setText(getNumberFromHead()+"/"+level.numberOfCommands);
+                }
+                else foundPrevious();//noue les liens avec precedent
             }
             
             public void mouseMoved(MouseEvent e){}
@@ -712,19 +772,68 @@ public class ViewPlaying extends ViewGame{
             
             public void mouseDragged(MouseEvent e){}//empeche Start d etre deplacee
             
-            boolean canExecute(){//verifie qu il n y a pas de champs vide
+            boolean canExecute(){//verifie qu il n y a pas de champs vide, et champs vide en rouge
                 Command tmp=this.next;
+                boolean ok=true;
                 while(tmp!=null){
-                    if(!(tmp.canExecute())) return false;
+                    if(!(tmp.canExecute())) ok=false;//on ne s arrete pas
                     tmp=tmp.next;
                 }
-                return true;
+                return ok;
             }
 
             void execute(boolean executeNext){///execute toujours le suivant
-                if(executeNext && canExecute() && next!=null) next.execute(executeNext);
+                if(canExecute() && next!=null) next.execute(true);
             }
         }//fin classe interne Start
+        
+        
+        class CommandFunctionCall extends Command{
+            private CommandFunctionInit function;
+            private JLabel name=new JLabel();
+            
+            CommandFunctionCall(CommandFunctionInit function, int x, int y){
+                super("Call", new Color(212, 115, 212));
+                this.function=function;
+                initializeDisplay();
+                this.setBounds(x, y, getPreferredSize().width, commandH);
+            }
+            
+            void initializeDisplay(){
+                name.setText(function.nameFunction.getText());
+                setSize(getPreferredSize().width, commandH);
+                this.add(name);
+            }
+            
+            boolean inFunction(Command c){
+                while(c.previous!=null) c=c.previous;
+                return (c==this.function);
+            }
+            
+            int closeCommand(){//this et c sont assez proches pour se coller
+                int i=0;
+                for(Command c : commands){
+                    if(!inFunction(c)){
+                        if(c instanceof CommandWithCommands){
+                            if(this.closeHeight(c) && this.closeWidthIntern((CommandWithCommands)c))
+                                return i;
+                        }
+                        else if(this.closeHeight(c) && this.closeWidth(c)) return i;
+                    }
+                    i++;
+                }                
+                return -1;
+            }
+            
+            boolean canExecute(){
+                return function.canExecute();
+            }
+            
+            void execute(boolean executeNext){
+                function.execute(executeNext);                
+                if(executeNext && next!=null) next.execute(true);
+            }
+        }
 
 
         /*********************
@@ -841,7 +950,10 @@ public class ViewPlaying extends ViewGame{
             }
             
             boolean canExecute(){
-                return super.canExecute() && index.getText().length()!=0;
+                int i=index.getText().length();
+                if(i==0) index.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                else index.setBorder(null);
+                return super.canExecute() && i!=0;
             }
 
             void execute(boolean executeNext){
@@ -909,7 +1021,10 @@ public class ViewPlaying extends ViewGame{
             }
             
             boolean canExecute(){
-                return super.canExecute() && variableD.getText().length()!=0;
+                int i=variableD.getText().length();
+                if(i==0) variableD.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                else variableD.setBorder(null);
+                return super.canExecute() && i!=0;
             }
 
             void execute(boolean executeNext){
@@ -918,6 +1033,59 @@ public class ViewPlaying extends ViewGame{
                 this.hookH.execute(true);
             }
         }//fin classe interne If
+        
+        
+        class CommandFunctionInit extends CommandWithCommands implements MouseListener{
+            protected JLabel nameFunction;
+            private CustomJButton changeName=new CustomJButton("", null);//pop up pour changer
+            private LinkedList<CommandFunctionCall> caller=new LinkedList<CommandFunctionCall>();
+            
+            CommandFunctionInit(String name, int x, int y){
+                super(name, new Color(212, 115, 212), x, y);
+                initializeDisplay();
+                this.setBounds(x, y, getPreferredSize().width, commandH);
+            }
+            
+            void initializeDisplay(){
+                this.add(new JLabel("  "));//pour la presentation
+                
+                try{
+                    Image img=ImageIO.read(new File("images/engrenage.png"));
+                    changeName.addImage(img);
+                    changeName.setBackground(new Color(212, 115, 212));
+                }
+                catch(IOException e){}
+                changeName.setPreferredSize(new Dimension(commandH-10, commandH-10));
+                changeName.addActionListener((event)->{
+                    String name=JOptionPane.showInputDialog("New name ?");
+                    if(name!=null) resize(name);
+                });
+                this.add(changeName);
+                
+                nameFunction=new JLabel("  "+name+"  ");
+                this.add(nameFunction);
+            }
+            
+            void resize(String name){
+                this.nameFunction.setText("  "+name+"  ");
+                this.setSize(this.getPreferredSize().width, commandH);
+                for(CommandFunctionCall c : caller) c.initializeDisplay();
+            }
+            
+            void newDrag(){//override : pas de previous ou next au hookH
+                if(inWhiteBoard() && !commands.contains(this)){
+                    commands.add(this);
+                    addCommandCall(this, getPositionY(this.name));//pour generer bloc d appel
+                    SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
+                }
+            }
+
+            void stick(){}//ne peut pas etre stick aux autres
+            
+            void execute(boolean executeNext){
+                this.next.execute(true);
+            }
+        }
 
 
         /*****************
@@ -940,7 +1108,10 @@ public class ViewPlaying extends ViewGame{
             }
             
             boolean canExecute(){
-                return distance.getText().length()!=0;
+                int i=distance.getText().length();
+                if(i==0) distance.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                else distance.setBorder(null);
+                return i!=0;
             }
 
             void execute(boolean executeNext){
@@ -997,7 +1168,13 @@ public class ViewPlaying extends ViewGame{
             }
             
             boolean canExecute(){
-                return radius.getText().length()!=0 && angleScan.getText().length()!=0;
+                int r=radius.getText().length();
+                if(r==0) radius.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                else radius.setBorder(null);
+                int a=angleScan.getText().length();
+                if(a==0) angleScan.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                else angleScan.setBorder(null);
+                return r!=0 && a!=0;
             }
 
             void execute(boolean executeNext){
@@ -1084,7 +1261,10 @@ public class ViewPlaying extends ViewGame{
             }
             
             boolean canExecute(){
-                return angle.getText().length()!=0;
+                int a=angle.getText().length();
+                if(a==0) angle.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                else angle.setBorder(null);
+                return a!=0;
             }
 
             void execute(boolean executeNext){
@@ -1181,7 +1361,13 @@ public class ViewPlaying extends ViewGame{
             }
             
             boolean canExecute(){
-                return positionX.getText().length()!=0 && positionY.getText().length()!=0;
+                int x=positionX.getText().length();
+                if(x==0) positionX.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                else positionX.setBorder(null);
+                int y=positionY.getText().length();
+                if(y==0) positionY.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                else positionY.setBorder(null);
+                return x!=0 && y!=0;
             }
 
             void execute(boolean executeNext){
@@ -1210,7 +1396,10 @@ public class ViewPlaying extends ViewGame{
             }
             
             boolean canExecute(){
-                return angle.getText().length()!=0;
+                int a=angle.getText().length();
+                if(a==0) angle.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                else angle.setBorder(null);
+                return a!=0;
             }
 
             void execute(boolean executeNext){
