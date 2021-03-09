@@ -38,6 +38,8 @@ public class ViewPlaying extends ViewGame{
     private PanelDragDropBoard dragDrop;//fusion de WhiteBoard et CommandBoard
     private JPanel features=new JPanel();//panel avec tous les boutons sous BlackBoard
     private Level level;//niveau en cours
+    private JLabel limite;
+    
     
     ViewPlaying(Player player, boolean isCreating) throws IOException{
         super(player);
@@ -77,6 +79,7 @@ public class ViewPlaying extends ViewGame{
         });
         features.add(stop);
         
+        
         //creer un niveau -> que pour la page Create
         if(isCreating){
             JButton submit=new JButton("Submit");
@@ -85,6 +88,12 @@ public class ViewPlaying extends ViewGame{
                 super.control.submit(name);
             });
             features.add(submit);
+        }
+        
+      //limite des commandes si on est dans un niveau
+        if(!isCreating) {
+        	limite = new JLabel(this.getNumberOfCommands() + "/" + this.level.numberOfCommands);
+            features.add(limite);
         }
         
         //---que pour le test, a supprimer une fois le sommaire fonctionnel---
@@ -114,6 +123,7 @@ public class ViewPlaying extends ViewGame{
     String[] getCommandsArray(){
         return dragDrop.listToTab(dragDrop.getCommands());
     }
+    
     
     
     /**********************  Classes internes  **********************/
@@ -401,7 +411,7 @@ public class ViewPlaying extends ViewGame{
             final int commandH=35, commandW=70;//hauteur d une commande, largeur par defaut de hookH
             protected Command next, previous;//next a executer, previous pour ajuster l affichage
             private int mouseX, mouseY;//position initiale de la souris au moment du drag
-            private boolean isDragging, brighter;//drag ; a allumer -> default=false
+            private boolean isDragging, brighter,max;//drag ; a allumer -> default=false
             
             Command(String name, Color color){
                 this.name=name;
@@ -474,6 +484,9 @@ public class ViewPlaying extends ViewGame{
                 SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
                 bin.loadBin("images/closedBin.png");
                 if(this.next!=null) this.next.deleteSteps();
+                if(limite !=null) {
+                	limite.setText(getNumberOfCommands()+"/"+level.numberOfCommands);
+                }
             }
             
             
@@ -705,6 +718,7 @@ public class ViewPlaying extends ViewGame{
             public void mouseReleased(MouseEvent e){
                 isDragging=false;
                 switchOff();//eteint tout
+                
                 try{
                     if(this.toDelete()){
                         this.deleteSteps();
@@ -714,7 +728,17 @@ public class ViewPlaying extends ViewGame{
                 catch(IOException e1){
                     System.out.println("Couldn't delete command");
                 }
-                foundPrevious();//noue les liens avec precedent
+                if(limite !=null) {
+                	if(!(getNumberOfCommands() >= level.numberOfCommands)){
+                    	foundPrevious();//noue les liens avec precedent
+                    }
+                	limite.setText(getNumberOfCommands()+"/"+level.numberOfCommands);
+                }
+                else {
+                	foundPrevious();//noue les liens avec precedent
+                }
+                
+                
             }
             
             public void mouseMoved(MouseEvent e){}
