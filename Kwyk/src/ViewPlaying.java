@@ -712,11 +712,11 @@ public class ViewPlaying extends ViewGame{
                 
                 //allume et eteint les blocs selon les cas
                 int nearby=closeCommand();
-                if(nearby!=-1 && getNumberFromThis()+getNumberFromHead()<=level.numberOfCommands){//proche d un bloc et attachable
-                    switchOff();//eteint tout
-                    commands.get(nearby).brighter=true;//allume le seul necessaire
+                switchOff();//eteint tout d abord
+                if(nearby!=-1){//proche d un bloc
+                    if(limite==null || getNumberFromThis()+getNumberFromHead()<=level.numberOfCommands)//attachable
+                        commands.get(nearby).brighter=true;//allume le seul necessaire
                 }
-                else switchOff();//proche de personne, tout a eteindre
                 switchOn();//allume le seul bloc a allumer
                 
                 //ouvre eventuellement la poubelle
