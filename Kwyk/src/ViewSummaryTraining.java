@@ -3,6 +3,7 @@ import java.awt.FlowLayout;
 import java.awt.Image;
 import java.io.File;
 import javax.imageio.ImageIO;
+import javax.swing.JButton;
 import javax.swing.JPanel;
 
 public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
@@ -10,21 +11,26 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
     
     ViewSummaryTraining(Player player){
         super(player);
-        listeNiveau();
+        //listeNiveau();
+        sommaire();
     }
     
-    void listeNiveau(){
+    ViewSummaryTraining(Player player, String path){
+        super(player);
+        listeNiveau(path);
+    }
+    
+    void sommaire(){
         JPanel summary=new JPanel();
         summary.setLayout(new FlowLayout());
         summary.setBounds(0,50+buttonHeight,widthFS,heightFS);
         File[] arrayLevels=nombreNiveau("levels/training/");
         for(int i=0; i<arrayLevels.length; i++){
             try{
-                String name=arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length()-4);
+                String name=arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length())+"/";
                 Image img=ImageIO.read(new File("preview/training/"+name+".png"));
-                CustomJButton jb=new CustomJButton(name, img);
-                jb.addActionListener((event)->super.control.load("training/"+name));
-                jb.setPreferredSize(new Dimension(200, 200));
+                JButton jb=new JButton(name);
+                jb.addActionListener((event)->super.control.switchTraining(name));
                 summary.add(jb);
             }
             catch(Exception e){
@@ -34,9 +40,26 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
         this.add(summary);
     }
     
-    File[] nombreNiveau(String path){
-        File file=new File(path);
-        File[] files=file.listFiles();
-        return files;
+    void listeNiveau(String path){
+        JPanel summary=new JPanel();
+        summary.setLayout(new FlowLayout());
+        summary.setBounds(0,50+buttonHeight,widthFS,heightFS);
+        int directory=Integer.parseInt(path.charAt(0)+"")-1;
+        File[] arrayLevels=nombreNiveau("levels/training/"+path);
+        for(int i=0; i<arrayLevels.length; i++){
+            try{
+                String name=arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length()-4);
+                Image img=ImageIO.read(new File("preview/training/"+path+name+".png"));
+                CustomJButton jb=new CustomJButton(name, img,super.getModel().getPlayer().currentLevel[directory][i+1]);
+                jb.setEnabled(super.getModel().getPlayer().currentLevel[directory][i]);
+                jb.addActionListener((event)->super.control.load("training/"+path+name));
+                jb.setPreferredSize(new Dimension(200, 200));
+                summary.add(jb);
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }
+        }
+        this.add(summary);
     }
 }

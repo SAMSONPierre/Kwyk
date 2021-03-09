@@ -33,10 +33,4 @@ public class ViewSummaryChallenge extends ViewGame{//sommaire des defis
         }
         this.add(summary);
     }
-    
-    File[] nombreNiveau(String path){
-        File file=new File(path);
-        File[] files=file.listFiles();
-        return files;
-    }
 }

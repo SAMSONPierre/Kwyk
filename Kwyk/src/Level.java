@@ -22,17 +22,6 @@ public class Level implements Serializable{
         this.pattern=v;
     }
     
-    Level(Player p, int nbOfC, String name, String[] nameOfC, LinkedList<Vector> v){//pour submit
-        this.brushX=200;
-        this.brushY=200;
-        this.brushAngle=0;
-        this.brushFirstColor=Color.WHITE;
-        this.numberOfCommands=nbOfC;
-        this.name=name;
-        this.availableCommands=nameOfC;
-        this.pattern=v;
-    }
-    
     Level(Player p){//pour creer des niveaux      
         this.brushX=200;
         this.brushY=200;
@@ -41,7 +30,20 @@ public class Level implements Serializable{
         this.numberOfCommands=0;
         this.name="editor";
         String[] c={"for", "if", "function", "drawLine", "drawArc", "raisePutBrush",
-            "shiftAngle", "changeColor", "moveTo", "addAngle"};
+            "setAngle", "setColor", "moveTo", "addAngle"};
+        this.availableCommands=c;
+        this.pattern=new LinkedList<Vector>();
+    }
+    
+    Level(Player p, int x, int y, int angle, Color color){//pour construire tutoriel
+        this.brushX=x;
+        this.brushY=y;
+        this.brushAngle=angle;
+        this.brushFirstColor=color;
+        this.numberOfCommands=0;
+        this.name="GMVersion";
+        String[] c={"for", "if", "function", "drawLine", "drawArc", "raisePutBrush",
+            "setAngle", "setColor", "moveTo", "addAngle"};
         this.availableCommands=c;
         this.pattern=new LinkedList<Vector>();
     }
