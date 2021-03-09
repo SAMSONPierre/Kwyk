@@ -15,6 +15,11 @@ class CustomJButton extends JButton{
         this.done = done;
     }
     
+    CustomJButton(String text, Image image){
+        this.text=text;
+        this.image=image;
+    }
+    
     void addImage(Image image){
         this.image=image;
     }

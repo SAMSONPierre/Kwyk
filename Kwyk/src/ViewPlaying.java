@@ -137,9 +137,9 @@ public class ViewPlaying extends ViewGame{
     }
     
     int getNumberOfDirectory(String name) {
-    	File[] arrayLevels=nombreNiveau("levels/challenge/");
+    	File[] arrayLevels=nombreNiveau("levels/training/");
     	for(int i=0;i<arrayLevels.length; i++){
-    		File[] arrayLevels2 = nombreNiveau("levels/challenge/"+ arrayLevels[i].getName());
+    		File[] arrayLevels2 = nombreNiveau("levels/training/"+ arrayLevels[i].getName());
     		for(int j=0;j<arrayLevels2.length;j++) {
     			String str = arrayLevels2[j].getName().substring(0, arrayLevels2[j].getName().length()-4);
     			if(str.equals(level.name)) {
