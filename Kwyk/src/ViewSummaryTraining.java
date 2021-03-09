@@ -22,7 +22,7 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
             try{
                 String name=arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length()-4);
                 Image img=ImageIO.read(new File("preview/training/"+name+".png"));
-                CustomJButton jb=new CustomJButton(name, img);
+                CustomJButton jb=new CustomJButton(name, img,false); // à changer plus tard
                 jb.addActionListener((event)->super.control.load("training/"+name));
                 jb.setPreferredSize(new Dimension(200, 200));
                 summary.add(jb);
@@ -34,9 +34,5 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
         this.add(summary);
     }
     
-    File[] nombreNiveau(String path){
-        File file=new File(path);
-        File[] files=file.listFiles();
-        return files;
-    }
+    
 }

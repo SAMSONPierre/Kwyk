@@ -25,6 +25,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingUtilities;
@@ -38,7 +39,7 @@ public class ViewPlaying extends ViewGame{
     private PanelDragDropBoard dragDrop;//fusion de WhiteBoard et CommandBoard
     private JPanel features=new JPanel();//panel avec tous les boutons sous BlackBoard
     private Level level;//niveau en cours
-    private JLabel limite;
+    private JProgressBar limite;
     
     
     ViewPlaying(Player player, boolean isCreating) throws IOException{
@@ -92,17 +93,18 @@ public class ViewPlaying extends ViewGame{
         
       //limite des commandes si on est dans un niveau
         if(!isCreating) {
-        	limite = new JLabel(this.getNumberOfCommands() + "/" + this.level.numberOfCommands);
+            limite=new JProgressBar(0, level.numberOfCommands){
+                public String getString(){//presentation apparente
+                    return getValue()+"/"+level.numberOfCommands;
+                }
+            };
+            limite.setStringPainted(true);
             features.add(limite);
         }
+
         
-        //---que pour le test, a supprimer une fois le sommaire fonctionnel---
-        JButton load=new JButton("Load");
-        load.addActionListener((event)->{
-            String name=JOptionPane.showInputDialog(this,"Level's name ?", null);	
-            super.control.load(name);
-        });
-        features.add(load);
+
+
     }
     
     void run(){
@@ -113,7 +115,13 @@ public class ViewPlaying extends ViewGame{
     }
     
     void victoryMessage(){
-        if(level.compare()) JOptionPane.showMessageDialog(this, "Victory !");
+        if(level.compare()) {
+        	int lvl = Integer.parseInt(level.name.charAt(0)+"");
+        	System.out.println(getNumberOfDirectory(level.name) + " "+lvl);
+        	this.getModel().getPlayer().currentLevel[getNumberOfDirectory(level.name)][lvl] = true;
+        	JOptionPane.showMessageDialog(this, "Victory !");
+        	
+        }
     }
     
     int getNumberOfCommands(){
@@ -123,6 +131,25 @@ public class ViewPlaying extends ViewGame{
     String[] getCommandsArray(){
         return dragDrop.listToTab(dragDrop.getCommands());
     }
+    
+    int getNumberFromHead(){
+        return dragDrop.getNumberFromHead();
+    }
+    
+    int getNumberOfDirectory(String name) {
+    	File[] arrayLevels=nombreNiveau("levels/challenge/");
+    	for(int i=0;i<arrayLevels.length; i++){
+    		File[] arrayLevels2 = nombreNiveau("levels/challenge/"+ arrayLevels[i].getName());
+    		for(int j=0;j<arrayLevels2.length;j++) {
+    			String str = arrayLevels2[j].getName().substring(0, arrayLevels2[j].getName().length()-4);
+    			if(str.equals(level.name)) {
+    				return i;
+    			}
+    		}
+    	}
+    	return 0;
+    }
+
     
     
     
@@ -321,6 +348,17 @@ public class ViewPlaying extends ViewGame{
             init.caller.add(callC);
         }
         
+        int getNumberFromHead(){
+            int res=0;
+            Command tmp=this.commands.getFirst().next;//deuxieme commande du code du joueur
+            while(tmp!=null){
+                if(!(tmp instanceof CommandWithCommands)) res++;//un cwc a toujours un hookH donc 2 commandes
+                tmp=tmp.next;
+            }
+            return res;
+        }
+
+        
         int getNumberOfCommands(){
             int res=0;
             Command tmp=this.commands.getFirst().next;//deuxieme commande du code du joueur
@@ -485,7 +523,8 @@ public class ViewPlaying extends ViewGame{
                 bin.loadBin("images/closedBin.png");
                 if(this.next!=null) this.next.deleteSteps();
                 if(limite !=null) {
-                	limite.setText(getNumberOfCommands()+"/"+level.numberOfCommands);
+                	if(getNumberFromHead()+getNumberFromThis()<=level.numberOfCommands) foundPrevious();
+                    limite.setValue(getNumberFromHead());
                 }
             }
             
@@ -681,6 +720,17 @@ public class ViewPlaying extends ViewGame{
             /*****************
             * Mouse Override *
             *****************/
+            
+            int getNumberFromThis(){//nombre de commandes qu on drag
+                int res=0;
+                Command tmp=this;
+                while(tmp!=null){
+                    if(!(tmp instanceof CommandWithCommands)) res++;
+                    tmp=tmp.next;
+                }
+                return res;
+            }
+
 
             public void mouseDragged(MouseEvent e){
                 if(!isDragging){//ce qu on fait au premier click
@@ -728,15 +778,12 @@ public class ViewPlaying extends ViewGame{
                 catch(IOException e1){
                     System.out.println("Couldn't delete command");
                 }
-                if(limite !=null) {
-                	if(!(getNumberOfCommands() >= level.numberOfCommands)){
-                    	foundPrevious();//noue les liens avec precedent
-                    }
-                	limite.setText(getNumberOfCommands()+"/"+level.numberOfCommands);
+                if(limite!=null){//pas en train de creer
+                    if(getNumberFromHead()+getNumberFromThis()<=level.numberOfCommands) foundPrevious();
+                    limite.setValue(getNumberFromHead());
                 }
-                else {
-                	foundPrevious();//noue les liens avec precedent
-                }
+                else foundPrevious();//noue les liens avec precedent
+
                 
                 
             }
@@ -1029,7 +1076,7 @@ public class ViewPlaying extends ViewGame{
         
         class CommandFunctionInit extends CommandWithCommands implements MouseListener{
             protected JLabel nameFunction;
-            private CustomJButton changeName=new CustomJButton("", null);//pop up pour changer
+            private CustomJButton changeName=new CustomJButton("", null,true);//pop up pour changer
             private LinkedList<CommandFunctionCall> caller=new LinkedList<CommandFunctionCall>();
             
             CommandFunctionInit(String name, int x, int y){
