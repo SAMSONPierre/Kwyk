@@ -25,6 +25,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingUtilities;
@@ -38,7 +39,7 @@ public class ViewPlaying extends ViewGame{
     private PanelDragDropBoard dragDrop;//fusion de WhiteBoard et CommandBoard
     private JPanel features=new JPanel();//panel avec tous les boutons sous BlackBoard
     private Level level;//niveau en cours
-    private JLabel limite;
+    private JProgressBar limite;
     
     
     ViewPlaying(Player player, boolean isCreating) throws IOException{
@@ -92,7 +93,12 @@ public class ViewPlaying extends ViewGame{
         
         //limite des commandes si on est dans un niveau
         if(!isCreating) {
-            limite=new JLabel(this.getNumberFromHead()+"/"+this.level.numberOfCommands);
+            limite=new JProgressBar(0, level.numberOfCommands){
+                public String getString(){//presentation apparente
+                    return getValue()+"/"+level.numberOfCommands;
+                }
+            };
+            limite.setStringPainted(true);
             features.add(limite);
         }
         
@@ -734,7 +740,7 @@ public class ViewPlaying extends ViewGame{
                 try{
                     if(this.toDelete()){
                         this.deleteSteps();
-                        if(limite!=null) limite.setText(getNumberFromHead()+"/"+level.numberOfCommands);
+                        if(limite!=null) limite.setValue(getNumberFromHead());
                         return;//sinon peut ajouter this a commands car appel a foundPrevious
                     }
                 }
@@ -744,7 +750,7 @@ public class ViewPlaying extends ViewGame{
                 newDrag();
                 if(limite!=null){//pas en train de creer
                     if(getNumberFromHead()+getNumberFromThis()<=level.numberOfCommands) foundPrevious();
-                    limite.setText(getNumberFromHead()+"/"+level.numberOfCommands);
+                    limite.setValue(getNumberFromHead());
                 }
                 else foundPrevious();//noue les liens avec precedent
             }
