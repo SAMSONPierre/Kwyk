@@ -30,7 +30,7 @@ public class Level implements Serializable{
         this.numberOfCommands=0;
         this.name="editor";
         String[] c={"for", "if", "function", "drawLine", "drawArc", "raisePutBrush",
-            "setAngle", "setColor", "moveTo", "addAngle"};
+            "setAngle", "setColor", "moveTo", "addAngle","shiftColor"};
         this.availableCommands=c;
         this.pattern=new LinkedList<Vector>();
     }
@@ -43,7 +43,7 @@ public class Level implements Serializable{
         this.numberOfCommands=0;
         this.name="GMVersion";
         String[] c={"for", "if", "function", "drawLine", "drawArc", "raisePutBrush",
-            "setAngle", "setColor", "moveTo", "addAngle"};
+            "setAngle", "setColor", "moveTo", "addAngle","shiftColor"};
         this.availableCommands=c;
         this.pattern=new LinkedList<Vector>();
     }
@@ -86,6 +86,7 @@ public class Level implements Serializable{
     }
     
     boolean compare(){//a la fin, pour verifier si dessin correct
+    	if(pattern.size()==0) return false;
         for(Vector patternV : this.pattern){//on prend chaque trait du patron
             boolean found=false;
             for(Vector playerV : this.playerDraw){//on verifie s il est dessine
