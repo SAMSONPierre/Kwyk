@@ -6,17 +6,22 @@ public class Level implements Serializable{
     final int brushX, brushY, brushAngle;
     final Color brushFirstColor;
     final int numberOfCommands;
+    final int numberOfFunctions;
+    final int numberOfVariables;
     final String name;
     final String[] availableCommands;//nom des commandes disponibles
     private LinkedList<Vector> pattern=new LinkedList<Vector>();//patron
     private LinkedList<Vector> playerDraw=new LinkedList<Vector>();
     
-    Level(Player p, int x, int y, int angle, Color color, int nbOfC, String name, String[] nameOfC, LinkedList<Vector> v){
+    Level(Player p, int x, int y, int angle, Color color, int nbOfC, int nbOfF, int nbOfV,
+            String name, String[] nameOfC, LinkedList<Vector> v){
         this.brushX=x;
         this.brushY=y;
         this.brushAngle=angle;
         this.brushFirstColor=color;
         this.numberOfCommands=nbOfC;
+        this.numberOfFunctions=nbOfF;
+        this.numberOfVariables=nbOfV;
         this.name=name;
         this.availableCommands=nameOfC;
         this.pattern=v;
@@ -28,9 +33,11 @@ public class Level implements Serializable{
         this.brushAngle=0;
         this.brushFirstColor=Color.WHITE;
         this.numberOfCommands=0;
+        this.numberOfFunctions=-1;
+        this.numberOfVariables=-1;
         this.name="editor";
-        String[] c={"for", "if", "function", "drawLine", "drawArc", "raisePutBrush",
-            "setAngle", "setColor", "moveTo", "addAngle","shiftColor"};
+        String[] c={"for", "if", "drawLine", "drawArc", "raisePutBrush", "moveTo",
+            "setAngle", "addAngle", "setColor", "shiftColor"};
         this.availableCommands=c;
         this.pattern=new LinkedList<Vector>();
     }
@@ -41,9 +48,11 @@ public class Level implements Serializable{
         this.brushAngle=angle;
         this.brushFirstColor=color;
         this.numberOfCommands=0;
+        this.numberOfFunctions=-1;
+        this.numberOfVariables=-1;
         this.name="GMVersion";
-        String[] c={"for", "if", "function", "drawLine", "drawArc", "raisePutBrush",
-            "setAngle", "setColor", "moveTo", "addAngle","shiftColor"};
+        String[] c={"for", "if", "drawLine", "drawArc", "raisePutBrush", "moveTo",
+            "setAngle", "addAngle", "setColor", "shiftColor"};
         this.availableCommands=c;
         this.pattern=new LinkedList<Vector>();
     }
@@ -86,7 +95,7 @@ public class Level implements Serializable{
     }
     
     boolean compare(){//a la fin, pour verifier si dessin correct
-    	if(pattern.size()==0) return false;
+        if(pattern.size()==0) return false;//pas de message de victoire
         for(Vector patternV : this.pattern){//on prend chaque trait du patron
             boolean found=false;
             for(Vector playerV : this.playerDraw){//on verifie s il est dessine

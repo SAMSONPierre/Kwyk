@@ -162,7 +162,7 @@ public class Control implements Serializable{
         if(name==null) return;
     	ViewPlaying tmp=(ViewPlaying)this.view;
     	LinkedList<Vector> newPattern=model.getPlayer().getLevel().getSimplifyPattern();
-    	int numberOfCommands=tmp.getNumberFromHead();
+    	int[] numbers=tmp.getNumbersFromHead();
     	String[] commandsAvailable=tmp.getCommandsArray();
         Rectangle screenRect=new Rectangle(tmp.getX()+tmp.getInsets().left+20,
                 tmp.getY()+tmp.getInsets().top+tmp.buttonHeight+20, 400, 400);
@@ -175,7 +175,7 @@ public class Control implements Serializable{
             e.printStackTrace();
         }        
     	Level newLvl=new Level(model.getPlayer(),level.brushX,level.brushY,level.brushAngle,
-            level.brushFirstColor,numberOfCommands,name,commandsAvailable,newPattern);
+            level.brushFirstColor,numbers[0],numbers[1],numbers[2],name,commandsAvailable,newPattern);
     	try{
             String saveFile="levels/challenge/"+name+".lvl";
             File file=new File(saveFile);
