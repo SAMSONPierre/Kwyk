@@ -130,8 +130,9 @@ public class ViewPlaying extends ViewGame{
         return dragDrop.listToTab(dragDrop.getCommands());
     }
     
-    int getNumberFromHead(){
-        return dragDrop.getNumberFromHead();
+    int[] getNumbersFromHead(){//commandes, fonctions, variables
+        int[] res={dragDrop.getNumbersFromHead()[0], dragDrop.getNumbersFromHead()[1], dragDrop.getMaxVariables()};
+        return res;
     }
     
     int getNumberOfDirectory(String name){
@@ -255,7 +256,8 @@ public class ViewPlaying extends ViewGame{
     public class PanelDragDropBoard extends JPanel{
         final int x00, y00, width, height;//position initiale, largeur, hauteur du panel
         private LinkedList<Command> commands=new LinkedList<Command>();//liste de commandes ayant ete drag sur whiteBoard
-        private int[] commandPositionY;//nom de leur position verticale, pour regenerer les commandes
+        private int lastPositionY=20;//emplacement vertical des commandes
+        private int[] numberOfFV=new int[2];//fonction, varibale
         private Bin bin;
 
         PanelDragDropBoard() throws IOException{
@@ -265,120 +267,44 @@ public class ViewPlaying extends ViewGame{
             height=heightFS-40-buttonHeight;//40=marges haut+bas
             this.setLayout(null);
             this.setBounds(x00, y00-ViewPlaying.this.getInsets().top, width, height);
-            this.addAvailableCommands();
             
             this.bin=new Bin();
             this.add(bin);
-            SwingUtilities.updateComponentTreeUI(this);//refresh affichage
+            this.setFunctionVariableButton();
+            this.addAvailableCommands();
         }
         
-        void addAvailableCommands(){
-            //ajout dans WhiteBoard
-            commands.add(new CommandStart());//toujours le premier de la liste de commandes
-            this.add(commands.getFirst());
-            
-            //ajout dans CommandBoard
-            this.commandPositionY=new int[level.getAvailableCommands().length];
-            int i=0;
-            int positionY=20;
-            for(String c : level.getAvailableCommands()){//ajout commandes disponibles
-                this.commandPositionY[i++]=positionY;
-                positionY+=addCommand(c, positionY);
-            }
-        }
-        
-        int addCommand(String name, int positionY){
-            switch(name){
-                case "for":
-                    CommandFor forC=new CommandFor(width/2+20, positionY);
-                    this.add(forC);
-                    this.add(forC.hookV);
-                    this.add(forC.hookH);
-                    return forC.getHeight()+forC.hookV.getHeight()+forC.hookH.getHeight()+10;
-                case "if":
-                    CommandIf ifC=new CommandIf(width/2+20, positionY);
-                    this.add(ifC);
-                    this.add(ifC.hookV);
-                    this.add(ifC.hookH);
-                    return ifC.getHeight()+ifC.hookV.getHeight()+ifC.hookH.getHeight()+10;
-                case "drawLine":
-                    CommandDrawLine drawLineC=new CommandDrawLine(width/2+20, positionY);
-                    this.add(drawLineC);
-                    return drawLineC.getHeight()+10;
-                case "drawArc":
-                    CommandDrawArc drawArcC=new CommandDrawArc(width/2+20, positionY);
-                    this.add(drawArcC);
-                    return drawArcC.getHeight()+10;
-                case "raisePutBrush":
-                    CommandRaisePutBrush raisePutC=new CommandRaisePutBrush(width/2+20, positionY);
-                    this.add(raisePutC);
-                    return raisePutC.getHeight()+10;
-                case "setAngle":
-                    CommandSetAngle shiftAngleC=new CommandSetAngle(width/2+20, positionY);
-                    this.add(shiftAngleC);
-                    return shiftAngleC.getHeight()+10;
-                case "setColor":
-                    CommandSetColor colorC=new CommandSetColor(width/2+20, positionY);
-                    this.add(colorC);
-                    return colorC.getHeight()+10;
-                case "moveTo":
-                    CommandMoveTo moveC=new CommandMoveTo(width/2+20, positionY);
-                    this.add(moveC);
-                    return moveC.getHeight()+10;
-                case "addAngle":
-                    CommandAddAngle addAngleC=new CommandAddAngle(width/2+20, positionY);
-                    this.add(addAngleC);
-                    return addAngleC.getHeight()+10;
-                default://fonction
-                    if(!(name.equals("hookHorizontal"))){
-                        CommandFunctionInit functionC=new CommandFunctionInit(name, width/2+20, positionY);
-                        this.add(functionC);
-                        this.add(functionC.hookV);
-                        this.add(functionC.hookH);
-                        return functionC.getHeight()+functionC.hookV.getHeight()+functionC.hookH.getHeight()+10;
+        void setFunctionVariableButton(){
+            int x=width/2-20;
+            if(level.numberOfFunctions!=0){
+                JButton createF=new JButton("Create a new function");
+                createF.addActionListener((event)->{
+                    String name=JOptionPane.showInputDialog("Name of this fonction ?");
+                    if(name!=null) addFunctionVariable("function", name);
+                    if(numberOfFV[0]==level.numberOfFunctions){//max atteint
+                        createF.setEnabled(false);
+                        createF.setBackground(Color.red);
                     }
-                    return 0;//on ne cree pas de hookHorizontal seul
+                });
+                Dimension dF=createF.getPreferredSize();
+                createF.setBounds(x-dF.width, 20, dF.width, dF.height);
+                this.add(createF);
             }
-        }
-        
-        void addCommandCall(CommandFunctionInit init, int positionY){
-            CommandFunctionCall callC=new CommandFunctionCall(init, width/2+20, positionY);
-            this.add(callC);
-            init.caller.add(callC);
-        }
-        
-        int getNumberFromHead(){
-            int res=0;
-            Command tmp=this.commands.getFirst().next;//deuxieme commande du code du joueur
-            while(tmp!=null){
-                if(!(tmp instanceof CommandWithCommands)) res++;//un cwc a toujours un hookH donc 2 commandes
-                tmp=tmp.next;
+            
+            if(level.numberOfVariables!=0){
+                JButton createV=new JButton("Create a new variable");
+                createV.addActionListener((event)->{
+                    String name=JOptionPane.showInputDialog("Name of this variable ?");
+                    if(name!=null) addFunctionVariable("variable", name);
+                    if(numberOfFV[1]==level.numberOfVariables){//max atteint
+                        createV.setEnabled(false);
+                        createV.setBackground(Color.red);
+                    }
+                });
+                Dimension dV=createV.getPreferredSize();
+                createV.setBounds(x-dV.width, 30+dV.height, dV.width, dV.height);
+                this.add(createV);
             }
-            return res;
-        }
-        
-        boolean notAdd(LinkedList<Command> list, Command test){
-            for(Command c : list){
-                if(c.name.equals(test.name)) return false;//deja dans la liste
-            }
-            return true;//pas dans la liste
-        }
-        
-        LinkedList<Command> getCommands(){
-            LinkedList<Command> res=new LinkedList<Command>();
-            Command tmp=this.commands.getFirst().next;
-            while(tmp!=null){
-                if(notAdd(res, tmp)) res.add(tmp);
-                tmp=tmp.next;
-            }
-            return res;
-        }
-        
-        String[] listToTab(LinkedList<Command> list){
-            int size=list.size();
-            String[] res=new String[size];
-            for(int i=0; i<size; i++) res[i]=list.get(i).name;
-            return res;
         }
 
         protected void paintComponent(Graphics g){
@@ -395,6 +321,200 @@ public class ViewPlaying extends ViewGame{
             //CommandBoard a droite
             g2.setColor(Color.LIGHT_GRAY);
             g2.fillRect(width, 0, width/2, height);
+        }
+        
+        
+        /*******************
+        * Gestion Commands *
+        *******************/
+        
+        void addAvailableCommands(){//premier ajout des commandes disponibles
+            //ajout dans WhiteBoard
+            commands.add(new CommandStart());//toujours le premier de la liste de commandes
+            this.add(commands.getFirst());
+            
+            //ajout dans CommandBoard
+            for(String c : level.getAvailableCommands())
+                lastPositionY+=addCommand(c, lastPositionY);
+        }
+        
+        void addFunctionVariable(String name, String name2){//nouvelles fonctions/variables
+            switch(name){
+                case "function":
+                    numberOfFV[0]++;
+                    CommandFunctionInit fC=new CommandFunctionInit(name, name2, width/2+20, lastPositionY);
+                    this.add(fC);
+                    this.add(fC.hookV);
+                    this.add(fC.hookH);
+                    lastPositionY+=fC.getHeight()+fC.hookV.getHeight()+fC.hookH.getHeight()+10;
+                    break;               
+                case "variable":
+                    numberOfFV[1]++;
+                    
+                    break;
+            }
+            SwingUtilities.updateComponentTreeUI(this);//refresh affichage
+        }
+        
+        int addCommand(String name, int positionY){//(re)generation des commandes
+            int res=10;
+            switch(name){
+                case "for":
+                    CommandFor forC=new CommandFor(width/2+20, positionY);
+                    this.add(forC);
+                    this.add(forC.hookV);
+                    this.add(forC.hookH);
+                    res+=forC.getHeight()+forC.hookV.getHeight()+forC.hookH.getHeight();
+                    break;
+                case "if":
+                    CommandIf ifC=new CommandIf(width/2+20, positionY);
+                    this.add(ifC);
+                    this.add(ifC.hookV);
+                    this.add(ifC.hookH);
+                    res+=ifC.getHeight()+ifC.hookV.getHeight()+ifC.hookH.getHeight();
+                    break;
+                case "drawLine":
+                    CommandDrawLine drawLineC=new CommandDrawLine(width/2+20, positionY);
+                    this.add(drawLineC);
+                    res+=drawLineC.getHeight();
+                    break;
+                case "drawArc":
+                    CommandDrawArc drawArcC=new CommandDrawArc(width/2+20, positionY);
+                    this.add(drawArcC);
+                    res+=drawArcC.getHeight();
+                    break;
+                case "raisePutBrush":
+                    CommandRaisePutBrush raisePutC=new CommandRaisePutBrush(width/2+20, positionY);
+                    this.add(raisePutC);
+                    res+=raisePutC.getHeight();
+                    break;
+                case "moveTo":
+                    CommandMoveTo moveC=new CommandMoveTo(width/2+20, positionY);
+                    this.add(moveC);
+                    res+=moveC.getHeight();
+                    break;
+                case "setAngle":
+                    CommandSetAngle shiftAngleC=new CommandSetAngle(width/2+20, positionY);
+                    this.add(shiftAngleC);
+                    res+=shiftAngleC.getHeight();
+                    break;
+                case "addAngle":
+                    CommandAddAngle addAngleC=new CommandAddAngle(width/2+20, positionY);
+                    this.add(addAngleC);
+                    res+=addAngleC.getHeight();
+                    break;
+                case "setColor":
+                    CommandSetColor changeColorC=new CommandSetColor(width/2+20, positionY);
+                    this.add(changeColorC);
+                    res+=changeColorC.getHeight();
+                    break;
+                case "shiftColor":
+                    CommandShiftColor shiftColorC=new CommandShiftColor(width/2+20, positionY);
+                    this.add(shiftColorC);
+                    res+=shiftColorC.getHeight();
+                    break;
+                default :
+                    return 0;
+            }
+            SwingUtilities.updateComponentTreeUI(this);//refresh affichage
+            return res;
+        }
+        
+        void addCommandCall(CommandFunctionInit init, int positionY){
+            CommandFunctionCall callC=new CommandFunctionCall(init, width/2+20, positionY);
+            this.add(callC);
+            init.caller.add(callC);
+            SwingUtilities.updateComponentTreeUI(this);//refresh affichage
+        }
+        
+        void addSameVariable(/*a ajouter*/){//regeneration des variables
+            //----- a faire -----
+        }
+        
+        
+        /*******************
+        *   Create Level   *
+        *******************/
+        
+        int[] getNumbersFromHead(){//nombre de commandes/fonctions depuis Start
+            int[] res=new int[2];//commandes, fonctions
+            Command tmp=this.commands.getFirst().next;//deuxieme commande du code du joueur
+            LinkedList<String> functions=new LinkedList<String>();
+            while(tmp!=null){
+                if(tmp instanceof CommandFunctionCall){//nouvelle fonction
+                    String name2=((CommandFunctionCall)tmp).name2.getText();
+                    if(!functions.contains(name2)){
+                        functions.add(name2);
+                        res[1]++;
+                        Command interne=((CommandFunctionCall)tmp).function.next;
+                        if(interne!=null) res[0]+=interne.getNumberFromThis();
+                    }
+                }
+                else if(!(tmp instanceof CommandWithCommands)) res[0]++;//un cwc a toujours un hookH donc 2 commandes
+                tmp=tmp.next;
+            }
+            return res;
+        }
+        
+        int getMaxVariables(){
+            int res=0;
+            LinkedList<String> variables=new LinkedList<String>();
+            Command tmp=this.commands.getFirst().next;//deuxieme commande du code du joueur
+            /*while(tmp!=null){
+                if(tmp instanceof CommandVariable){
+                    String name2=((CommandVariable)tmp).name2;
+                    if(!variables.contains(name2)){
+                        res++;
+                        variables.add(name2);
+                    }
+                }
+                tmp=tmp.next;
+            }*/
+            return res;
+        }
+        
+        boolean notAdd(LinkedList<Command> list, Command test){
+            for(Command c : list){
+                if(c.name.equals(test.name)) return false;//deja dans la liste
+            }
+            return true;//pas dans la liste
+        }
+        
+        LinkedList<Command> getFunctionInterne(CommandFunctionInit init){
+            LinkedList<Command> res=new LinkedList<Command>();
+            Command tmp=init.next;
+            while(tmp!=null){
+                if(!(tmp instanceof HookHorizontal)) res.add(tmp);
+                tmp=tmp.next;
+            }
+            return res;
+        }
+        
+        LinkedList<Command> getCommands(){
+            LinkedList<Command> res=new LinkedList<Command>();
+            LinkedList<String> functions=new LinkedList<String>();
+            Command tmp=this.commands.getFirst().next;
+            while(tmp!=null){
+                if(tmp instanceof CommandFunctionCall){//nouvelle fonction
+                    CommandFunctionCall call=(CommandFunctionCall)tmp;
+                    if(!functions.contains(call.name2.getText())){
+                        functions.add(call.name2.getText());
+                        for(Command c : getFunctionInterne(call.function)){
+                            if(notAdd(res, c)) res.add(c);
+                        }
+                    }
+                }
+                else if(notAdd(res, tmp)) res.add(tmp);
+                tmp=tmp.next;
+            }
+            return res;
+        }
+        
+        String[] listToTab(LinkedList<Command> list){
+            int size=list.size();
+            String[] res=new String[size];
+            for(int i=0; i<size; i++) res[i]=list.get(i).name;
+            return res;
         }
         
         
@@ -434,14 +554,15 @@ public class ViewPlaying extends ViewGame{
         abstract class Command extends JPanel implements MouseInputListener{
             final String name;//if, else, for, while, ...
             private Color color;
-            final int commandH=35, commandW=70;//hauteur d une commande, largeur par defaut de hookH
+            final int commandH=35, commandW=70, positionY;//hauteur d une commande, largeur par defaut de hookH
             protected Command next, previous;//next a executer, previous pour ajuster l affichage
             private int mouseX, mouseY;//position initiale de la souris au moment du drag
             private boolean isDragging, brighter;//drag ; a allumer -> default=false
             
-            Command(String name, Color color){
+            Command(String name, Color color, int positionY){
                 this.name=name;
                 this.color=color;
+                this.positionY=positionY;
                 this.setBackground(color);
                 this.setLayout(new GridBagLayout());//pour centrer verticalement les textes
                 this.addMouseMotionListener(this);
@@ -504,11 +625,11 @@ public class ViewPlaying extends ViewGame{
                 if(commands.contains(this)) commands.remove(this);//sur whiteBoard
                 else if(this instanceof CommandFunctionCall){
                     CommandFunctionCall tmp=(CommandFunctionCall)this;
-                    addCommandCall(tmp.function, getPositionY(tmp.function.name));
+                    addCommandCall(tmp.function, tmp.function.positionY);
                 }
-                else addCommand(this.name, getPositionY(this.name));
-                SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
+                else addCommand(this.name, this.positionY);
                 bin.loadBin("images/closedBin.png");
+                SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
                 if(this.next!=null) this.next.deleteSteps();
             }
             
@@ -524,23 +645,15 @@ public class ViewPlaying extends ViewGame{
                     //pour regenerer commande utilisee :
                     if(this instanceof CommandFunctionCall){
                         CommandFunctionInit init=((CommandFunctionCall)this).function;
-                        addCommandCall(init, getPositionY(init.name));
+                        addCommandCall(init, init.positionY);
                     }
-                    else addCommand(this.name, getPositionY(this.name));
-                    SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
+                    else addCommand(this.name, this.positionY);
                 }
             }
 
             boolean inWhiteBoard(){//est dans whiteBoard
                 Point p=this.getLocation();
                 return (p.x>0 && p.x<width/2 && p.y>0 && p.y<height);
-            }
-            
-            int getPositionY(String name){
-                for(int i=0; i<level.getAvailableCommands().length; i++){
-                    if(name.equals(level.getAvailableCommands()[i])) return commandPositionY[i];
-                }
-                return -1;
             }
 
             
@@ -712,7 +825,15 @@ public class ViewPlaying extends ViewGame{
                 int res=0;
                 Command tmp=this;
                 while(tmp!=null){
-                    if(!(tmp instanceof CommandWithCommands)) res++;
+                    if(tmp instanceof CommandFunctionCall){
+                        res++;//pour functionCall
+                        Command interne=((CommandFunctionCall)tmp).function.next;
+                        while(interne!=null){
+                            if(!(interne instanceof HookHorizontal)) res++;
+                            interne=interne.next;
+                        }
+                    }
+                    else if(!(tmp instanceof CommandWithCommands)) res++;
                     tmp=tmp.next;
                 }
                 return res;
@@ -737,7 +858,7 @@ public class ViewPlaying extends ViewGame{
                 int nearby=closeCommand();
                 switchOff();//eteint tout d abord
                 if(nearby!=-1){//proche d un bloc
-                    if(limite==null || getNumberFromThis()+getNumberFromHead()<=level.numberOfCommands)//attachable
+                    if(limite==null || getNumberFromThis()+getNumbersFromHead()[0]<=level.numberOfCommands)//attachable
                         commands.get(nearby).brighter=true;//allume le seul necessaire
                 }
                 switchOn();//allume le seul bloc a allumer
@@ -757,7 +878,7 @@ public class ViewPlaying extends ViewGame{
                 try{
                     if(this.toDelete()){
                         this.deleteSteps();
-                        if(limite!=null) limite.setValue(getNumberFromHead());
+                        if(limite!=null) limite.setValue(getNumbersFromHead()[0]);
                         return;//sinon peut ajouter this a commands car appel a foundPrevious
                     }
                 }
@@ -766,8 +887,9 @@ public class ViewPlaying extends ViewGame{
                 }
                 newDrag();
                 if(limite!=null){//pas en train de creer
-                    if(getNumberFromHead()+getNumberFromThis()<=level.numberOfCommands) foundPrevious();
-                    limite.setValue(getNumberFromHead());
+                    if(getNumberFromThis()+getNumbersFromHead()[0]<=level.numberOfCommands)
+                        foundPrevious();
+                    limite.setValue(getNumbersFromHead()[0]);
                 }
                 else foundPrevious();//noue les liens avec precedent
             }
@@ -776,6 +898,7 @@ public class ViewPlaying extends ViewGame{
             public void mousePressed(MouseEvent e){}
             public void mouseClicked(MouseEvent e){//pour verification, a enlever apres
                 //if(this.canExecute()) this.execute(true);
+                System.out.println(getNumberFromThis());
             }
             public void mouseEntered(MouseEvent e){}
             public void mouseExited(MouseEvent e){}
@@ -784,7 +907,7 @@ public class ViewPlaying extends ViewGame{
 
         class CommandStart extends Command{//bloc initial present que sur WhiteBoard
             CommandStart(){
-                super("start", Color.GREEN.darker());
+                super("start", Color.GREEN.darker(), 20);
                 initializeDisplay();
             }
             
@@ -813,19 +936,19 @@ public class ViewPlaying extends ViewGame{
         
         class CommandFunctionCall extends Command{
             private CommandFunctionInit function;
-            private JLabel name=new JLabel();
+            private JLabel name2=new JLabel();
             
             CommandFunctionCall(CommandFunctionInit function, int x, int y){
-                super("Call", new Color(212, 115, 212));
+                super("Call", new Color(212, 115, 212), y);
                 this.function=function;
                 initializeDisplay();
+                this.add(name2);
                 this.setBounds(x, y, getPreferredSize().width, commandH);
             }
             
             void initializeDisplay(){
-                name.setText(function.nameFunction.getText());
+                name2.setText(function.nameFunction.getText());
                 setSize(getPreferredSize().width, commandH);
-                this.add(name);
             }
             
             boolean inFunction(Command c){
@@ -868,7 +991,7 @@ public class ViewPlaying extends ViewGame{
             final HookHorizontal hookH;//next si pas de commandes internes
             
             CommandWithCommands(String name, Color color, int x, int y){
-                super(name, color);
+                super(name, color, y);
                 hookV=new HookVertical(color, commandH, x, y+commandH);//apres la commande
                 hookH=new HookHorizontal(color, x, y+2*commandH);//apres hookV
                 this.next=hookH;
@@ -933,7 +1056,7 @@ public class ViewPlaying extends ViewGame{
 
         class HookHorizontal extends Command{//fin de la boucle/condition
             HookHorizontal(Color color, int x, int y){
-                super("hookHorizontal", color);
+                super("hookHorizontal", color, y);
                 this.setBounds(x, y, commandW, commandH/2);
             }
             
@@ -1063,8 +1186,9 @@ public class ViewPlaying extends ViewGame{
             private CustomJButton changeName=new CustomJButton("", null, true);//pop up pour changer
             private LinkedList<CommandFunctionCall> caller=new LinkedList<CommandFunctionCall>();
             
-            CommandFunctionInit(String name, int x, int y){
+            CommandFunctionInit(String name, String name2, int x, int y){
                 super(name, new Color(212, 115, 212), x, y);
+                nameFunction=new JLabel("  "+name2+"  ");
                 initializeDisplay();
                 this.setBounds(x, y, getPreferredSize().width, commandH);
             }
@@ -1080,17 +1204,16 @@ public class ViewPlaying extends ViewGame{
                 catch(IOException e){}
                 changeName.setPreferredSize(new Dimension(commandH-10, commandH-10));
                 changeName.addActionListener((event)->{
-                    String name=JOptionPane.showInputDialog("New name ?");
-                    if(name!=null) resize(name);
+                    String newName=JOptionPane.showInputDialog("New name ?");
+                    if(newName!=null) resize(newName);
                 });
                 this.add(changeName);
                 
-                nameFunction=new JLabel("  "+name+"  ");
                 this.add(nameFunction);
             }
             
-            void resize(String name){
-                this.nameFunction.setText("  "+name+"  ");
+            void resize(String newName){
+                this.nameFunction.setText("  "+newName+"  ");
                 this.setSize(this.getPreferredSize().width, commandH);
                 for(CommandFunctionCall c : caller) c.initializeDisplay();
             }
@@ -1098,8 +1221,7 @@ public class ViewPlaying extends ViewGame{
             void newDrag(){//override : pas de previous ou next au hookH
                 if(inWhiteBoard() && !commands.contains(this)){
                     commands.add(this);
-                    addCommandCall(this, getPositionY(this.name));//pour generer bloc d appel
-                    SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
+                    addCommandCall(this, positionY);//pour generer bloc d appel
                 }
             }
 
@@ -1119,7 +1241,7 @@ public class ViewPlaying extends ViewGame{
             private JTextField distance=new JTextField(3);
 
             CommandDrawLine(int x, int y){
-                super("drawLine", Color.CYAN.darker());
+                super("drawLine", Color.CYAN.darker(), y);
                 initializeDisplay();
                 this.setBounds(x, y, getPreferredSize().width, commandH);
             }
@@ -1166,7 +1288,7 @@ public class ViewPlaying extends ViewGame{
             private int sens=1;//1=gauche, -1=droite
             
             CommandDrawArc(int x, int y){
-                super("drawArc", Color.CYAN.darker());
+                super("drawArc", Color.CYAN.darker(), y);
                 initializeDisplay();
                 this.setBounds(x, y, getPreferredSize().width, commandH);
             }
@@ -1236,7 +1358,7 @@ public class ViewPlaying extends ViewGame{
             private boolean choiceRes=true;//raise=false, put=true
             
             CommandRaisePutBrush(int x, int y){
-                super("raisePutBrush", Color.LIGHT_GRAY.darker());
+                super("raisePutBrush", Color.LIGHT_GRAY.darker(), y);
                 initializeDisplay();
                 this.setBounds(x, y, getPreferredSize().width, commandH);
             }
@@ -1272,7 +1394,7 @@ public class ViewPlaying extends ViewGame{
             JTextField angle=new JTextField(3);//meilleur moyen de choisir l angle ? --------a faire--------
 
             CommandSetAngle(int x, int y){
-                super("setAngle", Color.LIGHT_GRAY.darker());
+                super("setAngle", Color.LIGHT_GRAY.darker(), y);
                 initializeDisplay();
                 this.setBounds(x, y, getPreferredSize().width, commandH);
             }
@@ -1305,7 +1427,7 @@ public class ViewPlaying extends ViewGame{
             private Color colorRes=level.brushFirstColor;
 
             CommandSetColor(int x, int y){
-                super("setColor", Color.LIGHT_GRAY.darker());
+                super("setColor", Color.LIGHT_GRAY.darker(), y);
                 initializeDisplay();
                 this.setBounds(x, y, getPreferredSize().width+5, commandH);
             }
@@ -1370,7 +1492,7 @@ public class ViewPlaying extends ViewGame{
             private JTextField positionX=new JTextField(3), positionY=new JTextField(3);
 
             CommandMoveTo(int x, int y){
-                super("moveTo", Color.LIGHT_GRAY.darker());
+                super("moveTo", Color.LIGHT_GRAY.darker(), y);
                 initializeDisplay();
                 this.setBounds(x, y, getPreferredSize().width, commandH);
             }
@@ -1407,7 +1529,7 @@ public class ViewPlaying extends ViewGame{
             private JTextField angle=new JTextField(3);
 
             CommandAddAngle(int x, int y){
-                super("addAngle", Color.LIGHT_GRAY.darker());
+                super("addAngle", Color.LIGHT_GRAY.darker(), y);
                 initializeDisplay();
                 this.setBounds(x, y, getPreferredSize().width, commandH);
             }
@@ -1435,6 +1557,48 @@ public class ViewPlaying extends ViewGame{
         }//fin de classe interne AddAngle
 
 
-        //autre classe de dessin...
+        class CommandShiftColor extends Command{
+            private JTextField newColor=new JTextField(3);
+
+            CommandShiftColor(int x, int y){
+                super("shiftColor", Color.LIGHT_GRAY.darker(), y);
+                initializeDisplay();
+                this.setBounds(x, y, getPreferredSize().width, commandH);
+            }
+            
+            void initializeDisplay(){
+                this.add(new JLabel("  Add  "));
+                this.add(this.newColor);
+                this.add(new JLabel("  % to color  "));
+            }
+            
+            boolean canExecute(){
+                int n=newColor.getText().length();
+                if(n==0) newColor.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                else newColor.setBorder(null);
+                return n!=0;
+            }
+
+            void execute(boolean executeNext){
+                int percent=(255*Integer.parseInt(newColor.getText()))/100;
+                
+                int nRed=blackBoard.brushColor.getRed()+percent;
+                if(nRed>255) nRed=255;
+                else if(nRed<0) nRed=0;
+                
+                int nGreen=blackBoard.brushColor.getGreen()+percent;
+                if(nGreen>255) nGreen=255;
+                else if(nGreen<0) nGreen=0;
+                
+                int nBlue=blackBoard.brushColor.getBlue()+percent;
+                if(nBlue>255) nBlue=255;
+                else if(nBlue<0) nBlue=0;
+                
+                blackBoard.brushColor=new Color(nRed,nGreen,nBlue);
+                ViewPlaying.this.blackBoard.repaint();
+                if(executeNext && next!=null) next.execute(true);
+                else if(next==null) victoryMessage();
+            }
+       }//fin de classe interne shiftColor
     }//fin classe interne PanelDragDropBoard
 }
