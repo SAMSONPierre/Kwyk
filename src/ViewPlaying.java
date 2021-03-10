@@ -33,6 +33,8 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.event.MouseInputListener;
 
+
+
 public class ViewPlaying extends ViewGame{
     final int buttonHeight=super.getButtonHeight();//hauteur d un bouton
     private PanelBlackBoard blackBoard;//patron + visualisation du resultat du code
@@ -119,11 +121,11 @@ public class ViewPlaying extends ViewGame{
     }
     
     void victoryMessage(){
-        if(level.compare()){
-            int lvl=Integer.parseInt(level.name.charAt(0)+"");
-            getModel().getPlayer().currentLevel[getNumberOfDirectory(level.name)][lvl]=true;
-            JOptionPane.showMessageDialog(this, "Victory !");
-        }
+    	if(level.compare()){
+    	     int lvl=Integer.parseInt(level.name.charAt(0)+"");
+    	     getModel().getPlayer().currentLevel[getNumberOfDirectory(level.name)][lvl]=true;
+    	     JOptionPane.showMessageDialog(this, "Victory !");
+    	}
     }
     
     String[] getCommandsArray(){
@@ -1555,6 +1557,59 @@ public class ViewPlaying extends ViewGame{
                 else if(next==null) victoryMessage();
             }
         }//fin de classe interne AddAngle
+        
+        class CommandShiftColor extends Command{
+       	 private JTextField newColor=new JTextField(3);
+       	 
+
+            CommandShiftColor(int x, int y){
+                super("shiftColor", Color.LIGHT_GRAY.darker());
+                initializeDisplay();
+                this.setBounds(x, y, getPreferredSize().width, commandH);
+            }
+            
+            void initializeDisplay(){
+                this.add(new JLabel("  Add  "));
+                this.add(this.newColor);
+                this.add(new JLabel("  % to color  "));
+            }
+            
+            boolean canExecute(){
+                int a=newColor.getText().length();
+                if(a==0) newColor.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                else newColor.setBorder(null);
+                return a!=0;
+            }
+
+            void execute(boolean executeNext){
+           	 	int percent = (255 * Integer.parseInt(newColor.getText())) / 100;    
+           	 	int nRed = blackBoard.brushColor.getRed() + percent;
+           	 	if(nRed > 255) {
+           	 		nRed = 255;
+           	 	}
+           	 	else if(nRed<0) {
+           	 		nRed = 0;
+           	 	}
+           	 	int nGreen = blackBoard.brushColor.getGreen() + percent;
+           	 	if(nGreen > 255) {
+        	 		nGreen = 255;
+        	 	}
+           	 	else if(nGreen<0) {
+           	 		nGreen = 0;
+           	 	}
+           	 	int nBlue = blackBoard.brushColor.getBlue() + percent;
+           	 	if(nBlue > 255) {
+        	 		nBlue = 255;
+        	 	}
+           	 	else if(nBlue<0) {
+           	 		nBlue = 0;
+           	 	}
+                blackBoard.brushColor = new Color(nRed,nGreen,nBlue);
+                ViewPlaying.this.blackBoard.repaint();
+                if(executeNext && next!=null) next.execute(true);
+                else if(next==null) victoryMessage();
+            }
+       }//fin de classe interne shiftColor
 
 
         class CommandShiftColor extends Command{
