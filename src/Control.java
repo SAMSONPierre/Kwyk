@@ -116,6 +116,12 @@ public class Control implements Serializable{
         this.model=view.getModel();
     }
     
+    void switchTraining(){
+    	this.exitFrame();
+        this.view=new ViewSummaryTraining(this.model.getPlayer());
+        this.model=view.getModel();
+    }
+    
     void switchChallenge(){
         this.exitFrame();
         this.view=new ViewSummaryChallenge(this.model.getPlayer());

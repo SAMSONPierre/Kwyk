@@ -28,7 +28,6 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
         for(int i=0; i<arrayLevels.length; i++){
             try{
                 String name=arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length())+"/";
-                Image img=ImageIO.read(new File("preview/training/"+name+".png"));
                 JButton jb=new JButton(name);
                 jb.addActionListener((event)->super.control.switchTraining(name));
                 summary.add(jb);
