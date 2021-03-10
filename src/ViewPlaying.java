@@ -372,6 +372,13 @@ public class ViewPlaying extends ViewGame{
                     this.add(ifC.hookH);
                     res+=ifC.getHeight()+ifC.hookV.getHeight()+ifC.hookH.getHeight();
                     break;
+                case "while":
+                    CommandWhile whileC=new CommandWhile(width/2+20, positionY);
+                    this.add(whileC);
+                    this.add(whileC.hookV);
+                    this.add(whileC.hookH);
+                    res+=whileC.getHeight()+whileC.hookV.getHeight()+whileC.hookH.getHeight();
+                    break;
                 case "drawLine":
                     CommandDrawLine drawLineC=new CommandDrawLine(width/2+20, positionY);
                     this.add(drawLineC);
@@ -1177,6 +1184,113 @@ public class ViewPlaying extends ViewGame{
                 this.hookH.execute(true);
             }
         }//fin classe interne If
+        
+        
+        class CommandWhile extends CommandWithCommands{//classe interne
+            private JComboBox variableG=new JComboBox();
+            private JComboBox operateur=new JComboBox();
+            private JTextField variableD=new JTextField(3);
+            private String op="<";
+            private int varG=blackBoard.x, varD;
+            private boolean varG_isX=true;//par defaut ; pour savoir quelle valeur devra être actualisee
+            
+            CommandWhile(int x, int y){
+                super("while", Color.YELLOW.darker(), x, y);
+                initializeDisplay();
+                this.setBounds(x, y, getPreferredSize().width, commandH);
+            }
+            
+            void initializeDisplay(){
+                this.add(new JLabel("  While  "));
+
+                this.variableG.addItemListener(new ItemListener(){
+                    public void itemStateChanged(ItemEvent e){
+                        if(e.getSource()==variableG) {
+                            varG=variableG.getSelectedItem().equals(" x ")?blackBoard.x:blackBoard.y;
+                            varG_isX=varG==blackBoard.x;
+                        }
+                    }
+                });
+                this.variableG.addItem(" x ");
+                this.variableG.addItem(" y ");
+
+                this.operateur.addItemListener(new ItemListener(){
+                    public void itemStateChanged(ItemEvent e){
+                        if(e.getSource()==operateur) op=(String)operateur.getSelectedItem();
+                    }
+                });
+                String[] tmpOp={" <", " >", " <=", " >=", " =="};
+                for(String s : tmpOp) this.operateur.addItem(s);
+
+                this.add(variableG);
+                this.add(operateur);
+                this.add(variableD);
+                this.add(new JLabel("  "));//pour la presentation
+            }
+
+            boolean evaluate(String op){
+            	switch(op){
+            	case " <":
+                    return this.varG<this.varD;
+            	case " <=":
+                    return this.varG<=this.varD;
+            	case " >":
+                    return this.varG>this.varD;
+            	case " >=":
+                    return this.varG>=this.varD;
+            	case " ==":
+                    return this.varG==this.varD;
+            	}
+            	return false;
+            }
+            
+            boolean canExecute(){
+                int i=variableD.getText().length();
+                if(i==0) variableD.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                else variableD.setBorder(null);
+                return super.canExecute() && i!=0;
+            }
+
+            void execute(boolean executeNext){
+            	int varG_initial=varG;
+            	this.varD=Integer.parseInt(this.variableD.getText());
+            	int limit=99999;//pour simuler la terminaison
+            	while(evaluate(this.op) && limit>0) {
+            		super.execute(false);
+            		this.varG=varG_isX?blackBoard.x:blackBoard.y;
+            		limit--;
+            	}
+            	if(limit==0) error(true);//si la terminaison a du etre simulee
+            	else {
+            		error(false);
+            		this.hookH.execute(true);
+            	}
+                this.varG=varG_initial;
+            }
+            
+            private void error(boolean b) {
+            	if(b) {
+            		this.setBorder(BorderFactory.createLineBorder(Color.RED, 2));
+            		Command n=this.next;
+            		while(!(n instanceof HookHorizontal)) {
+            			n.setBorder(BorderFactory.createLineBorder(Color.RED, 1));
+            			n=n.next;
+            		}
+            		this.hookH.setBorder(BorderFactory.createLineBorder(Color.RED, 2));
+            		this.hookV.setBorder(BorderFactory.createLineBorder(Color.RED, 2));
+            	}
+            	else {
+            		this.setBorder(BorderFactory.createLineBorder(Color.RED, 0));
+            		Command n=this.next;
+            		while(!(n instanceof HookHorizontal)) {
+            			n.setBorder(BorderFactory.createLineBorder(Color.RED, 0));
+            			n=n.next;
+            		}
+            		this.hookH.setBorder(BorderFactory.createLineBorder(Color.RED, 0));
+            		this.hookV.setBorder(BorderFactory.createLineBorder(Color.RED, 0));
+            	}
+            }
+        }//fin classe interne While
         
         
         class CommandFunctionInit extends CommandWithCommands implements MouseListener{
