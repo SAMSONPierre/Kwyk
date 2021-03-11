@@ -167,9 +167,11 @@ public class Control implements Serializable{
         Rectangle screenRect=new Rectangle(tmp.getX()+tmp.getInsets().left+20,
                 tmp.getY()+tmp.getInsets().top+tmp.buttonHeight+20, 400, 400);
         BufferedImage capture;
+        File[] arrayLevels=((ViewGame)view).nombreNiveau("levels/training/1Tutoriel/");
+        int cpt = arrayLevels.length;
         try{
             capture=new Robot().createScreenCapture(screenRect);
-            ImageIO.write(capture, "png", new File("preview/challenge/"+name+".png"));
+            ImageIO.write(capture, "png", new File("preview/training/1Tutoriel/"+cpt+"- "+name+".png"));
         }
         catch(Exception e){
             e.printStackTrace();
@@ -177,7 +179,7 @@ public class Control implements Serializable{
     	Level newLvl=new Level(model.getPlayer(),level.brushX,level.brushY,level.brushAngle,
             level.brushFirstColor,numberOfCommands,name,commandsAvailable,newPattern);
     	try{
-            String saveFile="levels/challenge/"+name+".lvl";
+            String saveFile="levels/training/1Tutoriel/"+cpt+"- "+name+".lvl";
             File file=new File(saveFile);
             ObjectOutputStream oos=new ObjectOutputStream(new FileOutputStream(file));
             oos.writeObject(newLvl);
