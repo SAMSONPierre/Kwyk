@@ -36,8 +36,8 @@ public class Level implements Serializable{
         this.numberOfFunctions=-1;
         this.numberOfVariables=-1;
         this.name="editor";
-        String[] c={"for", "if", "drawLine", "drawArc", "raisePutBrush", "moveTo",
-            "setAngle", "addAngle", "setColor", "shiftColor"};
+        String[] c={"for", "if", "while", "drawLine", "drawArc", "raisePutBrush",
+            "moveTo", "setAngle", "addAngle", "setColor", "shiftColor"};
         this.availableCommands=c;
         this.pattern=new LinkedList<Vector>();
     }
@@ -51,8 +51,8 @@ public class Level implements Serializable{
         this.numberOfFunctions=-1;
         this.numberOfVariables=-1;
         this.name="GMVersion";
-        String[] c={"for", "if", "drawLine", "drawArc", "raisePutBrush", "moveTo",
-            "setAngle", "addAngle", "setColor", "shiftColor"};
+        String[] c={"for", "if", "while", "drawLine", "drawArc", "raisePutBrush",
+            "moveTo", "setAngle", "addAngle", "setColor", "shiftColor"};
         this.availableCommands=c;
         this.pattern=new LinkedList<Vector>();
     }

@@ -11,6 +11,8 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -100,14 +102,6 @@ public class ViewPlaying extends ViewGame{
             limite.setStringPainted(true);
             features.add(limite);
         }
-        
-        //---que pour le test, a supprimer une fois le sommaire fonctionnel---
-        /*JButton load=new JButton("Load");
-        load.addActionListener((event)->{
-            String name=JOptionPane.showInputDialog(this,"Level's name ?", null);	
-            super.control.load(name);
-        });
-        features.add(load);*/
     }
     
     void run(){
@@ -252,18 +246,20 @@ public class ViewPlaying extends ViewGame{
     *     DragDropBoard     *
     ************************/
     
-    public class PanelDragDropBoard extends JPanel{
+    public class PanelDragDropBoard extends JPanel implements MouseWheelListener{
         final int x00, y00, width, height;//position initiale, largeur, hauteur du panel
         private LinkedList<Command> commands=new LinkedList<Command>();//liste de commandes ayant ete drag sur whiteBoard
         private int lastPositionY=20;//emplacement vertical des commandes
+        private int deltaY=0;//mouvement de la roulette pour regeneration des commandes
         private int[] numberOfFV=new int[2];//fonction, varibale
         private Bin bin;
-
+        
         PanelDragDropBoard() throws IOException{
             this.x00=440;
             this.y00=20+buttonHeight+ViewPlaying.this.getInsets().top;
             width=widthFS-460;//460=3 marges de colonne + taille blackBoard
             height=heightFS-40-buttonHeight;//40=marges haut+bas
+            this.setBorder(BorderFactory.createLineBorder(Color.BLACK, 3));
             this.setLayout(null);
             this.setBounds(x00, y00-ViewPlaying.this.getInsets().top, width, height);
             
@@ -271,6 +267,7 @@ public class ViewPlaying extends ViewGame{
             this.add(bin);
             this.setFunctionVariableButton();
             this.addAvailableCommands();
+            this.addMouseWheelListener(this);
         }
         
         void setFunctionVariableButton(){
@@ -309,17 +306,31 @@ public class ViewPlaying extends ViewGame{
         protected void paintComponent(Graphics g){
             super.paintComponent(g);
             Graphics2D g2 = (Graphics2D) g;
-
+            
             //WhiteBoard a gauche
             g2.setColor(Color.WHITE);
             g2.fillRect(0, 0, width/2, height);
-            g2.setColor(Color.BLACK);
-            g2.setStroke(new BasicStroke(3));
-            g2.drawRect(1, 1, width-3, height-3);//contour du whiteBoard
-
+            
             //CommandBoard a droite
             g2.setColor(Color.LIGHT_GRAY);
             g2.fillRect(width, 0, width/2, height);
+        }
+
+        public void mouseWheelMoved(MouseWheelEvent e){
+            int addToY=(e.getWheelRotation()<0?1:-1)*e.getScrollAmount()*10;
+            if(e.getX()<this.getX()+width/2-x00){//whiteBoard
+                for(Component c : ViewPlaying.this.dragDrop.getComponents()){
+                    if(commands.contains(c) && c instanceof Command && !(c instanceof HookHorizontal))
+                        c.setLocation(c.getX(), c.getY()+addToY);
+                }
+            }
+            else{//commandBoard
+                deltaY+=addToY;
+                for(Component c : ViewPlaying.this.dragDrop.getComponents()){
+                    if(!commands.contains(c) && c instanceof Command && !(c instanceof HookHorizontal))
+                        c.setLocation(c.getX(), c.getY()+addToY);
+                }
+            }
         }
         
         
@@ -371,6 +382,13 @@ public class ViewPlaying extends ViewGame{
                     this.add(ifC.hookV);
                     this.add(ifC.hookH);
                     res+=ifC.getHeight()+ifC.hookV.getHeight()+ifC.hookH.getHeight();
+                    break;
+                case "while":
+                    CommandWhile whileC=new CommandWhile(width/2+20, positionY);
+                    this.add(whileC);
+                    this.add(whileC.hookV);
+                    this.add(whileC.hookH);
+                    res+=whileC.getHeight()+whileC.hookV.getHeight()+whileC.hookH.getHeight();
                     break;
                 case "drawLine":
                     CommandDrawLine drawLineC=new CommandDrawLine(width/2+20, positionY);
@@ -455,7 +473,7 @@ public class ViewPlaying extends ViewGame{
             return res;
         }
         
-        int getMaxVariables(){
+        int getMaxVariables(){//a decommenter quand variable au point
             int res=0;
             LinkedList<String> variables=new LinkedList<String>();
             Command tmp=this.commands.getFirst().next;//deuxieme commande du code du joueur
@@ -552,11 +570,11 @@ public class ViewPlaying extends ViewGame{
 
         abstract class Command extends JPanel implements MouseInputListener{
             final String name;//if, else, for, while, ...
-            private Color color;
+            final Color color;
             final int commandH=35, commandW=70, positionY;//hauteur d une commande, largeur par defaut de hookH
             protected Command next, previous;//next a executer, previous pour ajuster l affichage
             private int mouseX, mouseY;//position initiale de la souris au moment du drag
-            private boolean isDragging, brighter;//drag ; a allumer -> default=false
+            private boolean brighter;//a allumer -> default=false
             
             Command(String name, Color color, int positionY){
                 this.name=name;
@@ -603,9 +621,11 @@ public class ViewPlaying extends ViewGame{
             
             boolean toDelete(){//quand pres de la poubelle
                 if(!(this instanceof CommandFunctionInit)){//ne supprime pas initialisateur de fonction
-                    int distanceH=bin.getLocation().y-bin.getHeight()-this.getLocation().y;
-                    int distanceW=bin.getLocation().x-this.getLocation().x;
-                    return distanceH>-70 && distanceH<15 && distanceW>-this.getWidth()/3 && distanceW<this.getWidth();
+                    if(bin.getLocation().y>getLocation().y+getHeight()) return false;
+                    if(bin.getLocation().y+bin.getHeight()<getLocation().y) return false;
+                    if(bin.getLocation().x>getLocation().x+getWidth()) return false;
+                    if(bin.getLocation().x+bin.getWidth()<getLocation().x) return false;
+                    return true;
                 }
                 return false;
             }
@@ -837,16 +857,15 @@ public class ViewPlaying extends ViewGame{
                 }
                 return res;
             }
+            
+            public void mousePressed(MouseEvent e){
+                unStick();//detache si a un precedent
+                mouseX=e.getX();//position initiale de souris
+                mouseY=e.getY();
+                this.setToForeground();//mettre ce qu on drag a l avant-plan
+            }
 
             public void mouseDragged(MouseEvent e){
-                if(!isDragging){//ce qu on fait au premier click
-                    unStick();//detache si a un precedent
-                    mouseX=e.getX();//position initiale de souris
-                    mouseY=e.getY();
-                    isDragging=true;
-                    this.setToForeground();//mettre ce qu on drag a l avant-plan
-                }
-                
                 //drag this et ses next
                 int x=e.getXOnScreen()-x00-mouseX-ViewPlaying.this.getX();
                 int y=e.getYOnScreen()-y00-mouseY-ViewPlaying.this.getY();
@@ -872,7 +891,6 @@ public class ViewPlaying extends ViewGame{
             }
 
             public void mouseReleased(MouseEvent e){
-                isDragging=false;
                 switchOff();//eteint tout
                 try{
                     if(this.toDelete()){
@@ -894,7 +912,6 @@ public class ViewPlaying extends ViewGame{
             }
             
             public void mouseMoved(MouseEvent e){}
-            public void mousePressed(MouseEvent e){}
             public void mouseClicked(MouseEvent e){//pour verification, a enlever apres
                 //if(this.canExecute()) this.execute(true);
                 System.out.println(getNumberFromThis());
@@ -942,7 +959,7 @@ public class ViewPlaying extends ViewGame{
                 this.function=function;
                 initializeDisplay();
                 this.add(name2);
-                this.setBounds(x, y, getPreferredSize().width, commandH);
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
             void initializeDisplay(){
@@ -991,8 +1008,8 @@ public class ViewPlaying extends ViewGame{
             
             CommandWithCommands(String name, Color color, int x, int y){
                 super(name, color, y);
-                hookV=new HookVertical(color, commandH, x, y+commandH);//apres la commande
-                hookH=new HookHorizontal(color, x, y+2*commandH);//apres hookV
+                hookV=new HookVertical(color, commandH, x, y+commandH+deltaY);//apres la commande
+                hookH=new HookHorizontal(color, x, y+2*commandH+deltaY);//apres hookV
                 this.next=hookH;
                 hookH.previous=this;
             }
@@ -1084,7 +1101,7 @@ public class ViewPlaying extends ViewGame{
             CommandFor(int x, int y){
                 super("for", Color.ORANGE.darker(), x, y);
                 initializeDisplay();
-                this.setBounds(x, y, getPreferredSize().width, commandH);
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
             void initializeDisplay(){
@@ -1119,7 +1136,7 @@ public class ViewPlaying extends ViewGame{
             CommandIf(int x, int y){
                 super("if", Color.PINK.darker(), x, y);
                 initializeDisplay();
-                this.setBounds(x, y, getPreferredSize().width, commandH);
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
             void initializeDisplay(){
@@ -1179,6 +1196,103 @@ public class ViewPlaying extends ViewGame{
         }//fin classe interne If
         
         
+        class CommandWhile extends CommandWithCommands{//classe interne
+            private JComboBox variableG=new JComboBox();
+            private JComboBox operateur=new JComboBox();
+            private JTextField variableD=new JTextField(3);
+            private String op="<";
+            private int varG=blackBoard.x, varD;
+            private boolean varG_isX=true;//par defaut ; pour savoir quelle valeur devra etre actualisee
+            
+            CommandWhile(int x, int y){
+                super("while", Color.YELLOW.darker(), x, y);
+                initializeDisplay();
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+            }
+            
+            void initializeDisplay(){
+                this.add(new JLabel("  While  "));
+
+                this.variableG.addItemListener(new ItemListener(){
+                    public void itemStateChanged(ItemEvent e){
+                        if(e.getSource()==variableG) {
+                            varG=variableG.getSelectedItem().equals(" x ")?blackBoard.x:blackBoard.y;
+                            varG_isX=varG==blackBoard.x;
+                        }
+                    }
+                });
+                this.variableG.addItem(" x ");
+                this.variableG.addItem(" y ");
+
+                this.operateur.addItemListener(new ItemListener(){
+                    public void itemStateChanged(ItemEvent e){
+                        if(e.getSource()==operateur) op=(String)operateur.getSelectedItem();
+                    }
+                });
+                String[] tmpOp={" <", " >", " <=", " >=", " =="};
+                for(String s : tmpOp) this.operateur.addItem(s);
+
+                this.add(variableG);
+                this.add(operateur);
+                this.add(variableD);
+                this.add(new JLabel("  "));//pour la presentation
+            }
+
+            boolean evaluate(String op){
+            	switch(op){
+            	case " <":
+                    return this.varG<this.varD;
+            	case " <=":
+                    return this.varG<=this.varD;
+            	case " >":
+                    return this.varG>this.varD;
+            	case " >=":
+                    return this.varG>=this.varD;
+            	case " ==":
+                    return this.varG==this.varD;
+            	}
+            	return false;
+            }
+            
+            boolean canExecute(){
+                int i=variableD.getText().length();
+                if(i==0) variableD.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                else variableD.setBorder(null);
+                return super.canExecute() && i!=0;
+            }
+
+            void execute(boolean executeNext){
+            	int varG_initial=varG;
+            	this.varD=Integer.parseInt(this.variableD.getText());
+            	int limit=2;//pour simuler la terminaison
+            	while(evaluate(this.op) && limit>0){
+                    super.execute(false);
+                    this.varG=varG_isX?blackBoard.x:blackBoard.y;
+                    limit--;
+            	}
+            	if(limit==0) error(true);//si la terminaison a du etre simulee
+            	else{
+                    error(false);
+                    this.hookH.execute(true);
+            	}
+                this.varG=varG_initial;
+            }
+            
+            private void error(boolean b){
+            	if(b){
+                    this.setBackground(Color.RED.darker());
+                    this.hookH.setBackground(Color.RED.darker());
+                    this.hookV.setBackground(Color.RED.darker());
+            	}
+            	else{
+                    this.setBackground(color);
+                    this.hookH.setBackground(color);
+                    this.hookV.setBackground(color);
+            	}
+            }
+        }//fin classe interne While
+        
+        
         class CommandFunctionInit extends CommandWithCommands implements MouseListener{
             protected JLabel nameFunction;
             private CustomJButton changeName=new CustomJButton("", null, true);//pop up pour changer
@@ -1188,7 +1302,7 @@ public class ViewPlaying extends ViewGame{
                 super(name, new Color(212, 115, 212), x, y);
                 nameFunction=new JLabel("  "+name2+"  ");
                 initializeDisplay();
-                this.setBounds(x, y, getPreferredSize().width, commandH);
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
             void initializeDisplay(){
@@ -1241,7 +1355,7 @@ public class ViewPlaying extends ViewGame{
             CommandDrawLine(int x, int y){
                 super("drawLine", Color.CYAN.darker(), y);
                 initializeDisplay();
-                this.setBounds(x, y, getPreferredSize().width, commandH);
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
             void initializeDisplay(){
@@ -1288,7 +1402,7 @@ public class ViewPlaying extends ViewGame{
             CommandDrawArc(int x, int y){
                 super("drawArc", Color.CYAN.darker(), y);
                 initializeDisplay();
-                this.setBounds(x, y, getPreferredSize().width, commandH);
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
             void initializeDisplay(){
@@ -1358,7 +1472,7 @@ public class ViewPlaying extends ViewGame{
             CommandRaisePutBrush(int x, int y){
                 super("raisePutBrush", Color.LIGHT_GRAY.darker(), y);
                 initializeDisplay();
-                this.setBounds(x, y, getPreferredSize().width, commandH);
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
             void initializeDisplay(){
@@ -1394,7 +1508,7 @@ public class ViewPlaying extends ViewGame{
             CommandSetAngle(int x, int y){
                 super("setAngle", Color.LIGHT_GRAY.darker(), y);
                 initializeDisplay();
-                this.setBounds(x, y, getPreferredSize().width, commandH);
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
             void initializeDisplay(){
@@ -1427,7 +1541,7 @@ public class ViewPlaying extends ViewGame{
             CommandSetColor(int x, int y){
                 super("setColor", Color.LIGHT_GRAY.darker(), y);
                 initializeDisplay();
-                this.setBounds(x, y, getPreferredSize().width+5, commandH);
+                this.setBounds(x, y+deltaY, getPreferredSize().width+5, commandH);
             }
             
             void initializeDisplay(){
@@ -1492,7 +1606,7 @@ public class ViewPlaying extends ViewGame{
             CommandMoveTo(int x, int y){
                 super("moveTo", Color.LIGHT_GRAY.darker(), y);
                 initializeDisplay();
-                this.setBounds(x, y, getPreferredSize().width, commandH);
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
             void initializeDisplay(){
@@ -1529,7 +1643,7 @@ public class ViewPlaying extends ViewGame{
             CommandAddAngle(int x, int y){
                 super("addAngle", Color.LIGHT_GRAY.darker(), y);
                 initializeDisplay();
-                this.setBounds(x, y, getPreferredSize().width, commandH);
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
             void initializeDisplay(){
@@ -1561,7 +1675,7 @@ public class ViewPlaying extends ViewGame{
             CommandShiftColor(int x, int y){
                 super("shiftColor", Color.LIGHT_GRAY.darker(), y);
                 initializeDisplay();
-                this.setBounds(x, y, getPreferredSize().width, commandH);
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
             void initializeDisplay(){
