@@ -152,8 +152,7 @@ public class ViewPlaying extends ViewGame{
     public class PanelBlackBoard extends JPanel{
         protected boolean gridApparent=true;//par defaut, on voit la grille
         private Brush brush=new Brush();//fleche vide
-        private int x, y;//par defaut a (0,0)==coin superieur gauche de blackBoard
-        private int angle;//par defaut, orientee "->" (angle 0° sur le cercle trigo)
+        private int x, y, angle;//par defaut (0,0) et orientee "->" (angle 0° sur le cercle trigo)
         private Color brushColor;
         private boolean drawing=true;//pinceau posé par defaut
 
@@ -249,8 +248,7 @@ public class ViewPlaying extends ViewGame{
     public class PanelDragDropBoard extends JPanel implements MouseWheelListener{
         final int x00, y00, width, height;//position initiale, largeur, hauteur du panel
         private LinkedList<Command> commands=new LinkedList<Command>();//liste de commandes ayant ete drag sur whiteBoard
-        private int lastPositionY=20;//emplacement vertical des commandes
-        private int deltaY=0;//mouvement de la roulette pour regeneration des commandes
+        private int lastPositionY=20, deltaY=0;//emplacement vertical des commandes, mouvement de la roulette
         private int[] numberOfFV=new int[2];//fonction, varibale
         private Bin bin;
         
@@ -262,12 +260,12 @@ public class ViewPlaying extends ViewGame{
             this.setBorder(BorderFactory.createLineBorder(Color.BLACK, 3));
             this.setLayout(null);
             this.setBounds(x00, y00-ViewPlaying.this.getInsets().top, width, height);
+            this.addMouseWheelListener(this);
             
             this.bin=new Bin();
             this.add(bin);
             this.setFunctionVariableButton();
             this.addAvailableCommands();
-            this.addMouseWheelListener(this);
         }
         
         void setFunctionVariableButton(){
@@ -1126,8 +1124,7 @@ public class ViewPlaying extends ViewGame{
 
 
         class CommandIf extends CommandWithCommands{//classe interne
-            private JComboBox variableG=new JComboBox();
-            private JComboBox operateur=new JComboBox();//a priori seulement deux listes deroulantes
+            private JComboBox variableG=new JComboBox(), operateur=new JComboBox();//a priori seulement deux listes deroulantes
             private JTextField variableD=new JTextField(3);//choix libre du joueur donc pas une liste
             private String op="<";//par defaut
             private int varG=blackBoard.x, varD;
@@ -1197,8 +1194,7 @@ public class ViewPlaying extends ViewGame{
         
         
         class CommandWhile extends CommandWithCommands{//classe interne
-            private JComboBox variableG=new JComboBox();
-            private JComboBox operateur=new JComboBox();
+            private JComboBox variableG=new JComboBox(), operateur=new JComboBox();
             private JTextField variableD=new JTextField(3);
             private String op="<";
             private int varG=blackBoard.x, varD;
@@ -1395,7 +1391,7 @@ public class ViewPlaying extends ViewGame{
 
 
         class CommandDrawArc extends Command{//classe interne
-            private JTextField radius=new JTextField(3),angleScan=new JTextField(3);//hauteur==largeur, angle scane
+            private JTextField radius=new JTextField(3), angleScan=new JTextField(3);//hauteur==largeur, angle scane
             private JComboBox rightLeft=new JComboBox();
             private int sens=1;//1=gauche, -1=droite
             
