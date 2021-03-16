@@ -1142,11 +1142,12 @@ public class ViewPlaying extends ViewGame{
                 this.variableG.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
                         if(e.getSource()==variableG)
-                            varG=variableG.getSelectedItem().equals(" x ")?blackBoard.x:blackBoard.y;
+                            varG=variableG.getSelectedItem().equals(" x ")?blackBoard.x:variableG.getSelectedItem().equals(" y ")?blackBoard.y:blackBoard.angle;
                     }
                 });
                 this.variableG.addItem(" x ");
                 this.variableG.addItem(" y ");
+                this.variableG.addItem("Angle");
 
                 this.operateur.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
@@ -1198,7 +1199,7 @@ public class ViewPlaying extends ViewGame{
             private JTextField variableD=new JTextField(3);
             private String op="<";
             private int varG=blackBoard.x, varD;
-            private boolean varG_isX=true;//par defaut ; pour savoir quelle valeur devra etre actualisee
+            private int whatIsVarG=0;//pour savoir quelle valeur devra etre actualisee ; x<=>0, y<=>1, angle<=>2
             
             CommandWhile(int x, int y){
                 super("while", Color.YELLOW.darker(), x, y);
@@ -1212,13 +1213,14 @@ public class ViewPlaying extends ViewGame{
                 this.variableG.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
                         if(e.getSource()==variableG) {
-                            varG=variableG.getSelectedItem().equals(" x ")?blackBoard.x:blackBoard.y;
-                            varG_isX=varG==blackBoard.x;
+                            varG=variableG.getSelectedItem().equals(" x ")?blackBoard.x:variableG.getSelectedItem().equals(" y ")?blackBoard.y:blackBoard.angle;
+                            whatIsVarG=variableG.getSelectedItem().equals(" x ")?0:variableG.getSelectedItem().equals(" y ")?1:2;
                         }
                     }
                 });
                 this.variableG.addItem(" x ");
                 this.variableG.addItem(" y ");
+                this.variableG.addItem("Angle");
 
                 this.operateur.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
@@ -1260,10 +1262,10 @@ public class ViewPlaying extends ViewGame{
             void execute(boolean executeNext){
             	int varG_initial=varG;
             	this.varD=Integer.parseInt(this.variableD.getText());
-            	int limit=2;//pour simuler la terminaison
+            	int limit=3000;//pour simuler la terminaison
             	while(evaluate(this.op) && limit>0){
                     super.execute(false);
-                    this.varG=varG_isX?blackBoard.x:blackBoard.y;
+                    this.varG=whatIsVarG==0?blackBoard.x:whatIsVarG==1?blackBoard.y:blackBoard.angle;
                     limit--;
             	}
             	if(limit==0) error(true);//si la terminaison a du etre simulee
