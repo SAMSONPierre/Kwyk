@@ -7,6 +7,8 @@ import java.awt.Graphics2D;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseEvent;
@@ -25,12 +27,15 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JLayeredPane;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
+import javax.swing.OverlayLayout;
+import javax.swing.RepaintManager;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
@@ -349,6 +354,10 @@ public class ViewPlaying extends ViewGame{
                 }
             }
         }
+            
+        public boolean isOptimizedDrawingEnabled(){
+            return false;
+        }
         
         
         /********************
@@ -597,7 +606,12 @@ public class ViewPlaying extends ViewGame{
                 this.addMouseListener(this);
             }
             
-            abstract boolean canExecute();
+            boolean canExecute(){//pour les commandes!=CWC qui ont exactement un NumberField
+                boolean isEmpty=input.isEmpty();
+                if(isEmpty) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                else input.setBorder(numberOfFV[1]==0?null:fields.getFirst().border);
+                return !isEmpty;
+            }
             abstract void execute(boolean executeNext);//chaque fonction les implemente
             
             
@@ -867,6 +881,7 @@ public class ViewPlaying extends ViewGame{
                     brightC=null;
                 }
             }
+            
 
             /*****************
             * Mouse Override *
@@ -1041,8 +1056,11 @@ public class ViewPlaying extends ViewGame{
             }
             
             boolean canExecute(){//ne peut pas etre vide
+                boolean isEmpty=input.isEmpty();
+                if(isEmpty) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                else input.setBorder(numberOfFV[1]==0?null:fields.getFirst().border);
                 if(this.next==this.hookH) return false;
-                return true;
+                return !isEmpty;
             }
             
             void execute(boolean executeNext){
@@ -1128,13 +1146,6 @@ public class ViewPlaying extends ViewGame{
                 this.add(new JLabel("  time  "));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
-            
-            boolean canExecute(){
-                int i=input.getText().length();
-                if(i==0) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                else input.setBorder(null);
-                return super.canExecute() && i!=0;
-            }
 
             void execute(boolean executeNext){
                 for(int i=0; i<input.getNumber(); i++) super.execute(false);
@@ -1143,7 +1154,7 @@ public class ViewPlaying extends ViewGame{
         }//fin classe interne For
 
 
-        class CommandIf extends CommandWithCommands{//classe interne
+        class CommandIf extends CommandWithCommands implements ActionListener{//classe interne
             private JComboBox variableG=new JComboBox(), operateur=new JComboBox();//a priori seulement deux listes deroulantes
             private String op="<";//par defaut
             private int varG=blackBoard.x;
@@ -1153,19 +1164,13 @@ public class ViewPlaying extends ViewGame{
                 super("if", new Color(179, 0, 89), x, y);
                 super.input=new NumberField(this);//choix libre du joueur donc pas une liste
                 
-                this.variableG.addItemListener(new ItemListener(){
-                    public void itemStateChanged(ItemEvent e){
-                        if(e.getSource()==variableG)
-                            varG=variableG.getSelectedItem().equals("  x")?blackBoard.x:variableG.getSelectedItem().equals("  y")?blackBoard.y:blackBoard.angle;
-                    }
-                });
-                this.variableG.addItem("  x");
-                this.variableG.addItem("  y");
-                this.variableG.addItem(" angle");
+                this.variableG.addActionListener(this);
+                String[] tmp={"  x", "  y", " angle"};
+                for(String s : tmp) variableG.addItem(s);
 
                 this.operateur.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
-                        if(e.getSource()==operateur) op=(String)operateur.getSelectedItem();
+                        op=(String)operateur.getSelectedItem();
                     }
                 });
                 String[] tmpOp={"  <", "  >", " <=", " >=", " =="};
@@ -1178,6 +1183,10 @@ public class ViewPlaying extends ViewGame{
                 this.add(new JLabel("  "));//pour la presentation
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
+            
+            public void actionPerformed(ActionEvent e){
+                varG=variableG.getSelectedItem().equals("  x")?blackBoard.x:variableG.getSelectedItem().equals("  y")?blackBoard.y:blackBoard.angle;
+            }
 
             boolean evaluate(String op){
             	switch(op){
@@ -1189,13 +1198,6 @@ public class ViewPlaying extends ViewGame{
             	}
             	return false;
             }
-            
-            boolean canExecute(){
-                int i=input.getText().length();
-                if(i==0) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                else input.setBorder(null);
-                return super.canExecute() && i!=0;
-            }
 
             void execute(boolean executeNext){
             	if(evaluate(this.op)) super.execute(false);//execute Command apres hookH
@@ -1204,30 +1206,22 @@ public class ViewPlaying extends ViewGame{
         }//fin classe interne If
         
         
-        class CommandWhile extends CommandWithCommands{//classe interne
+        class CommandWhile extends CommandWithCommands implements ActionListener{//classe interne
             private JComboBox variableG=new JComboBox(), operateur=new JComboBox();
             private String op="<";
-            private int varG=blackBoard.x, whatIsVarG=0;//pour savoir quelle valeur devra etre actualisee ; x<=>0, y<=>1, angle<=>2
+            private int varG, whatIsVarG=0;//pour savoir quelle valeur devra etre actualisee ; x<=>0, y<=>1, angle<=>2
             
             CommandWhile(int x, int y){
                 super("while", new Color(204, 102, 102), x, y);
                 super.input=new NumberField(this);
 
-                this.variableG.addItemListener(new ItemListener(){
-                    public void itemStateChanged(ItemEvent e){
-                        if(e.getSource()==variableG) {
-                            varG=variableG.getSelectedItem().equals("  x")?blackBoard.x:variableG.getSelectedItem().equals("  y")?blackBoard.y:blackBoard.angle;
-                            whatIsVarG=variableG.getSelectedItem().equals("  x")?0:variableG.getSelectedItem().equals("  y")?1:2;
-                        }
-                    }
-                });
-                this.variableG.addItem("  x");
-                this.variableG.addItem("  y");
-                this.variableG.addItem(" angle");
+                this.variableG.addActionListener(this);
+                String[] tmp={"  x", "  y", " angle"};
+                for(String s : tmp) variableG.addItem(s);
 
                 this.operateur.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
-                        if(e.getSource()==operateur) op=(String)operateur.getSelectedItem();
+                        op=(String)operateur.getSelectedItem();
                     }
                 });
                 String[] tmpOp={"  <", "  >", " <=", " >=", " =="};
@@ -1240,6 +1234,11 @@ public class ViewPlaying extends ViewGame{
                 this.add(new JLabel("  "));//pour la presentation
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
+            
+            public void actionPerformed(ActionEvent e){
+                whatIsVarG=variableG.getSelectedItem().equals("  x")?0:
+                           variableG.getSelectedItem().equals("  y")?1:2;
+            }
 
             boolean evaluate(String op){
             	switch(op){
@@ -1251,20 +1250,13 @@ public class ViewPlaying extends ViewGame{
             	}
             	return false;
             }
-            
-            boolean canExecute(){
-                int i=input.getText().length();
-                if(i==0) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                else input.setBorder(null);
-                return super.canExecute() && i!=0;
-            }
 
             void execute(boolean executeNext){
-            	int varG_initial=varG;
+                varG=whatIsVarG==0?blackBoard.x:whatIsVarG==1?blackBoard.y:blackBoard.angle;
             	int limit=3000;//pour simuler la terminaison
             	while(evaluate(this.op) && limit>0){
                     super.execute(false);
-                    this.varG=whatIsVarG==0?blackBoard.x:whatIsVarG==1?blackBoard.y:blackBoard.angle;
+                    varG=whatIsVarG==0?blackBoard.x:whatIsVarG==1?blackBoard.y:blackBoard.angle;
                     limit--;
             	}
             	if(limit==0) error(true);//si la terminaison a du etre simulee
@@ -1272,7 +1264,6 @@ public class ViewPlaying extends ViewGame{
                     error(false);
                     this.hookH.execute(true);
             	}
-                this.varG=varG_initial;
             }
             
             private void error(boolean b){
@@ -1337,7 +1328,6 @@ public class ViewPlaying extends ViewGame{
         *****************/
 
         class CommandDrawLine extends Command{//classe interne
-
             CommandDrawLine(int x, int y){
                 super("drawLine", Color.CYAN.darker(), y);
                 super.input=new NumberField(this);
@@ -1346,13 +1336,6 @@ public class ViewPlaying extends ViewGame{
                 this.add(input);
                 this.add(new JLabel("  "));//pour la presentation
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
-            }
-            
-            boolean canExecute(){
-                int i=input.getText().length();
-                if(i==0) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                else input.setBorder(null);
-                return i!=0;
             }
 
             void execute(boolean executeNext){
@@ -1406,13 +1389,16 @@ public class ViewPlaying extends ViewGame{
             }
             
             boolean canExecute(){
-                int r=input.getText().length();
-                if(r==0) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                else input.setBorder(null);
-                int a=angleScan.getText().length();
-                if(a==0) angleScan.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                else angleScan.setBorder(null);
-                return r!=0 && a!=0;
+                boolean isEmpty=input.isEmpty() || angleScan.isEmpty();
+                if(isEmpty){
+                    if(input.isEmpty()) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                    if(angleScan.isEmpty()) angleScan.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                }
+                else{
+                    input.setBorder(numberOfFV[1]==0?null:fields.getFirst().border);
+                    angleScan.setBorder(numberOfFV[1]==0?null:fields.getFirst().border);
+                }
+                return !isEmpty;
             }
 
             void execute(boolean executeNext){
@@ -1489,13 +1475,6 @@ public class ViewPlaying extends ViewGame{
                 this.add(new JLabel("  "));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
-            
-            boolean canExecute(){
-                int a=input.getText().length();
-                if(a==0) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                else input.setBorder(null);
-                return a!=0;
-            }
 
             void execute(boolean executeNext){
                 blackBoard.angle=input.getNumber();
@@ -1516,12 +1495,10 @@ public class ViewPlaying extends ViewGame{
                 
                 colorChoice.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
-                        if(e.getStateChange()==ItemEvent.SELECTED){
-                            for(int i=0; i<7; i++){
-                                if(palette[i].equals(colorChoice.getSelectedItem())){
-                                    colorRes=palette[i];
-                                    return;
-                                }
+                        for(int i=0; i<7; i++){
+                            if(palette[i].equals(colorChoice.getSelectedItem())){
+                                colorRes=palette[i];
+                                return;
                             }
                         }
                     }
@@ -1585,13 +1562,16 @@ public class ViewPlaying extends ViewGame{
             }
             
             boolean canExecute(){
-                int x=input.getText().length();
-                if(x==0) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                else input.setBorder(null);
-                int y=positionY.getText().length();
-                if(y==0) positionY.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                else positionY.setBorder(null);
-                return x!=0 && y!=0;
+                boolean isEmpty=input.isEmpty() || positionY.isEmpty();
+                if(isEmpty){
+                    if(input.isEmpty()) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                    if(positionY.isEmpty()) positionY.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                }
+                else{
+                    input.setBorder(numberOfFV[1]==0?null:fields.getFirst().border);
+                    positionY.setBorder(numberOfFV[1]==0?null:fields.getFirst().border);
+                }
+                return !isEmpty;
             }
 
             void execute(boolean executeNext){
@@ -1613,13 +1593,6 @@ public class ViewPlaying extends ViewGame{
                 this.add(input);
                 this.add(new JLabel("  to angle  "));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
-            }
-            
-            boolean canExecute(){
-                int a=input.getText().length();
-                if(a==0) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                else input.setBorder(null);
-                return a!=0;
             }
 
             void execute(boolean executeNext){
@@ -1643,13 +1616,6 @@ public class ViewPlaying extends ViewGame{
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
-            boolean canExecute(){
-                int n=input.getText().length();
-                if(n==0) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                else input.setBorder(null);
-                return n!=0;
-            }
-            
             int regularize(int n){
                 if(n>255) return 255;
                 if(n<0) return 0;
@@ -1670,24 +1636,28 @@ public class ViewPlaying extends ViewGame{
         }//fin de classe interne shiftColor
 
 
-        class CommandAddition extends Command{//classe interne
-            NumberField add=new NumberField(this);
+        class CommandAddition extends Command implements ActionListener{//classe interne
+            String[] tmp={"x", "y"};
+            private JComboBox choice=new JComboBox(tmp);
+            private int toAdd=0;
+            private NumberField add=new NumberField(this);
             
             CommandAddition(int x, int y){
                 super("addition", Color.LIGHT_GRAY.darker(), y);
                 super.input=new NumberField(this);
                 
+                choice.addActionListener(this);
+                
                 this.add(new JLabel("  "));//presentation
-                this.add(input);
+                this.add(choice);
                 this.add(new JLabel("  +  "));
-                this.add(add);
+                this.add(input);
                 this.add(new JLabel("  "));//presentation
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
-            
-            boolean canExecute(){
-                //
-                return true;
+
+            public void actionPerformed(ActionEvent e){
+                System.out.println(choice.getSelectedItem().toString());
             }
 
             void execute(boolean executeNext){
@@ -1715,7 +1685,14 @@ public class ViewPlaying extends ViewGame{
                     return res;
                 }
                 catch(NumberFormatException e){}
-                return 0;
+                return 0;//jamais atteint
+            }
+            
+            boolean isEmpty(){
+                if(variable==null){
+                    return getText().isEmpty();
+                }
+                return false;
             }
             
             void resize(boolean larger){//true=stick, false=unstick
@@ -1723,6 +1700,13 @@ public class ViewPlaying extends ViewGame{
                 setPreferredSize(new Dimension((larger)?variable.getWidth():35, getHeight()));
                 container.setBounds(container.getX(), container.getY(), container.getWidth()+diff, container.getHeight());
                 SwingUtilities.updateComponentTreeUI(container);
+                
+                //deuxieme champ avec une variable deja initialisee
+                if((container instanceof CommandDrawArc || container instanceof CommandMoveTo) && (this==container.input)){
+                    NumberField field2=(container instanceof CommandMoveTo)?
+                        ((CommandMoveTo)container).positionY:((CommandDrawArc)container).angleScan;
+                    if(field2.variable!=null) field2.variable.stick(false);
+                }
             }
 
             protected Document createDefaultModel(){
@@ -1826,11 +1810,6 @@ public class ViewPlaying extends ViewGame{
                     linkedTo.variable=this;
                     linkedTo.resize(true);//aggrandit
                     switchOff();
-                    SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);
-                    SwingUtilities.updateComponentTreeUI(ViewPlaying.this);
-                    SwingUtilities.updateComponentTreeUI(linkedTo.container);
-                    SwingUtilities.updateComponentTreeUI(linkedTo);
-                    SwingUtilities.updateComponentTreeUI(this);
                 }
                 int x=linkedTo.container.getX()+linkedTo.getX();
                 int y=linkedTo.container.getY()+linkedTo.getY();
