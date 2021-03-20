@@ -1156,12 +1156,21 @@ public class ViewPlaying extends ViewGame{
                 this.variableG.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
                         if(e.getSource()==variableG)
+<<<<<<< src/ViewPlaying.java
                             varG=variableG.getSelectedItem().equals("  x")?blackBoard.x:variableG.getSelectedItem().equals("  y")?blackBoard.y:blackBoard.angle;
                     }
                 });
                 this.variableG.addItem("  x");
                 this.variableG.addItem("  y");
                 this.variableG.addItem(" angle");
+=======
+                            varG=variableG.getSelectedItem().equals(" x ")?blackBoard.x:variableG.getSelectedItem().equals(" y ")?blackBoard.y:blackBoard.angle;
+                    }
+                });
+                this.variableG.addItem(" x ");
+                this.variableG.addItem(" y ");
+                this.variableG.addItem("Angle");
+>>>>>>> src/ViewPlaying.java
 
                 this.operateur.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
@@ -1207,7 +1216,12 @@ public class ViewPlaying extends ViewGame{
         class CommandWhile extends CommandWithCommands{//classe interne
             private JComboBox variableG=new JComboBox(), operateur=new JComboBox();
             private String op="<";
+<<<<<<< src/ViewPlaying.java
             private int varG=blackBoard.x, whatIsVarG=0;//pour savoir quelle valeur devra etre actualisee ; x<=>0, y<=>1, angle<=>2
+=======
+            private int varG=blackBoard.x, varD;
+            private int whatIsVarG=0;//pour savoir quelle valeur devra etre actualisee ; x<=>0, y<=>1, angle<=>2
+>>>>>>> src/ViewPlaying.java
             
             CommandWhile(int x, int y){
                 super("while", new Color(204, 102, 102), x, y);
@@ -1216,6 +1230,7 @@ public class ViewPlaying extends ViewGame{
                 this.variableG.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
                         if(e.getSource()==variableG) {
+<<<<<<< src/ViewPlaying.java
                             varG=variableG.getSelectedItem().equals("  x")?blackBoard.x:variableG.getSelectedItem().equals("  y")?blackBoard.y:blackBoard.angle;
                             whatIsVarG=variableG.getSelectedItem().equals("  x")?0:variableG.getSelectedItem().equals("  y")?1:2;
                         }
@@ -1224,6 +1239,16 @@ public class ViewPlaying extends ViewGame{
                 this.variableG.addItem("  x");
                 this.variableG.addItem("  y");
                 this.variableG.addItem(" angle");
+=======
+                            varG=variableG.getSelectedItem().equals(" x ")?blackBoard.x:variableG.getSelectedItem().equals(" y ")?blackBoard.y:blackBoard.angle;
+                            whatIsVarG=variableG.getSelectedItem().equals(" x ")?0:variableG.getSelectedItem().equals(" y ")?1:2;
+                        }
+                    }
+                });
+                this.variableG.addItem(" x ");
+                this.variableG.addItem(" y ");
+                this.variableG.addItem("Angle");
+>>>>>>> src/ViewPlaying.java
 
                 this.operateur.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
@@ -1261,6 +1286,10 @@ public class ViewPlaying extends ViewGame{
 
             void execute(boolean executeNext){
             	int varG_initial=varG;
+<<<<<<< src/ViewPlaying.java
+=======
+            	this.varD=Integer.parseInt(this.variableD.getText());
+>>>>>>> src/ViewPlaying.java
             	int limit=3000;//pour simuler la terminaison
             	while(evaluate(this.op) && limit>0){
                     super.execute(false);
