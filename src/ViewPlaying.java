@@ -27,15 +27,12 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JLayeredPane;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
-import javax.swing.OverlayLayout;
-import javax.swing.RepaintManager;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
@@ -288,7 +285,7 @@ public class ViewPlaying extends ViewGame{
                 createF.setBounds(x-dF.width, 20, dF.width, dF.height);
                 createF.addActionListener((event)->{
                     String name=JOptionPane.showInputDialog("Name of this fonction ?");
-                    if(name==null) return;
+                    if(name==null) return;//bouton annuler
                     while(name!=null && (name.equals("") || nameFunAlreadySet(name)))
                         name=JOptionPane.showInputDialog(errorName);
                     if(name!=null) addFunction(name, x-dF.width, 40+2*dF.height);
@@ -301,20 +298,43 @@ public class ViewPlaying extends ViewGame{
             }
             if(level.numberOfVariables!=0){
                 JButton createV=new JButton("Create a new variable");
+                JButton removeV=new JButton("Remove one variable");
+                
+                Dimension dC=createV.getPreferredSize();
+                createV.setBounds(x-dC.width, 30+dC.height, dC.width, dC.height);
                 createV.addActionListener((event)->{
                     String name=JOptionPane.showInputDialog("Name of this variable ?");
-                    if(name==null) return;
+                    if(name==null) return;//bouton annuler
                     while(name!=null && (name.equals("") || variables.containsKey(name)))
                         name=JOptionPane.showInputDialog(errorName);
-                    if(name!=null) addVariable(name);
+                    if(name!=null){
+                        addVariable(name);
+                        removeV.setEnabled(true);
+                    }
                     if(numberOfFV[1]==level.numberOfVariables){//max atteint
                         createV.setEnabled(false);
                         createV.setBackground(Color.red);
                     }
                 });
-                Dimension dV=createV.getPreferredSize();
-                createV.setBounds(x-dV.width, 30+dV.height, dV.width, dV.height);
                 this.add(createV);
+                
+                Dimension dR=removeV.getPreferredSize();
+                removeV.setBounds(x-dR.width, 40+dR.height*2, dR.width, dR.height);
+                removeV.addActionListener((event)->{
+                    //JComboBox choice=new JComboBox();
+                    //for(String name : variables.keySet()) choice.addItem(name);
+                    String[] choice=new String[variables.size()];
+                    int i=0;
+                    for(String name : variables.keySet()) choice[i++]=name;
+                    String name=JOptionPane.showInputDialog(null, "Name of this variable ?",
+                        "Input", JOptionPane.INFORMATION_MESSAGE, null, choice, choice[0]).toString();
+                            //JOptionPane.show(null, choice, "Name of this variable ?", JOptionPane.QUESTION_MESSAGE);
+                    if(name==null) return;//bouton annuler
+                    removeVariable(name);
+                    if(numberOfFV[1]==0) removeV.setEnabled(false);//pas de variable encore
+                });
+                this.add(removeV);
+                removeV.setEnabled(false);
             }
         }
         
@@ -341,7 +361,7 @@ public class ViewPlaying extends ViewGame{
             if(e.getX()<this.getX()+width/2-x00){//whiteBoard
                 for(Component c : ViewPlaying.this.dragDrop.getComponents()){
                     if(commands.contains(c) && c instanceof Command && !(c instanceof HookHorizontal)
-                    || (c instanceof Variable && !((Variable)c).lastCreated))
+                    || (c instanceof Variable /*&& !((Variable)c).lastCreated*/))
                         c.setLocation(c.getX(), c.getY()+addToY);
                 }
             }
@@ -349,7 +369,7 @@ public class ViewPlaying extends ViewGame{
                 deltaY+=addToY;
                 for(Component c : ViewPlaying.this.dragDrop.getComponents()){
                     if(!commands.contains(c) && c instanceof Command && !(c instanceof HookHorizontal)
-                    || (c instanceof Variable && ((Variable)c).lastCreated))
+                    || (c instanceof Variable /*&& ((Variable)c).lastCreated*/))
                         c.setLocation(c.getX(), c.getY()+addToY);
                 }
             }
@@ -393,93 +413,139 @@ public class ViewPlaying extends ViewGame{
         }
         
         void addVariable(String name){//nouvelle variable
-            if(numberOfFV[1]++==0){
+            if(numberOfFV[1]++==0){//premiere variable
                 for(NumberField f : fields) f.setBorder(f.border);
+                lastPositionY+=addCommand("affectation", lastPositionY);
                 lastPositionY+=addCommand("addition", lastPositionY);
+                lastPositionY+=addCommand("soustraction", lastPositionY);
+                lastPositionY+=addCommand("multiplication", lastPositionY);
+                lastPositionY+=addCommand("division", lastPositionY);
+                Variable variable=new Variable(name, width/2+20, lastPositionY);
+                //variable.choice.addItem(name);
+                this.add(variable);
+                lastPositionY+=variable.getHeight()+10;
             }
-            Variable variable=new Variable(name, width/2+20, lastPositionY);
-            this.add(variable);
-            lastPositionY+=variable.getHeight()+10;
+            for(Component c : getComponents()){//ajout dans tous les comboBox
+                if(c instanceof CommandOperationV || c instanceof CommandIf
+                    || c instanceof CommandWhile || c instanceof Variable){
+                    JComboBox box=(c instanceof CommandIf)?((CommandIf)c).variableG:(c instanceof CommandWhile)?
+                        ((CommandWhile)c).variableG:(c instanceof Variable)?((Variable)c).choice:((CommandOperationV)c).choice;
+                    int old=box.getPreferredSize().width;//difference a ajouter a la largeur du bloc
+                    box.addItem(name);
+                    if(c instanceof Variable) System.out.print(box.getItemCount());
+                    int larger=largerVariable(box);
+                    box.setPreferredSize(new Dimension(larger, box.getHeight()));
+                    c.setBounds(c.getX(), c.getY(), c.getWidth()-old+larger, c.getHeight());
+                }
+            }
             SwingUtilities.updateComponentTreeUI(this);//refresh affichage
         }
         
-        void addSameVariable(Variable origin){//regeneration des variables
+        /*void addSameVariable(Variable origin){//regeneration des variables
             Variable var=new Variable(origin.name, width/2+20, origin.positionY);
             this.add(var);
             SwingUtilities.updateComponentTreeUI(this);//refresh affichage
+        }*/
+        
+        void removeVariable(String name){
+            numberOfFV[1]--;
+            variables.remove(name);
+            for(Component c : getComponents()){//retrait de tous les comboBox
+                if(numberOfFV[1]==0 && c instanceof CommandOperationV){
+                    if(commands.contains(c)) commands.remove(c);
+                    this.remove(c);
+                }
+                else if(c instanceof CommandOperationV || c instanceof CommandIf || c instanceof CommandWhile){
+                    JComboBox box=(c instanceof CommandIf)?((CommandIf)c).variableG:
+                        (c instanceof CommandWhile)?((CommandWhile)c).variableG:((CommandOperationV)c).choice;
+                    int old=box.getPreferredSize().width;
+                    box.removeItem(name);
+                    int larger=largerVariable(box);
+                    box.setPreferredSize(new Dimension(larger, box.getHeight()));
+                    c.setBounds(c.getX(), c.getY(), c.getWidth()-old+larger, c.getHeight());
+                }
+            }
+            SwingUtilities.updateComponentTreeUI(this);//refresh affichage
+        }
+        
+        int largerVariable(JComboBox box){
+            JLabel larger=new JLabel(box.getItemAt(0).toString());
+            for(int i=1; i<box.getItemCount(); i++){
+                JLabel comp=new JLabel(box.getItemAt(i).toString());
+                if(larger.getPreferredSize().width<comp.getPreferredSize().width) larger=comp;
+            }
+            larger.setText("  "+larger.getText()+"  ");
+            return larger.getPreferredSize().width+15;
+        }
+        
+        int indexInBox(JComboBox box, String name){
+            for(int i=0; i<box.getItemCount(); i++){
+                if(box.getItemAt(i).toString().equals(name)) return i;
+            }
+            return -1;//jamais atteint a priori
         }
         
         int addCommand(String name, int positionY){//(re)generation des commandes
-            int res=10;
+            Command toAdd;
             switch(name){
                 case "for":
-                    CommandFor forC=new CommandFor(width/2+20, positionY);
-                    this.add(forC);
-                    this.add(forC.hookV);
-                    this.add(forC.hookH);
-                    res+=forC.getHeight()+forC.hookV.getHeight()+forC.hookH.getHeight();
+                    toAdd=new CommandFor(width/2+20, positionY);
                     break;
                 case "if":
-                    CommandIf ifC=new CommandIf(width/2+20, positionY);
-                    this.add(ifC);
-                    this.add(ifC.hookV);
-                    this.add(ifC.hookH);
-                    res+=ifC.getHeight()+ifC.hookV.getHeight()+ifC.hookH.getHeight();
+                    toAdd=new CommandIf(width/2+20, positionY);
                     break;
                 case "while":
-                    CommandWhile whileC=new CommandWhile(width/2+20, positionY);
-                    this.add(whileC);
-                    this.add(whileC.hookV);
-                    this.add(whileC.hookH);
-                    res+=whileC.getHeight()+whileC.hookV.getHeight()+whileC.hookH.getHeight();
+                    toAdd=new CommandWhile(width/2+20, positionY);
                     break;
                 case "drawLine":
-                    CommandDrawLine drawLineC=new CommandDrawLine(width/2+20, positionY);
-                    this.add(drawLineC);
-                    res+=drawLineC.getHeight();
+                    toAdd=new CommandDrawLine(width/2+20, positionY);
                     break;
                 case "drawArc":
-                    CommandDrawArc drawArcC=new CommandDrawArc(width/2+20, positionY);
-                    this.add(drawArcC);
-                    res+=drawArcC.getHeight();
+                    toAdd=new CommandDrawArc(width/2+20, positionY);
                     break;
                 case "raisePutBrush":
-                    CommandRaisePutBrush raisePutC=new CommandRaisePutBrush(width/2+20, positionY);
-                    this.add(raisePutC);
-                    res+=raisePutC.getHeight();
+                    toAdd=new CommandRaisePutBrush(width/2+20, positionY);
                     break;
                 case "moveTo":
-                    CommandMoveTo moveC=new CommandMoveTo(width/2+20, positionY);
-                    this.add(moveC);
-                    res+=moveC.getHeight();
+                    toAdd=new CommandMoveTo(width/2+20, positionY);
                     break;
                 case "setAngle":
-                    CommandSetAngle shiftAngleC=new CommandSetAngle(width/2+20, positionY);
-                    this.add(shiftAngleC);
-                    res+=shiftAngleC.getHeight();
+                    toAdd=new CommandSetAngle(width/2+20, positionY);
                     break;
                 case "addAngle":
-                    CommandAddAngle addAngleC=new CommandAddAngle(width/2+20, positionY);
-                    this.add(addAngleC);
-                    res+=addAngleC.getHeight();
+                    toAdd=new CommandAddAngle(width/2+20, positionY);
                     break;
                 case "setColor":
-                    CommandSetColor changeColorC=new CommandSetColor(width/2+20, positionY);
-                    this.add(changeColorC);
-                    res+=changeColorC.getHeight();
+                    toAdd=new CommandSetColor(width/2+20, positionY);
                     break;
                 case "shiftColor":
-                    CommandShiftColor shiftColorC=new CommandShiftColor(width/2+20, positionY);
-                    this.add(shiftColorC);
-                    res+=shiftColorC.getHeight();
+                    toAdd=new CommandShiftColor(width/2+20, positionY);
+                    break;
+                case "affectation":
+                    toAdd=new CommandAffectation(width/2+20, positionY);
                     break;
                 case "addition":
-                    CommandAddition addC=new CommandAddition(width/2+20, positionY);
-                    this.add(addC);
-                    res+=addC.getHeight();
+                    toAdd=new CommandAddition(width/2+20, positionY);
+                    break;
+                case "soustraction":
+                    toAdd=new CommandSoustraction(width/2+20, positionY);
+                    break;
+                case "multiplication":
+                    toAdd=new CommandMultiplication(width/2+20, positionY);
+                    break;
+                case "division":
+                    toAdd=new CommandDivision(width/2+20, positionY);
                     break;
                 default :
                     return 0;
+            }
+            this.add(toAdd);
+            int res=toAdd.getHeight()+10;
+            if(toAdd instanceof CommandWithCommands){
+                CommandWithCommands tmp=(CommandWithCommands)toAdd;
+                this.add(tmp.hookV);
+                this.add(tmp.hookH);
+                res+=tmp.hookV.getHeight()+tmp.hookH.getHeight();
             }
             SwingUtilities.updateComponentTreeUI(this);//refresh affichage
             return res;
@@ -591,7 +657,7 @@ public class ViewPlaying extends ViewGame{
         abstract class Command extends JPanel implements MouseInputListener{
             final String name;//if, else, for, while, ...
             final Color color;
-            final int commandH=35, commandW=70, positionY;//hauteur d une commande, largeur par defaut de hookH
+            final int commandH=40, commandW=70, positionY;//hauteur d une commande, largeur par defaut de hookH
             protected Command next, previous;//next a executer, previous pour ajuster l affichage
             private int mouseX, mouseY;//position initiale de la souris au moment du drag
             protected NumberField input;
@@ -1165,8 +1231,9 @@ public class ViewPlaying extends ViewGame{
                 super.input=new NumberField(this);//choix libre du joueur donc pas une liste
                 
                 this.variableG.addActionListener(this);
-                String[] tmp={"  x", "  y", " angle"};
+                String[] tmp={"x", "y", "angle"};
                 for(String s : tmp) variableG.addItem(s);
+                for(String s : variables.keySet()) variableG.addItem(s);
 
                 this.operateur.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
@@ -1179,13 +1246,15 @@ public class ViewPlaying extends ViewGame{
                 this.add(new JLabel("  If  "));
                 this.add(variableG);
                 this.add(operateur);
+                this.add(new JLabel("  "));//pour la presentation
                 this.add(input);
                 this.add(new JLabel("  "));//pour la presentation
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
             public void actionPerformed(ActionEvent e){
-                varG=variableG.getSelectedItem().equals("  x")?blackBoard.x:variableG.getSelectedItem().equals("  y")?blackBoard.y:blackBoard.angle;
+                varG=variableG.getSelectedItem().equals("x")?blackBoard.x:
+                     variableG.getSelectedItem().equals("y")?blackBoard.y:blackBoard.angle;
             }
 
             boolean evaluate(String op){
@@ -1216,8 +1285,9 @@ public class ViewPlaying extends ViewGame{
                 super.input=new NumberField(this);
 
                 this.variableG.addActionListener(this);
-                String[] tmp={"  x", "  y", " angle"};
+                String[] tmp={"x", "y", "angle"};
                 for(String s : tmp) variableG.addItem(s);
+                for(String s : variables.keySet()) variableG.addItem(s);
 
                 this.operateur.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
@@ -1230,14 +1300,15 @@ public class ViewPlaying extends ViewGame{
                 this.add(new JLabel("  While  "));
                 this.add(variableG);
                 this.add(operateur);
+                this.add(new JLabel("  "));//pour la presentation
                 this.add(input);
                 this.add(new JLabel("  "));//pour la presentation
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
             public void actionPerformed(ActionEvent e){
-                whatIsVarG=variableG.getSelectedItem().equals("  x")?0:
-                           variableG.getSelectedItem().equals("  y")?1:2;
+                whatIsVarG=variableG.getSelectedItem().equals("x")?0:
+                           variableG.getSelectedItem().equals("y")?1:2;
             }
 
             boolean evaluate(String op){
@@ -1634,46 +1705,17 @@ public class ViewPlaying extends ViewGame{
                 else if(next==null) victoryMessage();
             }
         }//fin de classe interne shiftColor
-
-
-        class CommandAddition extends Command implements ActionListener{//classe interne
-            String[] tmp={"x", "y"};
-            private JComboBox choice=new JComboBox(tmp);
-            private int toAdd=0;
-            private NumberField add=new NumberField(this);
-            
-            CommandAddition(int x, int y){
-                super("addition", Color.LIGHT_GRAY.darker(), y);
-                super.input=new NumberField(this);
-                
-                choice.addActionListener(this);
-                
-                this.add(new JLabel("  "));//presentation
-                this.add(choice);
-                this.add(new JLabel("  +  "));
-                this.add(input);
-                this.add(new JLabel("  "));//presentation
-                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
-            }
-
-            public void actionPerformed(ActionEvent e){
-                System.out.println(choice.getSelectedItem().toString());
-            }
-
-            void execute(boolean executeNext){
-                variables.replace(input.variable.name, input.getNumber()+add.getNumber());
-            }
-        }//fin de classe interne Addition
         
         
         class NumberField extends JTextField{
             protected Variable variable;//varibale qu on lui stick
-            Border border=BorderFactory.createLineBorder(new Color(255, 204, 255), 2);
+            final Border border=BorderFactory.createLineBorder(new Color(255, 204, 255), 2);
             final Command container;
+            final int fieldHeight=30, fieldWidth=50;
 
             NumberField(Command c){
                 super();
-                setPreferredSize(new Dimension(35, super.getPreferredSize().height));
+                setPreferredSize(new Dimension(fieldWidth, fieldHeight));
                 this.container=c;
             }
 
@@ -1733,25 +1775,32 @@ public class ViewPlaying extends ViewGame{
         *     Variable     *
         *******************/
         
-        class Variable extends JPanel implements MouseInputListener{
-            final String name;
+        class Variable extends JPanel implements MouseInputListener, ActionListener{
             final int positionY;
-            protected boolean lastCreated=true;//true=addSameVariable
-            private NumberField linkedTo;
             private int mouseX, mouseY;
+            //protected boolean lastCreated=true;//true=addSameVariable
+            private NumberField linkedTo;
+            private JComboBox choice=new JComboBox();
+            private String name;
             
             Variable(String name, int x, int y){
                 this.name=name;
                 this.positionY=y;
                 variables.put(name, 0);//met dans HashMap, par defaut variable=0
-                this.addMouseMotionListener(this);
-                this.addMouseListener(this);
+                choice.addItem(name);
                 
                 this.setBackground(new Color(255, 204, 255));
+                choice.setBackground(new Color(255, 204, 255));
+                this.addMouseMotionListener(this);
+                this.addMouseListener(this);
                 this.setLayout(new GridBagLayout());
-                this.add(new JLabel("  "+name+"  "));
-                NumberField tmp=new NumberField(null);//juste pour hauteur
-                this.setBounds(x, y+deltaY, getPreferredSize().width, tmp.getPreferredSize().height);
+                
+                this.add(new JLabel("    "));
+                this.add(choice);
+                this.add(new JLabel("    "));
+                NumberField tmp=new NumberField(null);//juste pour la hauteur
+                this.setBounds(x, y+deltaY, getPreferredSize().width+10, tmp.fieldHeight);
+                choice.setPreferredSize(new Dimension(choice.getPreferredSize().width, getPreferredSize().height-5));
             }
             
             
@@ -1775,7 +1824,7 @@ public class ViewPlaying extends ViewGame{
             void deleteSteps() throws IOException{//enleve variable du panel
                 PanelDragDropBoard.this.remove(this);
                 fields.remove(linkedTo);
-                if(lastCreated) addSameVariable(this);//regeneration
+                //if(lastCreated) addSameVariable(this);//regeneration
                 bin.loadBin("images/closedBin.png");
                 SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
             }
@@ -1883,12 +1932,16 @@ public class ViewPlaying extends ViewGame{
                     }
                 }
                 else{
-                    if(inWhiteBoard() && lastCreated){//regeneration
-                        lastCreated=false;
-                        addSameVariable(this);
+                    if(inWhiteBoard() /*&& lastCreated*/){//regeneration
+                        //lastCreated=false;
+                        //addSameVariable(this);
                     }
                     if(brightF!=null) stick(true);//accroche
                 }
+            }
+
+            public void actionPerformed(ActionEvent e){
+                name=choice.getSelectedItem().toString();
             }
             
             public void mouseMoved(MouseEvent e){}
@@ -1896,5 +1949,87 @@ public class ViewPlaying extends ViewGame{
             public void mouseEntered(MouseEvent e){}
             public void mouseExited(MouseEvent e){}
         }//fin classe interne Variable
+
+
+        class CommandOperationV extends Command implements ActionListener{//classe interne
+            protected JComboBox choice=new JComboBox();
+            protected String varName;
+            
+            CommandOperationV(String name, int x, int y, String sign){
+                super(name, new Color(255, 153, 194), y);
+                super.input=new NumberField(this);
+                
+                for(String varName : variables.keySet()) choice.addItem(varName);
+                choice.addActionListener(this);
+                
+                this.add(new JLabel("  "));//presentation
+                this.add(choice);
+                this.add(new JLabel("  "+sign+"  "));
+                this.add(input);
+                this.add(new JLabel("  "));//presentation
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+            }
+
+            public void actionPerformed(ActionEvent e){
+                varName=choice.getSelectedItem().toString();
+            }
+            
+            void execute(boolean executeNext){}//sera override
+        }//fin de classe interne OperationVariable
+
+
+        class CommandAffectation extends CommandOperationV{//classe interne
+            CommandAffectation(int x, int y){
+                super("affectation", x, y, "=");
+            }
+
+            void execute(boolean executeNext){
+                variables.replace(varName, input.getNumber());
+            }
+        }//fin de classe interne Affectation
+
+
+        class CommandAddition extends CommandOperationV{//classe interne
+            CommandAddition(int x, int y){
+                super("addition", x, y, "+");
+            }
+
+            void execute(boolean executeNext){
+                variables.replace(varName, variables.get(varName)+input.getNumber());
+            }
+        }//fin de classe interne Addition
+
+
+        class CommandSoustraction extends CommandOperationV{//classe interne
+            CommandSoustraction(int x, int y){
+                super("soustraction", x, y, "-");
+            }
+
+            void execute(boolean executeNext){
+                variables.replace(varName, variables.get(varName)-input.getNumber());
+            }
+        }//fin de classe interne Soustraction
+
+
+        class CommandMultiplication extends CommandOperationV{//classe interne
+            CommandMultiplication(int x, int y){
+                super("multiplication", x, y, "*");
+            }
+
+            void execute(boolean executeNext){
+                variables.replace(varName, variables.get(varName)*input.getNumber());
+            }
+        }//fin de classe interne Multiplication
+
+
+        class CommandDivision extends CommandOperationV{//classe interne
+            CommandDivision(int x, int y){
+                super("division", x, y, "/");
+            }
+
+            void execute(boolean executeNext){
+                variables.replace(varName, variables.get(varName)/input.getNumber());
+            }
+        }//fin de classe interne Division
     }//fin classe interne PanelDragDropBoard
 }
