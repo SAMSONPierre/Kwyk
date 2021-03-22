@@ -2,6 +2,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagLayout;
@@ -27,16 +28,14 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JLayeredPane;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
-import javax.swing.OverlayLayout;
-import javax.swing.RepaintManager;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.LineBorder;
@@ -65,6 +64,7 @@ public class ViewPlaying extends ViewGame{
     void addBoard() throws IOException{
         blackBoard=new PanelBlackBoard();
         this.add(blackBoard);//taille fixee
+        //setUIFont(new javax.swing.plaf.FontUIResource("Times New Roman", Font.BOLD, 14));
         dragDrop=new PanelDragDropBoard();
         this.add(dragDrop);//taille relative a l ecran
     }
@@ -93,9 +93,7 @@ public class ViewPlaying extends ViewGame{
         });
         features.add(stop);
         
-        
-        //creer un niveau -> que pour la page Create
-        if(isCreating){
+        if(isCreating){//creer un niveau -> que pour la page Create
             JButton submit=new JButton("Submit");
             submit.addActionListener((event)->{
                 String name=JOptionPane.showInputDialog(this,"Level's name ?", null);	
@@ -149,6 +147,16 @@ public class ViewPlaying extends ViewGame{
         }
         return 0;
     }
+
+    public static void setUIFont(javax.swing.plaf.FontUIResource f) {
+        java.util.Enumeration keys = UIManager.getDefaults().keys();
+        while (keys.hasMoreElements()) {
+            Object key = keys.nextElement();
+            Object value = UIManager.get(key);
+            if (value instanceof javax.swing.plaf.FontUIResource)
+            UIManager.put(key, f);
+        }
+    }
     
     
     /**********************  Classes internes  **********************/
@@ -174,9 +182,7 @@ public class ViewPlaying extends ViewGame{
         }
         
         
-        /******************
-        * Drawing & Paint *
-        ******************/
+        /***** Drawing & Paint *****/
 
         protected void paintComponent(Graphics g){
             super.paintComponent(g);
@@ -220,9 +226,9 @@ public class ViewPlaying extends ViewGame{
         }
         
         
-        /*******************
-        *    Brush class   *
-        *******************/
+        /************************
+        *      Brush Class      *
+        ************************/
         
         private class Brush extends Path2D.Double{//pinceau
             Brush(){//fleche dans le coin superieur gauche de blackBoard
@@ -258,10 +264,10 @@ public class ViewPlaying extends ViewGame{
         private Command brightC;//commande allumee
         private LinkedList<NumberField> fields=new LinkedList<NumberField>();
         private NumberField brightF;//field allume
-        private int lastPositionY=20, deltaY=0;//emplacement vertical des commandes, mouvement de la roulette
-        private int[] numberOfFV=new int[2];//fonction, varibale
+        private int lastPositionY=20, deltaY=0, numberOfFunction=0;//positionY libre, mouvement de la roulette
         private Bin bin;
-        private JLabel errorName=new JLabel("Please enter a valid name :");
+        final JLabel errorName=new JLabel("Please enter a valid name :");
+        final Border borderV=BorderFactory.createLineBorder(new Color(255, 204, 255), 2);
         
         PanelDragDropBoard() throws IOException{
             this.x00=440;
@@ -281,40 +287,62 @@ public class ViewPlaying extends ViewGame{
         }
         
         void setFunctionVariableButton(){
-            int x=width/2-20;
+            if(level.numberOfVariables!=0){
+                JButton createV=new JButton("Create a new variable");
+                JButton removeV=new JButton("Remove one variable");
+                Dimension dC=createV.getPreferredSize();
+                Dimension dR=removeV.getPreferredSize();
+                createV.setBounds(width/2-20-dC.width, 20, dC.width, dC.height);
+                removeV.setBounds(createV.getX(), 30+dR.height, dR.width, dR.height);
+                
+                createV.addActionListener((event)->{
+                    String name=JOptionPane.showInputDialog("Name of this variable ?");
+                    if(name==null) return;//bouton annuler
+                    while(name!=null && (name.equals("") || variables.containsKey(name)))
+                        name=JOptionPane.showInputDialog(errorName);
+                    if(name!=null){
+                        addVariable(name);
+                        removeV.setEnabled(true);
+                    }
+                    if(variables.size()==level.numberOfVariables){//max atteint
+                        createV.setEnabled(false);
+                        createV.setBackground(Color.red);
+                    }
+                });
+                removeV.addActionListener((event)->{
+                    Object[] choice=new String[variables.size()];
+                    int i=0;
+                    for(String name : variables.keySet()) choice[i++]=name;
+                    Object name=JOptionPane.showInputDialog(null, "Name of this variable ?",
+                        "", JOptionPane.QUESTION_MESSAGE, null, choice, choice[0]);
+                    if(name==null) return;//bouton annuler
+                    removeVariable(name.toString());
+                    if(variables.size()+1==level.numberOfVariables){//etait au max
+                        createV.setEnabled(true);
+                        createV.setBackground(null);
+                    }
+                    if(variables.size()==0) removeV.setEnabled(false);//plus de variable
+                });
+                this.add(createV);
+                this.add(removeV);
+                removeV.setEnabled(false);
+            }
             if(level.numberOfFunctions!=0){
                 JButton createF=new JButton("Create a new function");
                 Dimension dF=createF.getPreferredSize();
-                createF.setBounds(x-dF.width, 20, dF.width, dF.height);
+                createF.setBounds(width/2-20-dF.width, 50+2*dF.height, dF.width, dF.height);
                 createF.addActionListener((event)->{
                     String name=JOptionPane.showInputDialog("Name of this fonction ?");
-                    if(name==null) return;
+                    if(name==null) return;//bouton annuler
                     while(name!=null && (name.equals("") || nameFunAlreadySet(name)))
                         name=JOptionPane.showInputDialog(errorName);
-                    if(name!=null) addFunction(name, x-dF.width, 40+2*dF.height);
-                    if(numberOfFV[0]==level.numberOfFunctions){//max atteint
+                    if(name!=null) addFunction(name, width/2-20-dF.width, 60+3*dF.height);
+                    if(numberOfFunction==level.numberOfFunctions){//max atteint
                         createF.setEnabled(false);
                         createF.setBackground(Color.red);
                     }
                 });
                 this.add(createF);
-            }
-            if(level.numberOfVariables!=0){
-                JButton createV=new JButton("Create a new variable");
-                createV.addActionListener((event)->{
-                    String name=JOptionPane.showInputDialog("Name of this variable ?");
-                    if(name==null) return;
-                    while(name!=null && (name.equals("") || variables.containsKey(name)))
-                        name=JOptionPane.showInputDialog(errorName);
-                    if(name!=null) addVariable(name);
-                    if(numberOfFV[1]==level.numberOfVariables){//max atteint
-                        createV.setEnabled(false);
-                        createV.setBackground(Color.red);
-                    }
-                });
-                Dimension dV=createV.getPreferredSize();
-                createV.setBounds(x-dV.width, 30+dV.height, dV.width, dV.height);
-                this.add(createV);
             }
         }
         
@@ -325,15 +353,6 @@ public class ViewPlaying extends ViewGame{
                     return true;
             }
             return false;
-        }
-
-        protected void paintComponent(Graphics g){
-            super.paintComponent(g);
-            Graphics2D g2 = (Graphics2D) g;
-            g2.setColor(Color.WHITE);//WhiteBoard a gauche
-            g2.fillRect(0, 0, width/2, height);
-            g2.setColor(Color.LIGHT_GRAY);//CommandBoard a droite
-            g2.fillRect(width, 0, width/2, height);
         }
 
         public void mouseWheelMoved(MouseWheelEvent e){
@@ -354,15 +373,22 @@ public class ViewPlaying extends ViewGame{
                 }
             }
         }
+
+        protected void paintComponent(Graphics g){
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setColor(Color.WHITE);//WhiteBoard a gauche
+            g2.fillRect(0, 0, width/2, height);
+            g2.setColor(Color.LIGHT_GRAY);//CommandBoard a droite
+            g2.fillRect(width, 0, width/2, height);
+        }
             
         public boolean isOptimizedDrawingEnabled(){
             return false;
         }
         
         
-        /********************
-        *   Gestion Blocs   *
-        ********************/
+        /***** Gestion Blocs *****/
         
         void addAvailableCommands(){//premier ajout des commandes disponibles
             //ajout dans WhiteBoard
@@ -373,12 +399,78 @@ public class ViewPlaying extends ViewGame{
                 lastPositionY+=addCommand(c, lastPositionY);
         }
         
+        int addCommand(String name, int positionY){//(re)generation des commandes
+            Command toAdd;
+            switch(name){
+                case "for":
+                    toAdd=new CommandFor(width/2+20, positionY);
+                    break;
+                case "if":
+                    toAdd=new CommandIf(width/2+20, positionY);
+                    break;
+                case "while":
+                    toAdd=new CommandWhile(width/2+20, positionY);
+                    break;
+                case "drawLine":
+                    toAdd=new CommandDrawLine(width/2+20, positionY);
+                    break;
+                case "drawArc":
+                    toAdd=new CommandDrawArc(width/2+20, positionY);
+                    break;
+                case "raisePutBrush":
+                    toAdd=new CommandRaisePutBrush(width/2+20, positionY);
+                    break;
+                case "moveTo":
+                    toAdd=new CommandMoveTo(width/2+20, positionY);
+                    break;
+                case "setAngle":
+                    toAdd=new CommandSetAngle(width/2+20, positionY);
+                    break;
+                case "addAngle":
+                    toAdd=new CommandAddAngle(width/2+20, positionY);
+                    break;
+                case "setColor":
+                    toAdd=new CommandSetColor(width/2+20, positionY);
+                    break;
+                case "shiftColor":
+                    toAdd=new CommandShiftColor(width/2+20, positionY);
+                    break;
+                case "affectation":
+                    toAdd=new CommandAffectation(width/2+20, positionY);
+                    break;
+                case "addition":
+                    toAdd=new CommandAddition(width/2+20, positionY);
+                    break;
+                case "soustraction":
+                    toAdd=new CommandSoustraction(width/2+20, positionY);
+                    break;
+                case "multiplication":
+                    toAdd=new CommandMultiplication(width/2+20, positionY);
+                    break;
+                case "division":
+                    toAdd=new CommandDivision(width/2+20, positionY);
+                    break;
+                default :
+                    return 0;
+            }
+            this.add(toAdd);
+            int res=toAdd.getHeight()+10;
+            if(toAdd instanceof CommandWithCommands){
+                CommandWithCommands tmp=(CommandWithCommands)toAdd;
+                this.add(tmp.hookV);
+                this.add(tmp.hookH);
+                res+=tmp.hookV.getHeight()+tmp.hookH.getHeight();
+            }
+            SwingUtilities.updateComponentTreeUI(this);//refresh affichage
+            return res;
+        }
+        
         void addFunction(String name, int x, int y){//nouvelle fonction, ajout dans WhiteBoard
-            numberOfFV[0]++;
+            numberOfFunction++;
             CommandFunctionInit fC=new CommandFunctionInit(name, x, y);
-            this.add(fC);
-            this.add(fC.hookV);
-            this.add(fC.hookH);
+            this.add(fC, 0);
+            this.add(fC.hookV, 0);
+            this.add(fC.hookH, 0);
             lastPositionY+=addCommandCall(fC, lastPositionY);
             commands.add(fC);
             SwingUtilities.updateComponentTreeUI(this);//refresh affichage
@@ -393,102 +485,96 @@ public class ViewPlaying extends ViewGame{
         }
         
         void addVariable(String name){//nouvelle variable
-            if(numberOfFV[1]++==0){
-                for(NumberField f : fields) f.setBorder(f.border);
+            variables.put(name, 0);//met dans HashMap, par defaut variable=0
+            if(variables.size()==1){//premiere variable
+                for(NumberField f : fields) f.setBorder(borderV);
+                lastPositionY+=addCommand("affectation", lastPositionY);
                 lastPositionY+=addCommand("addition", lastPositionY);
+                lastPositionY+=addCommand("soustraction", lastPositionY);
+                lastPositionY+=addCommand("multiplication", lastPositionY);
+                lastPositionY+=addCommand("division", lastPositionY);
+                Variable variable=new Variable(width/2+20, lastPositionY);
+                this.add(variable);
+                lastPositionY+=variable.getHeight()+10;
+                SwingUtilities.updateComponentTreeUI(this);//refresh affichage
             }
-            Variable variable=new Variable(name, width/2+20, lastPositionY);
-            this.add(variable);
-            lastPositionY+=variable.getHeight()+10;
-            SwingUtilities.updateComponentTreeUI(this);//refresh affichage
+            for(Component c : getComponents()){//ajout dans tous les comboBox
+                if((variables.size()!=1 && (c instanceof CommandOperationV || c instanceof Variable))
+                || c instanceof CommandIf || c instanceof CommandWhile)
+                    regulation(c, name, true);
+            }
+            resizeCommand();
         }
         
-        void addSameVariable(Variable origin){//regeneration des variables
-            Variable var=new Variable(origin.name, width/2+20, origin.positionY);
+        void addSettedVariables(int positionY){//regeneration des variables
+            Variable var=new Variable(width/2+20, positionY);
             this.add(var);
             SwingUtilities.updateComponentTreeUI(this);//refresh affichage
         }
         
-        int addCommand(String name, int positionY){//(re)generation des commandes
-            int res=10;
-            switch(name){
-                case "for":
-                    CommandFor forC=new CommandFor(width/2+20, positionY);
-                    this.add(forC);
-                    this.add(forC.hookV);
-                    this.add(forC.hookH);
-                    res+=forC.getHeight()+forC.hookV.getHeight()+forC.hookH.getHeight();
-                    break;
-                case "if":
-                    CommandIf ifC=new CommandIf(width/2+20, positionY);
-                    this.add(ifC);
-                    this.add(ifC.hookV);
-                    this.add(ifC.hookH);
-                    res+=ifC.getHeight()+ifC.hookV.getHeight()+ifC.hookH.getHeight();
-                    break;
-                case "while":
-                    CommandWhile whileC=new CommandWhile(width/2+20, positionY);
-                    this.add(whileC);
-                    this.add(whileC.hookV);
-                    this.add(whileC.hookH);
-                    res+=whileC.getHeight()+whileC.hookV.getHeight()+whileC.hookH.getHeight();
-                    break;
-                case "drawLine":
-                    CommandDrawLine drawLineC=new CommandDrawLine(width/2+20, positionY);
-                    this.add(drawLineC);
-                    res+=drawLineC.getHeight();
-                    break;
-                case "drawArc":
-                    CommandDrawArc drawArcC=new CommandDrawArc(width/2+20, positionY);
-                    this.add(drawArcC);
-                    res+=drawArcC.getHeight();
-                    break;
-                case "raisePutBrush":
-                    CommandRaisePutBrush raisePutC=new CommandRaisePutBrush(width/2+20, positionY);
-                    this.add(raisePutC);
-                    res+=raisePutC.getHeight();
-                    break;
-                case "moveTo":
-                    CommandMoveTo moveC=new CommandMoveTo(width/2+20, positionY);
-                    this.add(moveC);
-                    res+=moveC.getHeight();
-                    break;
-                case "setAngle":
-                    CommandSetAngle shiftAngleC=new CommandSetAngle(width/2+20, positionY);
-                    this.add(shiftAngleC);
-                    res+=shiftAngleC.getHeight();
-                    break;
-                case "addAngle":
-                    CommandAddAngle addAngleC=new CommandAddAngle(width/2+20, positionY);
-                    this.add(addAngleC);
-                    res+=addAngleC.getHeight();
-                    break;
-                case "setColor":
-                    CommandSetColor changeColorC=new CommandSetColor(width/2+20, positionY);
-                    this.add(changeColorC);
-                    res+=changeColorC.getHeight();
-                    break;
-                case "shiftColor":
-                    CommandShiftColor shiftColorC=new CommandShiftColor(width/2+20, positionY);
-                    this.add(shiftColorC);
-                    res+=shiftColorC.getHeight();
-                    break;
-                case "addition":
-                    CommandAddition addC=new CommandAddition(width/2+20, positionY);
-                    this.add(addC);
-                    res+=addC.getHeight();
-                    break;
-                default :
-                    return 0;
+        void removeVariable(String name){
+            variables.remove(name);
+            if(variables.size()==0){//efface toutes les variables
+                for(Component c : getComponents()){
+                    if(c instanceof CommandOperationV || c instanceof Variable){
+                        if(commands.contains(c)){//OperationV sur whiteBoard
+                            ((Command)c).unStick();
+                            if(((Command)c).next!=null) ((Command)c).next.unStick();
+                            commands.remove(c);
+                            fields.remove(((CommandOperationV)c).input);
+                        }
+                        else if(!(c instanceof Variable) || ((Variable)c).lastCreated)//sur commandBoard
+                            lastPositionY-=c.getHeight()+10;
+                        else if(((Variable)c).linkedTo!=null) ((Variable)c).unStick();
+                        this.remove(c);
+                        SwingUtilities.updateComponentTreeUI(this);
+                    }
+                }
+                for(NumberField f : fields) f.setBorder(null);
             }
-            SwingUtilities.updateComponentTreeUI(this);//refresh affichage
-            return res;
+            for(Component c : getComponents()){//retrait de tous les comboBox
+                if(c instanceof CommandOperationV || c instanceof CommandIf || c instanceof CommandWhile || c instanceof Variable)
+                    regulation(c, name, false);
+            }
+            resizeCommand();
+        }
+        
+        void regulation(Component c, String name, boolean add){
+            JComboBox box=(c instanceof CommandIf)?((CommandIf)c).variableG:(c instanceof CommandWhile)?
+              ((CommandWhile)c).variableG:(c instanceof Variable)?((Variable)c).choice:((CommandOperationV)c).choice;
+            if(add) box.addItem(name);
+            else box.removeItem(name);
+            box.setPreferredSize(new Dimension(largerVariable(box), box.getHeight()));
+            //if(c instanceof Variable) ((Variable)c).resize();//resize variable+commande
+        }
+        
+        int largerVariable(JComboBox box){//larger du comboBox apres retrait d un element
+            JLabel larger=new JLabel(box.getItemAt(0).toString());
+            for(int i=1; i<box.getItemCount(); i++){
+                JLabel comp=new JLabel(box.getItemAt(i).toString());
+                if(larger.getPreferredSize().width<comp.getPreferredSize().width) larger=comp;
+            }
+            larger.setText("  "+larger.getText()+"  ");
+            return larger.getPreferredSize().width+15;
+        }
+        
+        void resizeCommand(){//resize commandes sans variable
+            for(Component c : getComponents()){
+                if(c instanceof Variable) ((Variable)c).resize();//resize variable+commande
+            }
+            for(Component c : getComponents()){
+                SwingUtilities.updateComponentTreeUI(c);
+                if(c instanceof Command && ((Command)c).input!=null && ((Command)c).input.variable==null)
+                    ((Command)c).resize();
+            }
+            for(Component c : getComponents()){
+                if(c instanceof Variable && ((Variable)c).linkedTo!=null)
+                    ((Variable)c).stick(false);
+            }
         }
         
         
-        /*******************
-        *   Create Level   *
-        *******************/
+        /***** Create Levels *****/
         
         int[] getNumbersFromHead(){//nombre de commandes/fonctions depuis Start
             int[] res=new int[2];//commandes, fonctions
@@ -555,9 +641,9 @@ public class ViewPlaying extends ViewGame{
         }
         
         
-        /******************
-        *       Bin       *
-        ******************/
+        /************************
+        *          Bin          *
+        ************************/
         
         private class Bin extends JPanel{
             BufferedImage state;
@@ -584,17 +670,18 @@ public class ViewPlaying extends ViewGame{
         }
 
 
-        /******************
-        *  Command class  *
-        ******************/
+        /************************
+        *     Command class     *
+        ************************/
 
         abstract class Command extends JPanel implements MouseInputListener{
             final String name;//if, else, for, while, ...
             final Color color;
-            final int commandH=35, commandW=70, positionY;//hauteur d une commande, largeur par defaut de hookH
+            final int commandH=40, hookW=70, positionY;//hauteur d une commande, largeur d un hookH
             protected Command next, previous;//next a executer, previous pour ajuster l affichage
             private int mouseX, mouseY;//position initiale de la souris au moment du drag
             protected NumberField input;
+            protected int commandW=0;//utile pour readapter largeur des NumberField
             
             Command(String name, Color color, int positionY){
                 this.name=name;
@@ -609,15 +696,14 @@ public class ViewPlaying extends ViewGame{
             boolean canExecute(){//pour les commandes!=CWC qui ont exactement un NumberField
                 boolean isEmpty=input.isEmpty();
                 if(isEmpty) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                else input.setBorder(numberOfFV[1]==0?null:fields.getFirst().border);
+                else input.setBorder(variables.size()==0?null:borderV);
                 return !isEmpty;
             }
+            
             abstract void execute(boolean executeNext);//chaque fonction les implemente
             
             
-            /*****************
-            * Delete Command *
-            *****************/
+            /***** Delete Command *****/
             
             boolean toDelete(){//quand pres de la poubelle
                 if(!(this instanceof CommandFunctionInit)){//ne supprime pas initialisateur de fonction
@@ -666,9 +752,7 @@ public class ViewPlaying extends ViewGame{
             }
             
             
-            /****************************
-            *  Regeneration of Command  *
-            ****************************/
+            /***** Regeneration of Command *****/
             
             void newDrag(){//nouvelle commande qu on drag pour la premiere fois
                 if(inWhiteBoard() && !commands.contains(this)){//premier drag sur whiteBoard
@@ -676,13 +760,13 @@ public class ViewPlaying extends ViewGame{
                     if(this instanceof CommandWithCommands) commands.add(this.next);//ajout de HookH aussi
                     if(level.numberOfVariables!=0 && input!=null){
                         fields.add(input);
-                        if(numberOfFV[1]!=0) input.setBorder(input.border);
+                        if(variables.size()!=0) input.setBorder(borderV);
                     }
                     if(this instanceof CommandDrawArc || this instanceof CommandMoveTo){
                         NumberField tmp=(this instanceof CommandDrawArc)?
                             ((CommandDrawArc)this).angleScan:((CommandMoveTo)this).positionY;
                         fields.add(tmp);
-                        if(numberOfFV[1]!=0) tmp.setBorder(tmp.border);
+                        if(variables.size()!=0) tmp.setBorder(borderV);
                     }
                     //pour regenerer commande utilisee :
                     if(this instanceof CommandFunctionCall)
@@ -697,9 +781,7 @@ public class ViewPlaying extends ViewGame{
             }
 
             
-            /*****************
-            * Stick together *
-            *****************/
+            /***** Stick together *****/
             
             void foundPrevious(){//reformation des liens previous/next
                 if(brightC!=null){//s il existe
@@ -732,18 +814,16 @@ public class ViewPlaying extends ViewGame{
                 if(this.next!=null) this.next.stick();
             }
 
-            int closeCommand(){//this et c sont assez proches pour se coller
+            Command closeCommand(){//this et c sont assez proches pour se coller
                 if(!(this instanceof CommandFunctionInit)){//initialisateur de fonction sans previous
-                    int i=0;
                     for(Command c : commands){
                         if(c instanceof CommandWithCommands){
-                            if(closeHeight(c) && closeWidthIntern((CommandWithCommands)c)) return i;
+                            if(closeHeight(c) && closeWidthIntern((CommandWithCommands)c)) return c;
                         }
-                        else if(closeHeight(c) && closeWidth(c)) return i;
-                        i++;
+                        else if(closeHeight(c) && closeWidth(c)) return c;
                     }
                 }
-                return -1;
+                return null;
             }
 
             boolean closeHeight(Command c){//distance entre bas de c et haut de this
@@ -762,9 +842,7 @@ public class ViewPlaying extends ViewGame{
             }
 
 
-            /****************
-            *    Unstick    *
-            ****************/
+            /***** Unstick *****/
 
             void unStick(){//decolle this (dragged) de son previous
                 if(this.previous==null) return;//commande seule
@@ -797,9 +875,7 @@ public class ViewPlaying extends ViewGame{
             }
 
 
-            /********************
-            * Update of command *
-            ********************/
+            /***** Update of Command *****/
             
             void updateAllLocation(){//met a jour localisation depuis tete de liste
                 Command head=this;
@@ -843,10 +919,42 @@ public class ViewPlaying extends ViewGame{
                 }
             }
             
+            void resize(){//largeur, pour adapter a la variable
+                if(input==null) return;
+                int width=this.commandW+input.getPreferredSize().width;
+                if(this instanceof CommandMoveTo || this instanceof CommandDrawArc){
+                    NumberField tmp=(this instanceof CommandMoveTo)?((CommandMoveTo)this).positionY:
+                        ((CommandDrawArc)this).angleScan;
+                    width+=tmp.getPreferredSize().width;
+                }
+                else if(this instanceof CommandIf || this instanceof CommandWhile || this instanceof CommandOperationV){
+                    JComboBox tmp=(this instanceof CommandIf)?((CommandIf)this).variableG:(this instanceof CommandWhile)?
+                        ((CommandWhile)this).variableG:((CommandOperationV)this).choice;
+                    width+=tmp.getPreferredSize().width;
+                }
+                this.setBounds(getX(), getY(), width, getHeight());
+                
+                //deuxieme champ avec une variable deja initialisee
+                if(this instanceof CommandDrawArc || this instanceof CommandMoveTo){
+                    NumberField field2=(this instanceof CommandMoveTo)?
+                        ((CommandMoveTo)this).positionY:((CommandDrawArc)this).angleScan;
+                    if(field2.variable!=null){
+                        SwingUtilities.updateComponentTreeUI(this);
+                        field2.variable.stick(false);
+                    }
+                }
+                //variable a cote de comboBox initialisee
+                else if(this instanceof CommandIf || this instanceof CommandWhile || this instanceof CommandOperationV){
+                    Variable var=((Command)this).input.variable;
+                    if(var!=null){
+                        //SwingUtilities.updateComponentTreeUI(this);
+                        var.stick(false);
+                    }
+                }
+            }
+            
 
-            /*****************
-            *  Presentation  *
-            *****************/
+            /***** Look *****/
             
             void setToForeground(){//this a l avant-plan quand on le drag==tete de liste
                 if(this instanceof CommandWithCommands){
@@ -883,9 +991,14 @@ public class ViewPlaying extends ViewGame{
             }
             
 
-            /*****************
-            * Mouse Override *
-            *****************/
+            /***** Mouse Override *****/
+            
+            public void mousePressed(MouseEvent e){
+                unStick();//detache si a un precedent
+                mouseX=e.getX();//position initiale de souris
+                mouseY=e.getY();
+                this.setToForeground();//mettre ce qu on drag a l avant-plan
+            }
             
             int getNumberFromThis(){//nombre de commandes qu on drag
                 int res=0;
@@ -904,13 +1017,6 @@ public class ViewPlaying extends ViewGame{
                 }
                 return res;
             }
-            
-            public void mousePressed(MouseEvent e){
-                unStick();//detache si a un precedent
-                mouseX=e.getX();//position initiale de souris
-                mouseY=e.getY();
-                this.setToForeground();//mettre ce qu on drag a l avant-plan
-            }
 
             public void mouseDragged(MouseEvent e){
                 //drag this et ses next + variables
@@ -922,10 +1028,10 @@ public class ViewPlaying extends ViewGame{
                 
                 //allume et eteint les blocs selon les cas
                 switchOff();//eteint tout d abord
-                int nearby=closeCommand();
-                if(nearby!=-1){//proche d un bloc
+                Command nearby=closeCommand();
+                if(nearby!=null){//proche d un bloc
                     if(limite==null || getNumberFromThis()+getNumbersFromHead()[0]<=level.numberOfCommands){//attachable
-                        brightC=commands.get(nearby);//allume le seul bloc a allumer
+                        brightC=nearby;//allume le seul bloc a allumer
                         brightC.setBackground(brightC.getBackground().brighter());
                     }
                 }
@@ -958,17 +1064,22 @@ public class ViewPlaying extends ViewGame{
             
             public void mouseMoved(MouseEvent e){}
             public void mouseClicked(MouseEvent e){//pour verification, a enlever apres
-                //this.execute(false);
+                System.out.println(this.input.getPreferredSize());
+                System.out.println(this.getPreferredSize());
+                System.out.println(((CommandOperationV)this).choice.getPreferredSize());
             }
             public void mouseEntered(MouseEvent e){}
             public void mouseExited(MouseEvent e){}
         }//fin classe interne interne Command
         
 
+        /************************
+        *  Subclass of Command  *
+        ************************/
+        
         class CommandStart extends Command{//bloc initial present que sur WhiteBoard
             CommandStart(){
                 super("start", new Color(0, 204, 102), 20);
-                
                 this.add(new JLabel("  Start your code here !  "));
                 this.setBounds(20, 20, getPreferredSize().width, commandH);
             }
@@ -1013,19 +1124,16 @@ public class ViewPlaying extends ViewGame{
                 return (c==this.function);
             }
             
-            int closeCommand(){//this et c sont assez proches pour se coller
-                int i=0;
+            Command closeCommand(){//this et c sont assez proches pour se coller
                 for(Command c : commands){
                     if(!inFunction(c)){
                         if(c instanceof CommandWithCommands){
-                            if(this.closeHeight(c) && this.closeWidthIntern((CommandWithCommands)c))
-                                return i;
+                            if(closeHeight(c) && closeWidthIntern((CommandWithCommands)c)) return c;
                         }
-                        else if(this.closeHeight(c) && this.closeWidth(c)) return i;
+                        else if(closeHeight(c) && closeWidth(c)) return c;
                     }
-                    i++;
                 }                
-                return -1;
+                return null;
             }
             
             boolean canExecute(){
@@ -1036,12 +1144,12 @@ public class ViewPlaying extends ViewGame{
                 function.execute(executeNext);                
                 if(executeNext && next!=null) next.execute(true);
             }
-        }
+        }//fin classe interne FunctionCall
 
 
-        /*********************
-        * Bloc with commands *
-        *********************/
+        /*************************
+        *   Bloc with commands   *
+        *************************/
         
         class CommandWithCommands extends Command{
             final HookVertical hookV;//juste une accroche verticale
@@ -1058,18 +1166,18 @@ public class ViewPlaying extends ViewGame{
             boolean canExecute(){//ne peut pas etre vide
                 boolean isEmpty=input.isEmpty();
                 if(isEmpty) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                else input.setBorder(numberOfFV[1]==0?null:fields.getFirst().border);
+                else input.setBorder(variables.size()==0?null:borderV);
                 if(this.next==this.hookH) return false;
                 return !isEmpty;
             }
             
-            void execute(boolean executeNext){
+            void execute(boolean executeNext){//sera complete par ses enfants
                 Command tmp=this.next;
                 while(tmp!=this.hookH){
                     tmp.execute(false);//execute du next manuellement
                     tmp=tmp.next;//en incrementant tmp
                 }
-            }//sera complete par ses enfants
+            }
             
             void updateHookV(){//met a jour hookV et accroche les hook a this
                 int res=0;
@@ -1093,7 +1201,6 @@ public class ViewPlaying extends ViewGame{
                 hookH.setLocation(x, hookV.getY()+hookV.getHeight());
             }
 
-
             class HookVertical extends JPanel{//accroche verticale des blocs imbriquants
                 HookVertical(Color color, int commandH, int x, int y){
                     this.setBackground(color);
@@ -1115,7 +1222,7 @@ public class ViewPlaying extends ViewGame{
         class HookHorizontal extends Command{//fin de la boucle/condition
             HookHorizontal(Color color, int x, int y){
                 super("hookHorizontal", color, y);
-                this.setBounds(x, y, commandW, commandH/2);
+                this.setBounds(x, y, hookW, commandH/2);
             }
             
             public void mouseDragged(MouseEvent e){}//ne peut pas etre dragged seul
@@ -1145,6 +1252,7 @@ public class ViewPlaying extends ViewGame{
                 this.add(input);
                 this.add(new JLabel("  time  "));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+                super.commandW=getPreferredSize().width-input.getPreferredSize().width;
             }
 
             void execute(boolean executeNext){
@@ -1165,8 +1273,9 @@ public class ViewPlaying extends ViewGame{
                 super.input=new NumberField(this);//choix libre du joueur donc pas une liste
                 
                 this.variableG.addActionListener(this);
-                String[] tmp={"  x", "  y", " angle"};
+                String[] tmp={"x", "y", "angle"};
                 for(String s : tmp) variableG.addItem(s);
+                for(String s : variables.keySet()) variableG.addItem(s);
 
                 this.operateur.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
@@ -1179,13 +1288,18 @@ public class ViewPlaying extends ViewGame{
                 this.add(new JLabel("  If  "));
                 this.add(variableG);
                 this.add(operateur);
+                this.add(new JLabel("  "));//pour la presentation
                 this.add(input);
                 this.add(new JLabel("  "));//pour la presentation
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+                super.commandW=getPreferredSize().width-input.getPreferredSize().width-variableG.getPreferredSize().width;
             }
             
             public void actionPerformed(ActionEvent e){
-                varG=variableG.getSelectedItem().equals("  x")?blackBoard.x:variableG.getSelectedItem().equals("  y")?blackBoard.y:blackBoard.angle;
+                varG=variableG.getSelectedItem().equals("x")?blackBoard.x:
+                     variableG.getSelectedItem().equals("y")?blackBoard.y:
+                     variableG.getSelectedItem().equals("angle")?blackBoard.angle:
+                     variables.get(variableG.getSelectedItem().toString());
             }
 
             boolean evaluate(String op){
@@ -1209,15 +1323,16 @@ public class ViewPlaying extends ViewGame{
         class CommandWhile extends CommandWithCommands implements ActionListener{//classe interne
             private JComboBox variableG=new JComboBox(), operateur=new JComboBox();
             private String op="<";
-            private int varG, whatIsVarG=0;//pour savoir quelle valeur devra etre actualisee ; x<=>0, y<=>1, angle<=>2
+            private int varG, whatIsVarG=0;//x<=>0, y<=>1, angle<=>2, variables<=>3
             
             CommandWhile(int x, int y){
                 super("while", new Color(204, 102, 102), x, y);
                 super.input=new NumberField(this);
 
                 this.variableG.addActionListener(this);
-                String[] tmp={"  x", "  y", " angle"};
+                String[] tmp={"x", "y", "angle"};
                 for(String s : tmp) variableG.addItem(s);
+                for(String s : variables.keySet()) variableG.addItem(s);
 
                 this.operateur.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
@@ -1230,14 +1345,17 @@ public class ViewPlaying extends ViewGame{
                 this.add(new JLabel("  While  "));
                 this.add(variableG);
                 this.add(operateur);
+                this.add(new JLabel("  "));//pour la presentation
                 this.add(input);
                 this.add(new JLabel("  "));//pour la presentation
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+                super.commandW=getPreferredSize().width-input.getPreferredSize().width-variableG.getPreferredSize().width;
             }
             
             public void actionPerformed(ActionEvent e){
-                whatIsVarG=variableG.getSelectedItem().equals("  x")?0:
-                           variableG.getSelectedItem().equals("  y")?1:2;
+                whatIsVarG=variableG.getSelectedItem().equals("x")?0:
+                           variableG.getSelectedItem().equals("y")?1:
+                           variableG.getSelectedItem().equals("angle")?2:3;
             }
 
             boolean evaluate(String op){
@@ -1252,11 +1370,13 @@ public class ViewPlaying extends ViewGame{
             }
 
             void execute(boolean executeNext){
-                varG=whatIsVarG==0?blackBoard.x:whatIsVarG==1?blackBoard.y:blackBoard.angle;
+                varG=whatIsVarG==0?blackBoard.x:whatIsVarG==1?blackBoard.y:whatIsVarG==1?
+                    blackBoard.angle:variables.get(variableG.getSelectedItem().toString());
             	int limit=3000;//pour simuler la terminaison
             	while(evaluate(this.op) && limit>0){
                     super.execute(false);
-                    varG=whatIsVarG==0?blackBoard.x:whatIsVarG==1?blackBoard.y:blackBoard.angle;
+                    varG=whatIsVarG==0?blackBoard.x:whatIsVarG==1?blackBoard.y:whatIsVarG==1?
+                    blackBoard.angle:variables.get(variableG.getSelectedItem().toString());
                     limit--;
             	}
             	if(limit==0) error(true);//si la terminaison a du etre simulee
@@ -1287,7 +1407,7 @@ public class ViewPlaying extends ViewGame{
             private LinkedList<CommandFunctionCall> caller=new LinkedList<CommandFunctionCall>();
             
             CommandFunctionInit(String name, int x, int y){
-                super("function", new Color(212, 115, 212), x, y);
+                super("function", new Color(212, 115, 212), x, y-deltaY);
                 
                 try{
                     Image img=ImageIO.read(new File("images/engrenage.png"));
@@ -1298,7 +1418,7 @@ public class ViewPlaying extends ViewGame{
                 changeName.setPreferredSize(new Dimension(commandH-10, commandH-10));
                 changeName.addActionListener((event)->{
                     String newName=JOptionPane.showInputDialog("New name ?");
-                    if(newName!=null) resize(newName);
+                    if(newName!=null) rename(newName);
                 });
                 
                 this.add(new JLabel("  "));//pour la presentation
@@ -1308,7 +1428,7 @@ public class ViewPlaying extends ViewGame{
                 this.setBounds(x, y, getPreferredSize().width, commandH);
             }
             
-            void resize(String newName){
+            void rename(String newName){
                 this.nameFunction.setText("  "+newName+"  ");
                 this.setSize(this.getPreferredSize().width, commandH);
                 for(CommandFunctionCall c : caller) c.initializeDisplay();
@@ -1320,12 +1440,12 @@ public class ViewPlaying extends ViewGame{
             void execute(boolean executeNext){
                 this.next.execute(true);
             }
-        }
+        }//fin classe interne FunctionInit
 
 
-        /*****************
-        *   Draw class   *
-        *****************/
+        /*************************
+        *       Draw class       *
+        *************************/
 
         class CommandDrawLine extends Command{//classe interne
             CommandDrawLine(int x, int y){
@@ -1336,6 +1456,7 @@ public class ViewPlaying extends ViewGame{
                 this.add(input);
                 this.add(new JLabel("  "));//pour la presentation
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+                super.commandW=getPreferredSize().width-input.getPreferredSize().width;
             }
 
             void execute(boolean executeNext){
@@ -1386,6 +1507,7 @@ public class ViewPlaying extends ViewGame{
                 this.add(rightLeft);
                 this.add(new JLabel("  "));//pour la presentation
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+                super.commandW=getPreferredSize().width-input.getPreferredSize().width-angleScan.getPreferredSize().width;
             }
             
             boolean canExecute(){
@@ -1395,8 +1517,8 @@ public class ViewPlaying extends ViewGame{
                     if(angleScan.isEmpty()) angleScan.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
                 }
                 else{
-                    input.setBorder(numberOfFV[1]==0?null:fields.getFirst().border);
-                    angleScan.setBorder(numberOfFV[1]==0?null:fields.getFirst().border);
+                    input.setBorder(variables.size()==0?null:borderV);
+                    angleScan.setBorder(variables.size()==0?null:borderV);
                 }
                 return !isEmpty;
             }
@@ -1409,8 +1531,7 @@ public class ViewPlaying extends ViewGame{
                 Point origin=v.destinationLine(center.x, center.y, blackBoard.angle-sens*90, rad);//-90 pour gauche, +90 pour droite
                 Point translation=new Point(blackBoard.x-origin.x, blackBoard.y-origin.y);
                 
-                //ajout du vecteur dans le dessin du joueur
-                if(blackBoard.drawing){
+                if(blackBoard.drawing){//ajout du vecteur dans le dessin du joueur
                     Point square1=v.destinationLine(center.x, center.y, 90, rad);//haut du carre
                     square1=v.destinationLine(square1.x, square1.y, 180, rad);//coin gauche du carre
                     Point square2=new Point(square1.x+translation.x, square1.y+translation.y);//carre translate
@@ -1474,6 +1595,7 @@ public class ViewPlaying extends ViewGame{
                 this.add(this.input);
                 this.add(new JLabel("  "));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+                super.commandW=getPreferredSize().width-input.getPreferredSize().width;
             }
 
             void execute(boolean executeNext){
@@ -1523,7 +1645,6 @@ public class ViewPlaying extends ViewGame{
                 else if(next==null) victoryMessage();
             }
             
-            
             class ColorComboRenderer extends JPanel implements ListCellRenderer{
                 Color main=Color.BLUE;//couleur en tete d affichage
                 
@@ -1559,6 +1680,7 @@ public class ViewPlaying extends ViewGame{
                 this.add(this.positionY);
                 this.add(new JLabel("  )  "));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+                super.commandW=getPreferredSize().width-input.getPreferredSize().width-positionY.getPreferredSize().width;
             }
             
             boolean canExecute(){
@@ -1568,8 +1690,8 @@ public class ViewPlaying extends ViewGame{
                     if(positionY.isEmpty()) positionY.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
                 }
                 else{
-                    input.setBorder(numberOfFV[1]==0?null:fields.getFirst().border);
-                    positionY.setBorder(numberOfFV[1]==0?null:fields.getFirst().border);
+                    input.setBorder(variables.size()==0?null:borderV);
+                    positionY.setBorder(variables.size()==0?null:borderV);
                 }
                 return !isEmpty;
             }
@@ -1593,6 +1715,7 @@ public class ViewPlaying extends ViewGame{
                 this.add(input);
                 this.add(new JLabel("  to angle  "));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+                super.commandW=getPreferredSize().width-input.getPreferredSize().width;
             }
 
             void execute(boolean executeNext){
@@ -1614,6 +1737,7 @@ public class ViewPlaying extends ViewGame{
                 this.add(this.input);
                 this.add(new JLabel("  % to color  "));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+                super.commandW=getPreferredSize().width-input.getPreferredSize().width;
             }
             
             int regularize(int n){
@@ -1634,46 +1758,16 @@ public class ViewPlaying extends ViewGame{
                 else if(next==null) victoryMessage();
             }
         }//fin de classe interne shiftColor
-
-
-        class CommandAddition extends Command implements ActionListener{//classe interne
-            String[] tmp={"x", "y"};
-            private JComboBox choice=new JComboBox(tmp);
-            private int toAdd=0;
-            private NumberField add=new NumberField(this);
-            
-            CommandAddition(int x, int y){
-                super("addition", Color.LIGHT_GRAY.darker(), y);
-                super.input=new NumberField(this);
-                
-                choice.addActionListener(this);
-                
-                this.add(new JLabel("  "));//presentation
-                this.add(choice);
-                this.add(new JLabel("  +  "));
-                this.add(input);
-                this.add(new JLabel("  "));//presentation
-                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
-            }
-
-            public void actionPerformed(ActionEvent e){
-                System.out.println(choice.getSelectedItem().toString());
-            }
-
-            void execute(boolean executeNext){
-                variables.replace(input.variable.name, input.getNumber()+add.getNumber());
-            }
-        }//fin de classe interne Addition
         
         
         class NumberField extends JTextField{
             protected Variable variable;//varibale qu on lui stick
-            Border border=BorderFactory.createLineBorder(new Color(255, 204, 255), 2);
             final Command container;
+            final int fieldHeight=30, fieldWidth=50;
 
             NumberField(Command c){
                 super();
-                setPreferredSize(new Dimension(35, super.getPreferredSize().height));
+                setPreferredSize(new Dimension(fieldWidth, fieldHeight));
                 this.container=c;
             }
 
@@ -1689,24 +1783,14 @@ public class ViewPlaying extends ViewGame{
             }
             
             boolean isEmpty(){
-                if(variable==null){
-                    return getText().isEmpty();
-                }
+                if(variable==null) return getText().isEmpty();
                 return false;
             }
             
-            void resize(boolean larger){//true=stick, false=unstick
-                int diff=(variable.getWidth()-35)*(larger?1:-1);
-                setPreferredSize(new Dimension((larger)?variable.getWidth():35, getHeight()));
-                container.setBounds(container.getX(), container.getY(), container.getWidth()+diff, container.getHeight());
-                SwingUtilities.updateComponentTreeUI(container);
-                
-                //deuxieme champ avec une variable deja initialisee
-                if((container instanceof CommandDrawArc || container instanceof CommandMoveTo) && (this==container.input)){
-                    NumberField field2=(container instanceof CommandMoveTo)?
-                        ((CommandMoveTo)container).positionY:((CommandDrawArc)container).angleScan;
-                    if(field2.variable!=null) field2.variable.stick(false);
-                }
+            void resize(){
+                setPreferredSize(new Dimension((variable!=null)?
+                    variable.getPreferredSize().width:fieldWidth, fieldHeight));
+                container.resize();
             }
 
             protected Document createDefaultModel(){
@@ -1729,35 +1813,51 @@ public class ViewPlaying extends ViewGame{
         }//fin classe interne NumberField
 
 
-        /*******************
-        *     Variable     *
-        *******************/
+        /*************************
+        *        Variable        *
+        *************************/
         
-        class Variable extends JPanel implements MouseInputListener{
-            final String name;
-            final int positionY;
-            protected boolean lastCreated=true;//true=addSameVariable
-            private NumberField linkedTo;
+        class Variable extends JPanel implements MouseInputListener, ActionListener{
+            final int positionY, variableW, variableH;
             private int mouseX, mouseY;
+            private boolean lastCreated=true;
+            private NumberField linkedTo;
+            private JComboBox choice=new JComboBox();
+            private String name;
             
-            Variable(String name, int x, int y){
-                this.name=name;
-                this.positionY=y;
-                variables.put(name, 0);//met dans HashMap, par defaut variable=0
+            Variable(int x, int y){
+                this.positionY=y;                
+                this.setBackground(new Color(255, 204, 255));
+                this.setLayout(new GridBagLayout());
                 this.addMouseMotionListener(this);
                 this.addMouseListener(this);
                 
-                this.setBackground(new Color(255, 204, 255));
-                this.setLayout(new GridBagLayout());
-                this.add(new JLabel("  "+name+"  "));
-                NumberField tmp=new NumberField(null);//juste pour hauteur
-                this.setBounds(x, y+deltaY, getPreferredSize().width, tmp.getPreferredSize().height);
+                choice.setBackground(new Color(255, 204, 255));
+                for(String varName : variables.keySet()) choice.addItem(varName);
+                choice.setPreferredSize(new Dimension(largerVariable(choice), choice.getPreferredSize().height-5));
+                choice.addActionListener(this);
+                name=choice.getItemAt(0).toString();
+                
+                this.add(new JLabel("    "));
+                this.add(choice);
+                this.add(new JLabel("    "));
+                NumberField tmp=new NumberField(null);//juste pour la hauteur
+                variableH=tmp.fieldHeight;
+                this.setBounds(x, y+deltaY, getPreferredSize().width, variableH);
+                variableW=getPreferredSize().width-choice.getPreferredSize().width;
+            }
+
+            public void actionPerformed(ActionEvent e){
+                this.name=choice.getSelectedItem().toString();
+            }
+            
+            void resize(){
+                setBounds(getX(), getY(), variableW+choice.getPreferredSize().width, variableH);
+                if(linkedTo!=null) linkedTo.resize();
             }
             
             
-            /******************
-            * Delete Variable *
-            ******************/
+            /***** Delete Variable *****/
             
             boolean toDelete(){//quand pres de la poubelle
                 if(bin.getLocation().y>getLocation().y+getHeight()) return false;
@@ -1774,24 +1874,19 @@ public class ViewPlaying extends ViewGame{
             
             void deleteSteps() throws IOException{//enleve variable du panel
                 PanelDragDropBoard.this.remove(this);
-                fields.remove(linkedTo);
-                if(lastCreated) addSameVariable(this);//regeneration
+                if(!inWhiteBoard()) addSettedVariables(this.positionY);//regeneration
                 bin.loadBin("images/closedBin.png");
                 SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
             }
 
             
-            /******************
-            * Stick & Unstick *
-            ******************/
+            /***** Stick & Unstick *****/
 
-            int closeCommand(){//this et NumberField sont assez proches pour se coller
-                int i=0;
+            NumberField closeCommand(){//this et NumberField sont assez proches pour se coller
                 for(NumberField f : fields){
-                    if(f.variable==null && closeHeight(f) && closeWidth(f)) return i;
-                    i++;
+                    if(f.variable==null && closeHeight(f) && closeWidth(f)) return f;
                 }
-                return -1;
+                return null;
             }
 
             boolean closeHeight(NumberField field){//distance entre haut de field et this
@@ -1808,7 +1903,8 @@ public class ViewPlaying extends ViewGame{
                 if(needResize){
                     linkedTo=brightF;
                     linkedTo.variable=this;
-                    linkedTo.resize(true);//aggrandit
+                    linkedTo.resize();
+                    fields.remove(linkedTo);//plus disponible pour liaison
                     switchOff();
                 }
                 int x=linkedTo.container.getX()+linkedTo.getX();
@@ -1818,16 +1914,14 @@ public class ViewPlaying extends ViewGame{
             
             void unStick(){//decolle this (dragged) de son linkedTo
                 if(linkedTo==null) return;
-                linkedTo.resize(false);//retrecit
                 fields.add(linkedTo);//disponible pour liaison
                 linkedTo.variable=null;//suppression des liens
+                linkedTo.resize();
                 linkedTo=null;
             }
 
 
-            /*****************
-            * Mouse Override *
-            *****************/
+            /***** Mouse Motion *****/
             
             void setToForeground(){//this a l avant-plan quand on le drag==tete de liste
                 ViewPlaying.this.dragDrop.remove(this);
@@ -1835,7 +1929,7 @@ public class ViewPlaying extends ViewGame{
             }
             
             void switchOff(){//eteint le seul field a eteindre
-                brightF.setBorder(brightF.border);//pour eviter decalage brighter/darker
+                brightF.setBorder(borderV);//pour eviter decalage brighter/darker
                 brightF=null;
             }
 
@@ -1858,9 +1952,9 @@ public class ViewPlaying extends ViewGame{
                 
                 //allume et eteint les NumberField selon les cas
                 if(brightF!=null) switchOff();//eteint tout d abord
-                int nearby=closeCommand();
-                if(nearby!=-1){//proche d un bloc
-                    brightF=fields.get(nearby);//allume le seul necessaire
+                NumberField nearby=closeCommand();
+                if(nearby!=null){//proche d un bloc
+                    brightF=nearby;//allume le seul necessaire
                     brightF.setBorder(BorderFactory.createLineBorder(Color.MAGENTA, 3));
                 }
                 
@@ -1883,9 +1977,9 @@ public class ViewPlaying extends ViewGame{
                     }
                 }
                 else{
-                    if(inWhiteBoard() && lastCreated){//regeneration
+                    if(lastCreated && inWhiteBoard()){
                         lastCreated=false;
-                        addSameVariable(this);
+                        addSettedVariables(this.positionY);
                     }
                     if(brightF!=null) stick(true);//accroche
                 }
@@ -1896,5 +1990,97 @@ public class ViewPlaying extends ViewGame{
             public void mouseEntered(MouseEvent e){}
             public void mouseExited(MouseEvent e){}
         }//fin classe interne Variable
+        
+        
+        class CommandOperationV extends Command implements ActionListener{//classe interne
+            protected JComboBox choice=new JComboBox();
+            protected String varName;
+            
+            CommandOperationV(String name, int x, int y, String sign){
+                super(name, new Color(255, 153, 194), y);
+                super.input=new NumberField(this);
+                
+                for(String varName : variables.keySet()) choice.addItem(varName);
+                choice.addActionListener(this);
+                varName=choice.getItemAt(0).toString();
+                
+                this.add(new JLabel("  "));//presentation
+                this.add(choice);
+                this.add(new JLabel("  "+sign+"  "));
+                this.add(input);
+                this.add(new JLabel("  "));//presentation
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+                super.commandW=getPreferredSize().width-input.getPreferredSize().width-choice.getPreferredSize().width;
+            }
+
+            public void actionPerformed(ActionEvent e){
+                varName=choice.getSelectedItem().toString();
+            }
+            
+            void execute(boolean executeNext){
+                if(executeNext && next!=null) next.execute(true);
+                else if(next==null) victoryMessage();
+            }//sera override
+        }//fin de classe interne OperationVariable
+
+
+        class CommandAffectation extends CommandOperationV{//classe interne
+            CommandAffectation(int x, int y){
+                super("affectation", x, y, "=");
+            }
+
+            void execute(boolean executeNext){
+                variables.replace(varName, input.getNumber());
+                super.execute(executeNext);
+            }
+        }//fin de classe interne Affectation
+
+
+        class CommandAddition extends CommandOperationV{//classe interne
+            CommandAddition(int x, int y){
+                super("addition", x, y, "+");
+            }
+
+            void execute(boolean executeNext){
+                variables.replace(varName, variables.get(varName)+input.getNumber());
+                super.execute(executeNext);
+            }
+        }//fin de classe interne Addition
+
+
+        class CommandSoustraction extends CommandOperationV{//classe interne
+            CommandSoustraction(int x, int y){
+                super("soustraction", x, y, "-");
+            }
+
+            void execute(boolean executeNext){
+                variables.replace(varName, variables.get(varName)-input.getNumber());
+                super.execute(executeNext);
+            }
+        }//fin de classe interne Soustraction
+
+
+        class CommandMultiplication extends CommandOperationV{//classe interne
+            CommandMultiplication(int x, int y){
+                super("multiplication", x, y, "*");
+            }
+
+            void execute(boolean executeNext){
+                variables.replace(varName, variables.get(varName)*input.getNumber());
+                super.execute(executeNext);
+            }
+        }//fin de classe interne Multiplication
+
+
+        class CommandDivision extends CommandOperationV{//classe interne
+            CommandDivision(int x, int y){
+                super("division", x, y, "/");
+            }
+
+            void execute(boolean executeNext){
+                variables.replace(varName, variables.get(varName)/input.getNumber());
+                super.execute(executeNext);
+            }
+        }//fin de classe interne Division
     }//fin classe interne PanelDragDropBoard
 }
