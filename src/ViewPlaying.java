@@ -321,7 +321,7 @@ public class ViewPlaying extends ViewGame{
                         createV.setEnabled(true);
                         createV.setBackground(null);
                     }
-                    if(variables.size()==0) removeV.setEnabled(false);//plus de variable
+                    removeV.setEnabled(!variables.isEmpty());//plus de variable
                 });
                 this.add(createV);
                 this.add(removeV);
@@ -359,7 +359,7 @@ public class ViewPlaying extends ViewGame{
             int addToY=(e.getWheelRotation()<0?1:-1)*e.getScrollAmount()*10;
             if(e.getX()<this.getX()+width/2-x00){//whiteBoard
                 for(Component c : ViewPlaying.this.dragDrop.getComponents()){
-                    if(commands.contains(c) && c instanceof Command && !(c instanceof HookHorizontal)
+                    if(c instanceof Command && commands.contains(c) && !(c instanceof HookHorizontal)
                     || (c instanceof Variable && !((Variable)c).lastCreated))
                         c.setLocation(c.getX(), c.getY()+addToY);
                 }
@@ -367,7 +367,7 @@ public class ViewPlaying extends ViewGame{
             else{//commandBoard
                 deltaY+=addToY;
                 for(Component c : ViewPlaying.this.dragDrop.getComponents()){
-                    if(!commands.contains(c) && c instanceof Command && !(c instanceof HookHorizontal)
+                    if(c instanceof Command && !commands.contains(c) && !(c instanceof HookHorizontal)
                     || (c instanceof Variable && ((Variable)c).lastCreated))
                         c.setLocation(c.getX(), c.getY()+addToY);
                 }
@@ -501,7 +501,7 @@ public class ViewPlaying extends ViewGame{
             for(Component c : getComponents()){//ajout dans tous les comboBox
                 if((variables.size()!=1 && (c instanceof CommandOperationV || c instanceof Variable))
                 || c instanceof CommandIf || c instanceof CommandWhile)
-                    regulation(c, name, true);
+                    resizeBox(c, name, true);
             }
             resizeCommand();
         }
@@ -514,13 +514,12 @@ public class ViewPlaying extends ViewGame{
         
         void removeVariable(String name){
             variables.remove(name);
-            if(variables.size()==0){//efface toutes les variables
+            if(variables.isEmpty()){//efface toutes les variables
                 for(Component c : getComponents()){
                     if(c instanceof CommandOperationV || c instanceof Variable){
-                        if(commands.contains(c)){//OperationV sur whiteBoard
+                        if(commands.remove(c)==true){//OperationV sur whiteBoard
                             ((Command)c).unStick();
                             if(((Command)c).next!=null) ((Command)c).next.unStick();
-                            commands.remove(c);
                             fields.remove(((CommandOperationV)c).input);
                         }
                         else if(!(c instanceof Variable) || ((Variable)c).lastCreated)//sur commandBoard
@@ -533,19 +532,21 @@ public class ViewPlaying extends ViewGame{
                 for(NumberField f : fields) f.setBorder(null);
             }
             for(Component c : getComponents()){//retrait de tous les comboBox
-                if(c instanceof CommandOperationV || c instanceof CommandIf || c instanceof CommandWhile || c instanceof Variable)
-                    regulation(c, name, false);
+                if(c instanceof CommandOperationV || c instanceof CommandIf
+                    || c instanceof CommandWhile || c instanceof Variable){
+                    resizeBox(c, name, false);
+                }
             }
             resizeCommand();
         }
         
-        void regulation(Component c, String name, boolean add){
+        void resizeBox(Component c, String name, boolean add){
             JComboBox box=(c instanceof CommandIf)?((CommandIf)c).variableG:(c instanceof CommandWhile)?
               ((CommandWhile)c).variableG:(c instanceof Variable)?((Variable)c).choice:((CommandOperationV)c).choice;
             if(add) box.addItem(name);
             else box.removeItem(name);
             box.setPreferredSize(new Dimension(largerVariable(box), box.getHeight()));
-            //if(c instanceof Variable) ((Variable)c).resize();//resize variable+commande
+            if(c instanceof Variable) ((Variable)c).resize();
         }
         
         int largerVariable(JComboBox box){//larger du comboBox apres retrait d un element
@@ -560,16 +561,7 @@ public class ViewPlaying extends ViewGame{
         
         void resizeCommand(){//resize commandes sans variable
             for(Component c : getComponents()){
-                if(c instanceof Variable) ((Variable)c).resize();//resize variable+commande
-            }
-            for(Component c : getComponents()){
-                SwingUtilities.updateComponentTreeUI(c);
-                if(c instanceof Command && ((Command)c).input!=null && ((Command)c).input.variable==null)
-                    ((Command)c).resize();
-            }
-            for(Component c : getComponents()){
-                if(c instanceof Variable && ((Variable)c).linkedTo!=null)
-                    ((Variable)c).stick(false);
+                if(c instanceof Command) ((Command)c).resize();
             }
         }
         
@@ -649,7 +641,7 @@ public class ViewPlaying extends ViewGame{
             BufferedImage state;
 
             Bin() throws IOException{
-                this.setBounds(width/2+5, height-50, 40, 40);
+                this.setBounds(width/2-45, height-50, 40, 40);
                 this.loadBin("images/closedBin.png");
             }
 
@@ -658,14 +650,12 @@ public class ViewPlaying extends ViewGame{
                     this.state=ImageIO.read(new File(path));
                     this.repaint();
                 }
-                catch(FileNotFoundException e){
-                    System.out.println("Image could not be found");
-                }
+                catch(FileNotFoundException e){}
             }
 
             public void paintComponent(Graphics g){
                 super.paintComponent(g);
-                g.drawImage(this.state,0,0,40,40,null);
+                g.drawImage(this.state, 0, 0, 40, 40, Color.WHITE, null);
             }
         }
 
@@ -919,8 +909,15 @@ public class ViewPlaying extends ViewGame{
                 }
             }
             
-            void resize(){//largeur, pour adapter a la variable
-                if(input==null) return;
+            void resize(){//largeur
+                if(input==null) return;//pas besoin de resize, taille constante
+                //resize des composants du bloc
+                input.resize();
+                if(this instanceof CommandMoveTo || this instanceof CommandDrawArc){
+                    ((this instanceof CommandMoveTo)?((CommandMoveTo)this).positionY:
+                        ((CommandDrawArc)this).angleScan).resize();
+                }
+                //resize du bloc en lui-meme
                 int width=this.commandW+input.getPreferredSize().width;
                 if(this instanceof CommandMoveTo || this instanceof CommandDrawArc){
                     NumberField tmp=(this instanceof CommandMoveTo)?((CommandMoveTo)this).positionY:
@@ -933,23 +930,18 @@ public class ViewPlaying extends ViewGame{
                     width+=tmp.getPreferredSize().width;
                 }
                 this.setBounds(getX(), getY(), width, getHeight());
+                SwingUtilities.updateComponentTreeUI(this);
                 
-                //deuxieme champ avec une variable deja initialisee
+                //replacement d un deuxieme champ avec une variable deja initialisee
                 if(this instanceof CommandDrawArc || this instanceof CommandMoveTo){
                     NumberField field2=(this instanceof CommandMoveTo)?
                         ((CommandMoveTo)this).positionY:((CommandDrawArc)this).angleScan;
-                    if(field2.variable!=null){
-                        SwingUtilities.updateComponentTreeUI(this);
-                        field2.variable.stick(false);
-                    }
+                    if(field2.variable!=null) field2.variable.stick(false);
                 }
-                //variable a cote de comboBox initialisee
+                //replacement de variables initialisees a cote de comboBox
                 else if(this instanceof CommandIf || this instanceof CommandWhile || this instanceof CommandOperationV){
                     Variable var=((Command)this).input.variable;
-                    if(var!=null){
-                        //SwingUtilities.updateComponentTreeUI(this);
-                        var.stick(false);
-                    }
+                    if(var!=null) var.stick(false);
                 }
             }
             
@@ -1040,9 +1032,7 @@ public class ViewPlaying extends ViewGame{
                 try{
                     updateBinState();
                 }
-                catch(IOException e1){
-                    System.out.println("Couldn't update bin");
-                }
+                catch(IOException e1){}
             }
 
             public void mouseReleased(MouseEvent e){
@@ -1050,9 +1040,7 @@ public class ViewPlaying extends ViewGame{
                     try{
                         this.deleteSteps();
                     }
-                    catch(IOException e1){
-                        System.out.println("Couldn't delete command");
-                    }
+                    catch(IOException e1){}
                 }
                 else{
                     newDrag();
@@ -1064,9 +1052,7 @@ public class ViewPlaying extends ViewGame{
             
             public void mouseMoved(MouseEvent e){}
             public void mouseClicked(MouseEvent e){//pour verification, a enlever apres
-                System.out.println(this.input.getPreferredSize());
-                System.out.println(this.getPreferredSize());
-                System.out.println(((CommandOperationV)this).choice.getPreferredSize());
+                
             }
             public void mouseEntered(MouseEvent e){}
             public void mouseExited(MouseEvent e){}
@@ -1790,7 +1776,6 @@ public class ViewPlaying extends ViewGame{
             void resize(){
                 setPreferredSize(new Dimension((variable!=null)?
                     variable.getPreferredSize().width:fieldWidth, fieldHeight));
-                container.resize();
             }
 
             protected Document createDefaultModel(){
@@ -1851,11 +1836,6 @@ public class ViewPlaying extends ViewGame{
                 this.name=choice.getSelectedItem().toString();
             }
             
-            void resize(){
-                setBounds(getX(), getY(), variableW+choice.getPreferredSize().width, variableH);
-                if(linkedTo!=null) linkedTo.resize();
-            }
-            
             
             /***** Delete Variable *****/
             
@@ -1903,7 +1883,7 @@ public class ViewPlaying extends ViewGame{
                 if(needResize){
                     linkedTo=brightF;
                     linkedTo.variable=this;
-                    linkedTo.resize();
+                    linkedTo.container.resize();
                     fields.remove(linkedTo);//plus disponible pour liaison
                     switchOff();
                 }
@@ -1916,8 +1896,12 @@ public class ViewPlaying extends ViewGame{
                 if(linkedTo==null) return;
                 fields.add(linkedTo);//disponible pour liaison
                 linkedTo.variable=null;//suppression des liens
-                linkedTo.resize();
+                linkedTo.container.resize();
                 linkedTo=null;
+            }
+            
+            void resize(){
+                setBounds(getX(), getY(), variableW+choice.getPreferredSize().width, variableH);
             }
 
 
@@ -1959,12 +1943,10 @@ public class ViewPlaying extends ViewGame{
                 }
                 
                 //ouvre eventuellement la poubelle
-                try{
+                try{//ouvre eventuellement la poubelle
                     updateBinState();
                 }
-                catch(IOException e1){
-                    System.out.println("Couldn't update bin");
-                }
+                catch(IOException e1){}
             }
 
             public void mouseReleased(MouseEvent e){
@@ -1972,9 +1954,7 @@ public class ViewPlaying extends ViewGame{
                     try{
                         this.deleteSteps();
                     }
-                    catch(IOException e1){
-                        System.out.println("Couldn't delete command");
-                    }
+                    catch(IOException e1){}
                 }
                 else{
                     if(lastCreated && inWhiteBoard()){
@@ -2017,10 +1997,10 @@ public class ViewPlaying extends ViewGame{
                 varName=choice.getSelectedItem().toString();
             }
             
-            void execute(boolean executeNext){
+            void execute(boolean executeNext){//sera completee
                 if(executeNext && next!=null) next.execute(true);
                 else if(next==null) victoryMessage();
-            }//sera override
+            }
         }//fin de classe interne OperationVariable
 
 
