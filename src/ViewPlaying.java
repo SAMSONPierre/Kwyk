@@ -1,5 +1,4 @@
 import java.awt.BasicStroke;
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -139,9 +138,22 @@ public class ViewPlaying extends ViewGame{
     }
     
     void reset(){
-        this.level.initializePlayerDraw();//vide le dessin du joueur
-        this.blackBoard.brush.resetBrush();//remet le pinceau a l'emplacement initial
+        level.initializePlayerDraw();//vide le dessin du joueur
+        blackBoard.brush.resetBrush();//remet le pinceau a l'emplacement initial
+        if(!variables.isEmpty()){
+            for(String key : variables.keySet()) variables.replace(key, 0);
+            updateVariableDisplay();
+        }
         repaint();
+    }
+            
+    void updateVariableDisplay(){
+        for(JLabel[] label : varDisplay){
+            label[1].setText(variables.get(label[0].getText()).toString());
+            features.add(label[0]);
+            features.add(label[1]);
+        }
+        SwingUtilities.updateComponentTreeUI(features);
     }
     
     void victoryMessage(){
@@ -1158,6 +1170,8 @@ public class ViewPlaying extends ViewGame{
             }
             
             Command execute(){
+                function.caller.remove(this);
+                function.caller.addFirst(this);//met en avant pour se distinguer des autres
                 return function.execute();
             }
         }//fin classe interne FunctionCall
@@ -1174,17 +1188,19 @@ public class ViewPlaying extends ViewGame{
             CommandWithCommands(String name, Color color, int x, int y){
                 super(name, color, y);
                 hookV=new HookVertical(color, commandH, x, y+commandH+deltaY);//apres la commande
-                hookH=new HookHorizontal(color, x, y+2*commandH+deltaY);//apres hookV
+                hookH=new HookHorizontal(this, x, y+2*commandH+deltaY);//apres hookV
                 this.next=hookH;
                 hookH.previous=this;
             }
             
             boolean canExecute(){//ne peut pas etre vide
-                boolean isEmpty=input.isEmpty();
-                if(isEmpty) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                else input.setBorder(variables.isEmpty()?null:borderV);
-                if(this.next==this.hookH) return false;
-                return !isEmpty;
+                if(!(this instanceof CommandFunctionInit)){
+                    boolean isEmpty=input.isEmpty();
+                    if(isEmpty) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                    else input.setBorder(variables.isEmpty()?null:borderV);
+                    if(isEmpty) return false;
+                }
+                return this.next!=this.hookH;
             }
             
             Command execute(){//sera complete par ses enfants
@@ -1234,8 +1250,11 @@ public class ViewPlaying extends ViewGame{
 
 
         class HookHorizontal extends Command{//fin de la boucle/condition
-            HookHorizontal(Color color, int x, int y){
-                super("hookHorizontal", color, y);
+            final CommandWithCommands head;
+            
+            HookHorizontal(CommandWithCommands head, int x, int y){
+                super("hookHorizontal", head.color, y);
+                this.head=head;
                 this.setBounds(x, y, hookW, commandH/2);
             }
             
@@ -1251,12 +1270,14 @@ public class ViewPlaying extends ViewGame{
             }
 
             Command execute(){
-                return (next!=null)?next.execute():null;
+                return head;//revenir en arriere pour for et while
             }
         }//fin classe HookHorizontal
 
 
         class CommandFor extends CommandWithCommands{//classe interne
+            private int nbRepeats=-1;//pas initialisee
+            
             CommandFor(int x, int y){
                 super("for", new Color(230, 138, 0), x, y);
                 super.input=new NumberField(this);//nombre de repetition a saisir
@@ -1269,8 +1290,10 @@ public class ViewPlaying extends ViewGame{
             }
 
             Command execute(){
-                for(int i=0; i<input.getNumber(); i++) super.execute();
-                return hookH.execute();
+                if(nbRepeats==-1) nbRepeats=(input.getNumber()<0)?0:input.getNumber();
+                nbRepeats--;
+                if(nbRepeats>=0) return next;
+                return hookH.next;//nbRepeats reinitialisee a -1 a la fin
             }
         }//fin classe interne For
 
@@ -1279,6 +1302,7 @@ public class ViewPlaying extends ViewGame{
             private JComboBox variableG=new JComboBox(), operateur=new JComboBox();//a priori seulement deux listes deroulantes
             private String op="<";//par defaut
             private int varG=blackBoard.x;
+            private boolean alreadyExecuted;
             //e.g x<100 <=> variableG(varG)="x", operateur="<", variableD(varD)="100"
             
             CommandIf(int x, int y){
@@ -1327,8 +1351,9 @@ public class ViewPlaying extends ViewGame{
             }
 
             Command execute(){
-            	if(evaluate(this.op)) super.execute();//execute Command apres hookH
-                return hookH.execute();
+                alreadyExecuted=!alreadyExecuted;//quand hookH revient dessus, reinitialisera
+            	if(alreadyExecuted && evaluate(this.op)) return next;
+                return hookH.next;
             }
         }//fin classe interne If
         
@@ -1336,7 +1361,7 @@ public class ViewPlaying extends ViewGame{
         class CommandWhile extends CommandWithCommands implements ActionListener{//classe interne
             private JComboBox variableG=new JComboBox(), operateur=new JComboBox();
             private String op="<";
-            private int varG, whatIsVarG=0;//x<=>0, y<=>1, angle<=>2, variables<=>3
+            private int varG, whatIsVarG=0, limit=3000;//x<=>0, y<=>1, angle<=>2, variables<=>3 ; pour simuler la terminaison
             
             CommandWhile(int x, int y){
                 super("while", new Color(204, 102, 102), x, y);
@@ -1383,25 +1408,20 @@ public class ViewPlaying extends ViewGame{
             }
 
             Command execute(){
+                if(limit==3000) error(false);//enleve fond rouge qu une fois, au debut
                 varG=whatIsVarG==0?blackBoard.x:whatIsVarG==1?blackBoard.y:whatIsVarG==1?
                     blackBoard.angle:variables.get(variableG.getSelectedItem().toString());
-            	int limit=3000;//pour simuler la terminaison
-            	while(evaluate(this.op) && limit>0){
-                    super.execute();
-                    varG=whatIsVarG==0?blackBoard.x:whatIsVarG==1?blackBoard.y:whatIsVarG==1?
-                    blackBoard.angle:variables.get(variableG.getSelectedItem().toString());
-                    limit--;
-            	}
+                if(evaluate(this.op) && limit-->0) return next;
             	if(limit==0){//si la terminaison a du etre simulee
                     error(true);
                     return null;
                 }
-                error(false);
-                return hookH.execute();
+                return hookH.next;
             }
             
             private void error(boolean b){
             	if(b){
+                    limit=3000;//reinitialise
                     this.setBackground(Color.RED.darker());
                     this.hookH.setBackground(Color.RED.darker());
                     this.hookV.setBackground(Color.RED.darker());
@@ -1419,6 +1439,7 @@ public class ViewPlaying extends ViewGame{
             protected JLabel nameFunction;
             private CustomJButton changeName=new CustomJButton("", null, true);//pop up pour changer
             private LinkedList<CommandFunctionCall> caller=new LinkedList<CommandFunctionCall>();
+            private boolean alreadyCall;
             
             CommandFunctionInit(String name, int x, int y){
                 super("function", new Color(212, 115, 212), x, y-deltaY);
@@ -1452,7 +1473,9 @@ public class ViewPlaying extends ViewGame{
             void stick(){}//ne peut pas etre stick aux autres
             
             Command execute(){
-                return this.next.execute();
+                alreadyCall=!alreadyCall;
+                if(alreadyCall) return next;
+                return caller.getFirst().next;//first=celui qui a appele la fonction
             }
         }//fin classe interne FunctionInit
 
@@ -2018,16 +2041,6 @@ public class ViewPlaying extends ViewGame{
             public void actionPerformed(ActionEvent e){
                 varName=choice.getSelectedItem().toString();
             }
-            
-            void updateVariableDisplay(){
-                for(JLabel[] label : varDisplay){
-                    label[1].setText(variables.get(label[0].getText()).toString());
-                    label[0].setBackground(color);
-                    features.add(label[0], BorderLayout.AFTER_LAST_LINE);
-                    features.add(label[1]);
-                }
-                SwingUtilities.updateComponentTreeUI(features);
-            }
         }//fin de classe interne OperationVariable
 
 
@@ -2038,7 +2051,7 @@ public class ViewPlaying extends ViewGame{
 
             Command execute(){
                 variables.replace(varName, input.getNumber());
-                updateVariableDisplay();
+                ViewPlaying.this.updateVariableDisplay();
                 return next;
             }
         }//fin de classe interne Affectation
@@ -2051,7 +2064,7 @@ public class ViewPlaying extends ViewGame{
 
             Command execute(){
                 variables.replace(varName, variables.get(varName)+input.getNumber());
-                updateVariableDisplay();
+                ViewPlaying.this.updateVariableDisplay();
                 return next;
             }
         }//fin de classe interne Addition
@@ -2064,7 +2077,7 @@ public class ViewPlaying extends ViewGame{
 
             Command execute(){
                 variables.replace(varName, variables.get(varName)-input.getNumber());
-                updateVariableDisplay();
+                ViewPlaying.this.updateVariableDisplay();
                 return next;
             }
         }//fin de classe interne Soustraction
@@ -2077,7 +2090,7 @@ public class ViewPlaying extends ViewGame{
 
             Command execute(){
                 variables.replace(varName, variables.get(varName)*input.getNumber());
-                updateVariableDisplay();
+                ViewPlaying.this.updateVariableDisplay();
                 return next;
             }
         }//fin de classe interne Multiplication
@@ -2090,7 +2103,7 @@ public class ViewPlaying extends ViewGame{
 
             Command execute(){
                 variables.replace(varName, variables.get(varName)/input.getNumber());
-                updateVariableDisplay();
+                ViewPlaying.this.updateVariableDisplay();
                 return next;
             }
         }//fin de classe interne Division
