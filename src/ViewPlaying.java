@@ -21,6 +21,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedList;
 import javax.imageio.ImageIO;
@@ -55,7 +56,7 @@ public class ViewPlaying extends ViewGame{
     private Level level;//niveau en cours
     private JProgressBar limite;
     private HashMap<String, Integer> variables=new HashMap<String, Integer>();//nom, valeur
-    private Timer timer=new Timer(500, null);
+    private Timer timer=new Timer(200, null);
     private JSlider slider=new JSlider();//regulation de la vitesse
     private PanelDragDropBoard.Command runC;
     private LinkedList<JLabel[]> varDisplay=new LinkedList<JLabel[]>();
@@ -65,6 +66,8 @@ public class ViewPlaying extends ViewGame{
         this.level=player.getLevel();
         addBoard();//ajout des tableaux, avec des marges de 20 (haut, bas et entre tableaux)
         addFeatures(isCreating);//ajout des fonctionnalites
+        if(level.functions!=null) dragDrop.loadFunctions();
+        if(level.mainCode!=null) dragDrop.loadMainCode();
     }
     
     void addBoard() throws IOException{
@@ -102,7 +105,7 @@ public class ViewPlaying extends ViewGame{
             JButton submit=new JButton("Submit");
             submit.addActionListener((event)->{
                 String name=JOptionPane.showInputDialog(this,"Level's name ?", null);	
-                super.control.submit(name, level);
+                super.control.submit(name, level, dragDrop.convertStart(), dragDrop.convertFunctions());//---a changer---
             });
             features.add(submit);
         }
@@ -323,6 +326,131 @@ public class ViewPlaying extends ViewGame{
             errorName.setForeground(Color.RED);
         }
         
+        int countConvert(Command c){
+            int res=0;
+            while(c!=null){
+                res++;
+                c=c.next;
+            }
+            return res;
+        }
+        
+        String[] convertStart(){
+            Command tmp=commands.getFirst();
+            int size=countConvert(tmp);
+            String[] res=new String[size];
+            size=0;
+            while(tmp!=null){
+                res[size++]=(tmp instanceof CommandFunctionCall)?
+                    ((CommandFunctionCall)tmp).name.getText():tmp.name;
+                tmp=tmp.next;
+            }
+            return res;
+        }
+        
+        String[] convertFunctions(){
+            int size=0;
+            for(Command c : commands){
+                if(c instanceof CommandFunctionInit) size+=countConvert(c);
+            }
+            String[] res=new String[size];
+            size=0;
+            for(Command c : commands){
+                if(c instanceof CommandFunctionInit){
+                    res[size++]=((CommandFunctionInit)c).nameFunction.getText();
+                    Command tmp=((CommandFunctionInit)c).next;
+                    while(tmp!=null){
+                        res[size++]=tmp.name;
+                        tmp=tmp.next;
+                    }
+                }
+            }
+            return res;
+        }
+        
+        void loadMainCode(){//charge du code accroche a Start
+            String[] toLoad=level.mainCode;
+            LinkedList<Command> saveLast=new LinkedList<Command>();
+            saveLast.add(commands.getFirst());
+            for(int i=1; i<toLoad.length; i++){
+                Command last=saveLast.removeLast();
+                if(toLoad[i].equals("hookHorizontal")){
+                    saveLast.getLast().previous=last;
+                    last.next=saveLast.getLast();
+                }
+                else{
+                    Command command=addLaunch(toLoad[i]);
+                    this.add(command);//visible
+                    commands.add(command);//accessible
+                    if(command instanceof CommandWithCommands){
+                        CommandWithCommands cwc=(CommandWithCommands)command;
+                        this.add(cwc.hookV);
+                        this.add(cwc.hookH);
+                        if(!(cwc instanceof CommandFunctionInit)) commands.add(cwc.hookH);
+                        else{
+                            command=new CommandFunctionCall((CommandFunctionInit)command, 0, 0);
+                            this.add(command);
+                            commands.add(command);
+                        }
+                    }
+                    command.previous=last;//liens
+                    last.next=command;
+                    if(last instanceof CommandWithCommands)
+                        saveLast.addLast(((CommandWithCommands)last).hookH);
+                    saveLast.addLast(command);//prochain qui sera lie
+                }
+            }
+            Command second=commands.getFirst().next;
+            second.updateHookVRec(second.getTmpCwc());//met a jour les hookV
+            second.updateAllLocation();//accroche correctement
+            limite.setValue(getNumbersFromHead()[0]);
+            SwingUtilities.updateComponentTreeUI(this);//refresh affichage
+        }
+        
+        void loadFunctions(){
+            String[] toLoad=level.functions;
+            LinkedList<CommandFunctionInit> functionHead=new LinkedList<CommandFunctionInit>();
+            LinkedList<Command> saveLast=new LinkedList<Command>();
+            saveLast.add(new Command("", Color.BLACK, 0));//inutile, pour eviter erreur liste vide
+            for(int i=0; i<toLoad.length; i++){
+                Command last=saveLast.removeLast();
+                if(toLoad[i].equals("hookHorizontal")){
+                    saveLast.getLast().previous=last;
+                    last.next=saveLast.getLast();
+                }
+                else{
+                    Command command=addLaunch(toLoad[i]);
+                    this.add(command);//visible
+                    commands.add(command);//accessible
+                    if(command instanceof CommandWithCommands){
+                        CommandWithCommands cwc=(CommandWithCommands)command;
+                        this.add(cwc.hookV);
+                        this.add(cwc.hookH);
+                        if(!(cwc instanceof CommandFunctionInit)) commands.add(cwc.hookH);
+                        else{
+                            last=null;
+                            for(Command c : saveLast) saveLast.remove(c);
+                            functionHead.add(((CommandFunctionInit)command));
+                            lastPositionY+=addCommandCall((CommandFunctionInit)command, lastPositionY);
+                        }
+                    }
+                    if(last!=null){//dans la fonction
+                        command.previous=last;//liens
+                        last.next=command;
+                        if(last instanceof CommandWithCommands)
+                            saveLast.addLast(((CommandWithCommands)last).hookH);
+                    }
+                    saveLast.addLast(command);//prochain qui sera lie
+                }
+            }
+            for(CommandFunctionInit c : functionHead){
+                Command second=c.next;
+                second.updateHookVRec(second.getTmpCwc());//met a jour les hookV
+                second.updateAllLocation();//accroche correctement
+            }
+            SwingUtilities.updateComponentTreeUI(this);//refresh affichage
+        }
+        
         void setFunctionVariableButton(){
             if(level.numberOfVariables!=0){
                 JButton createV=new JButton("Create a new variable");
@@ -364,7 +492,7 @@ public class ViewPlaying extends ViewGame{
                 this.add(removeV);
                 removeV.setEnabled(false);
             }
-            if(level.numberOfFunctions!=0){
+            if(level.numberOfFunctions!=0 && level.mainCode==null){
                 JButton createF=new JButton("Create a new function");
                 Dimension dF=createF.getPreferredSize();
                 createF.setBounds(width/2-20-dF.width, 50+2*dF.height, dF.width, dF.height);
@@ -500,6 +628,53 @@ public class ViewPlaying extends ViewGame{
             }
             SwingUtilities.updateComponentTreeUI(this);//refresh affichage
             return res;
+        }
+        
+        Command addLaunch(String name){//(re)generation des commandes
+            switch(name){
+                case "for":
+                    return new CommandFor(0, 0);
+                case "if":
+                    return new CommandIf(0, 0);
+                case "while":
+                    return new CommandWhile(0, 0);
+                case "drawLine":
+                    return new CommandDrawLine(0, 0);
+                case "drawArc":
+                    return new CommandDrawArc(0, 0);
+                case "raisePutBrush":
+                    return new CommandRaisePutBrush(0, 0);
+                case "moveTo":
+                    return new CommandMoveTo(0, 0);
+                case "setAngle":
+                    return new CommandSetAngle(0, 0);
+                case "addAngle":
+                    return new CommandAddAngle(0, 0);
+                case "setColor":
+                    return new CommandSetColor(0, 0);
+                case "shiftColor":
+                    return new CommandShiftColor(0, 0);
+                case "affectation":
+                    return new CommandAffectation(0, 0);
+                case "addition":
+                    return new CommandAddition(0, 0);
+                case "soustraction":
+                    return new CommandSoustraction(0, 0);
+                case "multiplication":
+                    return new CommandMultiplication(0, 0);
+                case "division":
+                    return new CommandDivision(0, 0);
+                default ://fonction
+                    if(!nameFunAlreadySet(name)){//init
+                        numberOfFunction++;
+                        return new CommandFunctionInit(name, width/2-200, 60+3*ViewPlaying.this.buttonHeight);
+                    }
+                    for(Command c : commands){
+                        if(c instanceof CommandFunctionInit && ((CommandFunctionInit)c).nameFunction.getText().equals("  "+name+"  "))
+                            return new CommandFunctionCall((CommandFunctionInit)c, 0, 0);
+                    }
+            }
+            return null;//a priori jamais atteint
         }
         
         void addFunction(String name, int x, int y){//nouvelle fonction, ajout dans WhiteBoard
@@ -1110,7 +1285,7 @@ public class ViewPlaying extends ViewGame{
         *  Subclass of Command  *
         ************************/
         
-        class CommandStart extends Command{//bloc initial present que sur WhiteBoard
+        class CommandStart extends Command implements Serializable{//bloc initial present que sur WhiteBoard
             CommandStart(){
                 super("start", new Color(0, 204, 102), 20);
                 this.add(new JLabel("  Start your code here !  "));
@@ -1298,7 +1473,7 @@ public class ViewPlaying extends ViewGame{
         }//fin classe interne For
 
 
-        class CommandIf extends CommandWithCommands implements ActionListener{//classe interne
+        class CommandIf extends CommandWithCommands{//classe interne
             private JComboBox variableG=new JComboBox(), operateur=new JComboBox();//a priori seulement deux listes deroulantes
             private String op="<";//par defaut
             private int varG=blackBoard.x;
@@ -1309,7 +1484,6 @@ public class ViewPlaying extends ViewGame{
                 super("if", new Color(179, 0, 89), x, y);
                 super.input=new NumberField(this);//choix libre du joueur donc pas une liste
                 
-                this.variableG.addActionListener(this);
                 String[] tmp={"x", "y", "angle"};
                 for(String s : tmp) variableG.addItem(s);
                 for(String s : variables.keySet()) variableG.addItem(s);
@@ -1331,13 +1505,6 @@ public class ViewPlaying extends ViewGame{
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 super.commandW=getPreferredSize().width-input.getPreferredSize().width-variableG.getPreferredSize().width;
             }
-            
-            public void actionPerformed(ActionEvent e){
-                varG=variableG.getSelectedItem().equals("x")?blackBoard.x:
-                     variableG.getSelectedItem().equals("y")?blackBoard.y:
-                     variableG.getSelectedItem().equals("angle")?blackBoard.angle:
-                     variables.get(variableG.getSelectedItem().toString());
-            }
 
             boolean evaluate(String op){
             	switch(op){
@@ -1351,8 +1518,12 @@ public class ViewPlaying extends ViewGame{
             }
 
             Command execute(){
+                varG=variableG.getSelectedItem().equals("x")?blackBoard.x:
+                     variableG.getSelectedItem().equals("y")?blackBoard.y:
+                     variableG.getSelectedItem().equals("angle")?blackBoard.angle:
+                     variables.get(variableG.getSelectedItem().toString());
                 alreadyExecuted=!alreadyExecuted;//quand hookH revient dessus, reinitialisera
-            	if(alreadyExecuted && evaluate(this.op)) return next;
+            	if(evaluate(this.op) && alreadyExecuted) return next;
                 return hookH.next;
             }
         }//fin classe interne If

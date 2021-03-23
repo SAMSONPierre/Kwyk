@@ -158,7 +158,7 @@ public class Control implements Serializable{
     * Submit new level *
     *******************/
     
-    void submit(String name, Level level){
+    void submit(String name, Level level, String[] mainCode, String[] functions){
         if(name==null) return;
     	ViewPlaying tmp=(ViewPlaying)this.view;
     	LinkedList<Vector> newPattern=model.getPlayer().getLevel().getSimplifyPattern();
@@ -175,9 +175,9 @@ public class Control implements Serializable{
         }
         catch(Exception e){
             e.printStackTrace();
-        }        
+        }
     	Level newLvl=new Level(model.getPlayer(),level.brushX,level.brushY,level.brushAngle,
-            level.brushFirstColor,numbers[0],numbers[1],numbers[2],name,commandsAvailable,newPattern);
+            level.brushFirstColor,numbers[0],numbers[1],numbers[2],name,commandsAvailable,newPattern,mainCode, functions);
     	try{
             String saveFile="levels/training/1Tutoriel/"+cpt+"- "+name+".lvl";
             File file=new File(saveFile);

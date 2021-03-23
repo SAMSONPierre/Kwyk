@@ -7,7 +7,7 @@ public class Main {
         //EventQueue.invokeLater(()-> new Control(new ViewLogin()));
         
         Player p=new Player("user");
-        Level l=new Level(p, 200, 100, 270, Color.BLUE);//parametres en mode game master
+        Level l=new Level(p, 200, 100, 270, Color.BLUE, null, null);//parametres en mode game master
         
         //creer
         p.setLevel(l);

@@ -8,11 +8,12 @@ public class Level implements Serializable{
     final int numberOfCommands, numberOfFunctions, numberOfVariables;
     final String name;
     final String[] availableCommands;//nom des commandes disponibles
+    final String[] mainCode, functions;//code principal a charger
     private LinkedList<Vector> pattern=new LinkedList<Vector>();//patron
     private LinkedList<Vector> playerDraw=new LinkedList<Vector>();
     
     Level(Player p, int x, int y, int angle, Color color, int nbOfC, int nbOfF, int nbOfV,
-            String name, String[] nameOfC, LinkedList<Vector> v){
+            String name, String[] nameOfC, LinkedList<Vector> v, String[] mainCode, String[] functions){
         this.brushX=x;
         this.brushY=y;
         this.brushAngle=angle;
@@ -23,6 +24,8 @@ public class Level implements Serializable{
         this.name=name;
         this.availableCommands=nameOfC;
         this.pattern=v;
+        this.mainCode=mainCode;
+        this.functions=functions;
     }
     
     Level(Player p){//pour creer des niveaux      
@@ -38,9 +41,11 @@ public class Level implements Serializable{
             "moveTo", "setAngle", "addAngle", "setColor", "shiftColor"};
         this.availableCommands=c;
         this.pattern=new LinkedList<Vector>();
+        this.mainCode=null;
+        this.functions=null;
     }
     
-    Level(Player p, int x, int y, int angle, Color color){//pour construire tutoriel
+    Level(Player p, int x, int y, int angle, Color color, String[] mainCode, String[] functions){//pour construire tutoriel
         this.brushX=x;
         this.brushY=y;
         this.brushAngle=angle;
@@ -53,6 +58,8 @@ public class Level implements Serializable{
             "moveTo", "setAngle", "addAngle", "setColor", "shiftColor"};
         this.availableCommands=c;
         this.pattern=new LinkedList<Vector>();
+        this.mainCode=mainCode;
+        this.functions=functions;
     }
     
     String[] getAvailableCommands(){
