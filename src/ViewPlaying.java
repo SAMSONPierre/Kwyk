@@ -58,8 +58,9 @@ public class ViewPlaying extends ViewGame{
     private HashMap<String, Integer> variables=new HashMap<String, Integer>();//nom, valeur
     private Timer timer=new Timer(200, null);
     private JSlider slider=new JSlider();//regulation de la vitesse
-    private PanelDragDropBoard.Command runC;
-    private LinkedList<JLabel[]> varDisplay=new LinkedList<JLabel[]>();
+    private JButton run=new JButton("Run"), stop=new JButton("Stop"), reset=new JButton("Reset");
+    private PanelDragDropBoard.Command runC;//la commande en execution
+    private LinkedList<JLabel[]> varDisplay=new LinkedList<JLabel[]>();//affichage des variables
     
     ViewPlaying(Player player, boolean isCreating) throws IOException{
         super(player);
@@ -82,24 +83,22 @@ public class ViewPlaying extends ViewGame{
         features.setBounds(20, 440+buttonHeight, 400, heightFS-460-buttonHeight);
         this.add(features);
         
-        JButton seeGrid=new JButton("See grid");//voir la grille
+        JButton seeGrid=new JButton("Hide grid");//voir la grille
         seeGrid.addActionListener((event)->{
             blackBoard.gridApparent=!blackBoard.gridApparent;
+            seeGrid.setText(blackBoard.gridApparent?"Hide grid":"Show grid");
             blackBoard.repaint();
         });
         features.add(seeGrid);
         
-        JButton run=new JButton("Run");//actionner le code
-        run.addActionListener((event)->this.run());
+        run.addActionListener((event)->run());
+        stop.addActionListener((event)->stop());
+        reset.addActionListener((event)->reset());
         features.add(run);
-        
-        JButton stop=new JButton("Stop");//arreter le code
-        stop.addActionListener((event)->timer.stop());
         features.add(stop);
-        
-        JButton reset=new JButton("Reset");//reinitialise blackBoard
-        reset.addActionListener((event)->this.reset());
         features.add(reset);
+        stop.setVisible(false);//apparait apres avoir clique sur run
+        reset.setVisible(false);//idem, pour stop
         
         if(isCreating){//creer un niveau -> que pour la page Create
             JButton submit=new JButton("Submit");
@@ -121,6 +120,8 @@ public class ViewPlaying extends ViewGame{
     }
     
     void run(){
+        run.setVisible(false);
+        stop.setVisible(true);
         runC=dragDrop.commands.getFirst();
         runC=runC.canExecute()?runC.next:null;
         ActionListener taskPerformed=new ActionListener(){
@@ -129,15 +130,20 @@ public class ViewPlaying extends ViewGame{
                     runC=runC.execute();
                 }
                 else{
+                    stop();//arret automatique
                     if(level.compare()) JOptionPane.showMessageDialog(null, "Victory !");
-                    timer.stop();
-                    for(ActionListener action : timer.getActionListeners())
-                        timer.removeActionListener(action);
                 }
             }
         };
         timer.addActionListener(taskPerformed);
         timer.start();
+    }
+    
+    void stop(){
+        timer.stop();
+        stop.setVisible(false);
+        reset.setVisible(true);
+        for(ActionListener action : timer.getActionListeners()) timer.removeActionListener(action);
     }
     
     void reset(){
@@ -147,7 +153,10 @@ public class ViewPlaying extends ViewGame{
             for(String key : variables.keySet()) variables.replace(key, 0);
             updateVariableDisplay();
         }
+        for(PanelDragDropBoard.Command c : dragDrop.commands) c.reset();
         repaint();
+        reset.setVisible(false);
+        run.setVisible(true);
     }
             
     void updateVariableDisplay(){
@@ -914,6 +923,8 @@ public class ViewPlaying extends ViewGame{
                 return null;
             }
             
+            void reset(){}//quand on interrompt le programme en plein milieu
+            
             
             /***** Delete Command *****/
             
@@ -1026,7 +1037,7 @@ public class ViewPlaying extends ViewGame{
                 if(this.next!=null) this.next.stick();
             }
 
-            Command closeCommand(){//this et runC sont assez proches pour se coller
+            Command closeCommand(){//this et command sont assez proches pour se coller
                 if(!(this instanceof CommandFunctionInit)){//initialisateur de fonction sans previous
                     for(Command c : commands){
                         if(c instanceof CommandWithCommands){
@@ -1038,12 +1049,12 @@ public class ViewPlaying extends ViewGame{
                 return null;
             }
 
-            boolean closeHeight(Command c){//distance entre bas de runC et haut de this
+            boolean closeHeight(Command c){//distance entre bas de c et haut de this
                 int distance=this.getLocation().y-c.getLocation().y-c.getHeight();
                 return distance>0 && distance<15;
             }
 
-            boolean closeWidth(Command c){//distance entre cote gauche de this et celui de runC
+            boolean closeWidth(Command c){//distance entre cote gauche de this et celui de c
                 int distance=this.getLocation().x-c.getLocation().x;
                 return distance>-5 && distance<15;
             }
@@ -1328,7 +1339,7 @@ public class ViewPlaying extends ViewGame{
                 return (c==this.function);
             }
             
-            Command closeCommand(){//this et runC sont assez proches pour se coller
+            Command closeCommand(){//this et c sont assez proches pour se coller
                 for(Command c : commands){
                     if(!inFunction(c)){
                         if(c instanceof CommandWithCommands){
@@ -1382,6 +1393,17 @@ public class ViewPlaying extends ViewGame{
                 Command tmp=this.next;
                 while(tmp!=this.hookH) tmp=tmp.execute();
                 return null;//suivant gere par enfants
+            }
+
+            boolean evaluate(String op, int varG){
+            	switch(op){
+                    case "  <" : return varG<input.getNumber();
+                    case " <=" : return varG<=input.getNumber();
+                    case "  >" : return varG>input.getNumber();
+                    case " >=" : return varG>=input.getNumber();
+                    case " ==" : return varG==input.getNumber();
+            	}
+            	return false;
             }
             
             void updateHookV(){//met a jour hookV et accroche les hook a this
@@ -1470,13 +1492,16 @@ public class ViewPlaying extends ViewGame{
                 if(nbRepeats>=0) return next;
                 return hookH.next;//nbRepeats reinitialisee a -1 a la fin
             }
+            
+            void reset(){
+                this.nbRepeats=-1;
+            }
         }//fin classe interne For
 
 
         class CommandIf extends CommandWithCommands{//classe interne
             private JComboBox variableG=new JComboBox(), operateur=new JComboBox();//a priori seulement deux listes deroulantes
             private String op="<";//par defaut
-            private int varG=blackBoard.x;
             private boolean alreadyExecuted;
             //e.g x<100 <=> variableG(varG)="x", operateur="<", variableD(varD)="100"
             
@@ -1506,25 +1531,18 @@ public class ViewPlaying extends ViewGame{
                 super.commandW=getPreferredSize().width-input.getPreferredSize().width-variableG.getPreferredSize().width;
             }
 
-            boolean evaluate(String op){
-            	switch(op){
-                    case "  <" : return this.varG<input.getNumber();
-                    case " <=" : return this.varG<=input.getNumber();
-                    case "  >" : return this.varG>input.getNumber();
-                    case " >=" : return this.varG>=input.getNumber();
-                    case " ==" : return this.varG==input.getNumber();
-            	}
-            	return false;
-            }
-
             Command execute(){
-                varG=variableG.getSelectedItem().equals("x")?blackBoard.x:
+                int varG=variableG.getSelectedItem().equals("x")?blackBoard.x:
                      variableG.getSelectedItem().equals("y")?blackBoard.y:
                      variableG.getSelectedItem().equals("angle")?blackBoard.angle:
                      variables.get(variableG.getSelectedItem().toString());
                 alreadyExecuted=!alreadyExecuted;//quand hookH revient dessus, reinitialisera
-            	if(evaluate(this.op) && alreadyExecuted) return next;
+            	if(evaluate(this.op, varG) && alreadyExecuted) return next;
                 return hookH.next;
+            }
+            
+            void reset(){
+                alreadyExecuted=false;
             }
         }//fin classe interne If
         
@@ -1532,7 +1550,7 @@ public class ViewPlaying extends ViewGame{
         class CommandWhile extends CommandWithCommands implements ActionListener{//classe interne
             private JComboBox variableG=new JComboBox(), operateur=new JComboBox();
             private String op="<";
-            private int varG, whatIsVarG=0, limit=3000;//x<=>0, y<=>1, angle<=>2, variables<=>3 ; pour simuler la terminaison
+            private int whatIsVarG=0, limit=3000;//x<=>0, y<=>1, angle<=>2, variables<=>3 ; pour simuler la terminaison
             
             CommandWhile(int x, int y){
                 super("while", new Color(204, 102, 102), x, y);
@@ -1567,22 +1585,11 @@ public class ViewPlaying extends ViewGame{
                            variableG.getSelectedItem().equals("angle")?2:3;
             }
 
-            boolean evaluate(String op){
-            	switch(op){
-                    case "  <" : return this.varG<input.getNumber();
-                    case " <=" : return this.varG<=input.getNumber();
-                    case "  >" : return this.varG>input.getNumber();
-                    case " >=" : return this.varG>=input.getNumber();
-                    case " ==" : return this.varG==input.getNumber();
-            	}
-            	return false;
-            }
-
             Command execute(){
                 if(limit==3000) error(false);//enleve fond rouge qu une fois, au debut
-                varG=whatIsVarG==0?blackBoard.x:whatIsVarG==1?blackBoard.y:whatIsVarG==1?
+                int varG=whatIsVarG==0?blackBoard.x:whatIsVarG==1?blackBoard.y:whatIsVarG==1?
                     blackBoard.angle:variables.get(variableG.getSelectedItem().toString());
-                if(evaluate(this.op) && limit-->0) return next;
+                if(evaluate(this.op, varG) && limit-->0) return next;
             	if(limit==0){//si la terminaison a du etre simulee
                     error(true);
                     return null;
@@ -1602,6 +1609,10 @@ public class ViewPlaying extends ViewGame{
                     this.hookH.setBackground(color);
                     this.hookV.setBackground(color);
             	}
+            }
+            
+            void reset(){
+                limit=3000;
             }
         }//fin classe interne While
         
@@ -1647,6 +1658,10 @@ public class ViewPlaying extends ViewGame{
                 alreadyCall=!alreadyCall;
                 if(alreadyCall) return next;
                 return caller.getFirst().next;//first=celui qui a appele la fonction
+            }
+            
+            void reset(){
+                alreadyCall=false;
             }
         }//fin classe interne FunctionInit
 
