@@ -50,6 +50,7 @@ import javax.swing.text.PlainDocument;
 
 public class ViewPlaying extends ViewGame{
     final int buttonHeight=super.getButtonHeight();//hauteur d un bouton
+    final JLabel errorName=new JLabel("Please enter a valid name :");
     private PanelBlackBoard blackBoard;//patron + visualisation du resultat du code
     private PanelDragDropBoard dragDrop;//fusion de WhiteBoard et CommandBoard
     private JPanel features=new JPanel();//panel avec tous les boutons sous BlackBoard
@@ -62,8 +63,10 @@ public class ViewPlaying extends ViewGame{
     private PanelDragDropBoard.Command runC;//la commande en execution
     private LinkedList<JLabel[]> varDisplay=new LinkedList<JLabel[]>();//affichage des variables
     
+    
     ViewPlaying(Player player, boolean isCreating) throws IOException{
         super(player);
+        errorName.setForeground(Color.RED);
         this.level=player.getLevel();
         addBoard();//ajout des tableaux, avec des marges de 20 (haut, bas et entre tableaux)
         addFeatures(isCreating);//ajout des fonctionnalites
@@ -103,7 +106,8 @@ public class ViewPlaying extends ViewGame{
         if(isCreating){//creer un niveau -> que pour la page Create
             JButton submit=new JButton("Submit");
             submit.addActionListener((event)->{
-                String name=JOptionPane.showInputDialog(this,"Level's name ?", null);	
+                String name=JOptionPane.showInputDialog(this,"Level's name ?", null);
+                while(name==null || !name.matches("^[a-zA-Z0-9*$]")) name=JOptionPane.showInputDialog(this,errorName, null);
                 super.control.submit(name, level, dragDrop.convertStart(), dragDrop.convertFunctions());//---a changer---
             });
             features.add(submit);
@@ -126,9 +130,7 @@ public class ViewPlaying extends ViewGame{
         runC=runC.canExecute()?runC.next:null;
         ActionListener taskPerformed=new ActionListener(){
             public void actionPerformed(ActionEvent e){
-                if(runC!=null){
-                    runC=runC.execute();
-                }
+                if(runC!=null) runC=runC.execute();
                 else{
                     stop();//arret automatique
                     if(level.compare()) JOptionPane.showMessageDialog(null, "Victory !");
@@ -222,7 +224,7 @@ public class ViewPlaying extends ViewGame{
         private boolean drawing=true;//pinceau posé par defaut
 
         PanelBlackBoard(){
-            this.setBounds(20, 20+buttonHeight, 400, 400);//marge=20 à gauche, 20+bauteur d un bouton en haut, taille 400*400
+            this.setBounds(20, 20+buttonHeight, 400, 400);//marge gauche=20, 20+hauteur d un bouton en haut, taille 400*400
             this.setBackground(Color.BLACK);//fond noir
             this.x=level.brushX;
             this.y=level.brushY;
@@ -315,7 +317,6 @@ public class ViewPlaying extends ViewGame{
         private NumberField brightF;//field allume
         private int lastPositionY=20, deltaY=0, numberOfFunction=0;//positionY libre, mouvement de la roulette
         private Bin bin;
-        final JLabel errorName=new JLabel("Please enter a valid name :");
         final Border borderV=BorderFactory.createLineBorder(new Color(255, 204, 255), 2);
         
         PanelDragDropBoard() throws IOException{
@@ -332,7 +333,6 @@ public class ViewPlaying extends ViewGame{
             this.add(bin);
             this.setFunctionVariableButton();
             this.addAvailableCommands();
-            errorName.setForeground(Color.RED);
         }
         
         int countConvert(Command c){
@@ -379,6 +379,7 @@ public class ViewPlaying extends ViewGame{
         
         void loadMainCode(){//charge du code accroche a Start
             String[] toLoad=level.mainCode;
+            if(toLoad.length==0) return;
             LinkedList<Command> saveLast=new LinkedList<Command>();
             saveLast.add(commands.getFirst());
             for(int i=1; i<toLoad.length; i++){
@@ -418,6 +419,7 @@ public class ViewPlaying extends ViewGame{
         
         void loadFunctions(){
             String[] toLoad=level.functions;
+            if(toLoad.length==0) return;
             LinkedList<CommandFunctionInit> functionHead=new LinkedList<CommandFunctionInit>();
             LinkedList<Command> saveLast=new LinkedList<Command>();
             saveLast.add(new Command("", Color.BLACK, 0));//inutile, pour eviter erreur liste vide
@@ -2085,7 +2087,7 @@ public class ViewPlaying extends ViewGame{
             
             void deleteSteps() throws IOException{//enleve variable du panel
                 PanelDragDropBoard.this.remove(this);
-                if(!inWhiteBoard()) addSettedVariables(this.positionY);//regeneration
+                if(lastCreated) addSettedVariables(this.positionY);//regeneration
                 bin.loadBin("images/closedBin.png");
                 SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
             }
