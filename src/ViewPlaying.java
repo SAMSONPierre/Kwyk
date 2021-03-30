@@ -111,8 +111,10 @@ public class ViewPlaying extends ViewGame{
             JButton submit=new JButton("Submit");
             submit.addActionListener((event)->{
                 String name=JOptionPane.showInputDialog(this,"Level's name ?", null);
-                while(name==null || !name.matches("^[a-zA-Z0-9*$]")) name=JOptionPane.showInputDialog(this,errorName, null);
-                super.control.submit(name, level, dragDrop.convertStart(), dragDrop.convertFunctions());//---a changer---
+                while(name!=null && (name.equals("") || !name.matches("^[a-zA-Z0-9]*$")))
+                    name=JOptionPane.showInputDialog(this,errorName, null);
+                if(name!=null) super.control.submit(name, level,
+                    dragDrop.convertStart(), dragDrop.convertFunctions());//---a changer---
             });
             features.add(submit);
         }
@@ -137,7 +139,7 @@ public class ViewPlaying extends ViewGame{
                 if(runC!=null) runC=runC.execute();
                 else{
                     stop();//arret automatique
-                    if(level.compare()) JOptionPane.showMessageDialog(null, "Victory !");
+                    victoryMessage();
                 }
             }
         };
@@ -155,6 +157,7 @@ public class ViewPlaying extends ViewGame{
     void reset(){
         level.initializePlayerDraw();//vide le dessin du joueur
         blackBoard.brush.resetBrush();//remet le pinceau a l'emplacement initial
+        blackBoard.brush2=false;//pas de symetrie
         if(!variables.isEmpty()){
             for(String key : variables.keySet()) variables.replace(key, 0);
             updateVariableDisplay();
@@ -176,9 +179,9 @@ public class ViewPlaying extends ViewGame{
     
     void victoryMessage(){
     	if(level.compare()){
-    	     int lvl=Integer.parseInt(level.name.charAt(0)+"");
-    	     getModel().getPlayer().currentLevel[getNumberOfDirectory(level.name)][lvl]=true;
-    	     JOptionPane.showMessageDialog(this, "Victory !");
+    	    int lvl=Integer.parseInt(level.name.charAt(0)+"");
+    	    getModel().getPlayer().currentLevel[getNumberOfDirectory(level.name)][lvl]=true;
+    	    JOptionPane.showMessageDialog(this, "Victory !");
     	}
     }
     
@@ -225,7 +228,7 @@ public class ViewPlaying extends ViewGame{
         private Brush brush=new Brush();//fleche vide
         private int x, y, angle;//par defaut (0,0) et orientee "->" (angle 0° sur le cercle trigo)
         private Color brushColor;
-        private boolean drawing=true;//pinceau posé par defaut
+        private boolean drawing=true, brush2;//pinceau posé par defaut, 2e pinceau de symetrie
 
         PanelBlackBoard(){
             this.setBounds(20, 20+buttonHeight, 400, 400);//marge gauche=20, 20+hauteur d un bouton en haut, taille 400*400
@@ -242,9 +245,10 @@ public class ViewPlaying extends ViewGame{
         protected void paintComponent(Graphics g){
             super.paintComponent(g);
             if(gridApparent) paintGrid(g);//grille apparente quand on le souhaite
+            if(brush2) paintSymmetry(g);
             Graphics2D g2=(Graphics2D)g;
             g2.setStroke(new BasicStroke(4));
-            for(Vector v : level.getPattern()) paintVector(g2, v, true);//patron
+            for(Vector v : level.pattern) paintVector(g2, v, true);//patron
             for(Vector v : level.getPlayerDraw()) paintVector(g2, v, false);//dessin du joueur, au debut vide
             paintBrush(g2, x, y, angle, brushColor);//pinceau en dernier car rotation
         }
@@ -258,6 +262,11 @@ public class ViewPlaying extends ViewGame{
                 g.drawString(Integer.toString(i), 3, i+5);
             }
             g.drawString("0", 5, 15);
+        }
+        
+        void paintSymmetry(Graphics g){
+            g.setColor(Color.RED);
+            g.drawLine(200, 0, 200, 400);
         }
         
         void paintVector(Graphics2D g2, Vector v, boolean darker){
@@ -290,12 +299,12 @@ public class ViewPlaying extends ViewGame{
             	this.resetBrush();
             }
             
-            void resetBrush() {
+            void resetBrush(){
                 PanelBlackBoard.this.x=level.brushX;
-            	PanelBlackBoard.this.y=level.brushY;
-            	PanelBlackBoard.this.angle=level.brushAngle;
-            	PanelBlackBoard.this.brushColor=level.brushFirstColor;
-            	PanelBlackBoard.this.drawing=true;
+                PanelBlackBoard.this.y=level.brushY;
+                PanelBlackBoard.this.angle=level.brushAngle;
+                PanelBlackBoard.this.brushColor=level.brushFirstColor;
+                PanelBlackBoard.this.drawing=true;
             	moveTo(-18,-5);
             	lineTo(2,-5);
             	lineTo(1,-12);
@@ -329,7 +338,7 @@ public class ViewPlaying extends ViewGame{
             width=widthFS-460;//460=3 marges de colonne + taille blackBoard
             height=heightFS-40-buttonHeight;//40=marges haut+bas
             this.setBorder(BorderFactory.createLineBorder(Color.BLACK, 3));
-            this.setLayout(null);
+            this.setLayout(null); 
             this.setBounds(x00, y00-ViewPlaying.this.getInsets().top, width, height);
             this.addMouseWheelListener(this);
             
@@ -477,8 +486,8 @@ public class ViewPlaying extends ViewGame{
                 
                 createV.addActionListener((event)->{
                     String name=JOptionPane.showInputDialog("Name of this variable ?");
-                    if(name==null) return;//bouton annuler
-                    while(name!=null && (name.equals("") || variables.containsKey(name)))
+                    while(name!=null && ((name.equals("") || name.contains(" ") || name.equals("x")
+                       || name.equals("y") || name.equals("angle") || variables.containsKey(name))))
                         name=JOptionPane.showInputDialog(errorName);
                     if(name!=null){
                         addVariable(name);
@@ -513,7 +522,6 @@ public class ViewPlaying extends ViewGame{
                 createF.setBounds(width/2-20-dF.width, 50+2*dF.height, dF.width, dF.height);
                 createF.addActionListener((event)->{
                     String name=JOptionPane.showInputDialog("Name of this fonction ?");
-                    if(name==null) return;//bouton annuler
                     while(name!=null && (name.equals("") || nameFunAlreadySet(name)))
                         name=JOptionPane.showInputDialog(errorName);
                     if(name!=null) addFunction(name, width/2-20-dF.width, 60+3*dF.height);
@@ -580,8 +588,7 @@ public class ViewPlaying extends ViewGame{
             commands.add(new CommandStart());//toujours le premier de la liste de commandes
             this.add(commands.getFirst());
             //ajout dans CommandBoard
-            for(String c : level.getAvailableCommands())
-                lastPositionY+=addCommand(c, lastPositionY);
+            for(String c : level.availableCommands) lastPositionY+=addCommand(c, lastPositionY);
         }
         
         int addCommand(String name, int positionY){//(re)generation des commandes
@@ -620,6 +627,9 @@ public class ViewPlaying extends ViewGame{
                 case "shiftColor":
                     toAdd=new CommandShiftColor(width/2+20, positionY);
                     break;
+                case "symmetry":
+                    toAdd=new CommandSymmetry(width/2+20, positionY);
+                    break;
                 case "affectation":
                     toAdd=new CommandAffectation(width/2+20, positionY);
                     break;
@@ -650,7 +660,7 @@ public class ViewPlaying extends ViewGame{
             return res;
         }
         
-        Command addLaunch(String name){//(re)generation des commandes
+        Command addLaunch(String name){//pour generer du code
             switch(name){
                 case "for":
                     return new CommandFor(0, 0);
@@ -674,6 +684,8 @@ public class ViewPlaying extends ViewGame{
                     return new CommandSetColor(0, 0);
                 case "shiftColor":
                     return new CommandShiftColor(0, 0);
+                case "symmetry":
+                    return new CommandSymmetry(0, 0);
                 case "affectation":
                     return new CommandAffectation(0, 0);
                 case "addition":
@@ -1295,7 +1307,7 @@ public class ViewPlaying extends ViewGame{
             
             public void mouseMoved(MouseEvent e){}
             public void mouseClicked(MouseEvent e){//pour verification, a enlever apres
-                
+
             }
             public void mouseEntered(MouseEvent e){}
             public void mouseExited(MouseEvent e){}
@@ -1357,7 +1369,7 @@ public class ViewPlaying extends ViewGame{
                         }
                         else if(closeHeight(c) && closeWidth(c)) return c;
                     }
-                }                
+                }
                 return null;
             }
             
@@ -1700,8 +1712,13 @@ public class ViewPlaying extends ViewGame{
                 //ajout du vecteur dans le dessin du joueur
                 if(blackBoard.drawing){
                     Vector.VectorLine trait=v.new VectorLine(blackBoard.x,
-                        blackBoard.y, p.x, p.y, blackBoard.brushColor);
+                        blackBoard.y, p.x, p.y, blackBoard.angle, blackBoard.brushColor);
                     level.addToDraw(trait);
+                    if(blackBoard.brush2){//symetrie
+                        Vector.VectorLine trait2=v.new VectorLine(400-blackBoard.x,
+                            blackBoard.y, 400-p.x, p.y, blackBoard.angle, blackBoard.brushColor);
+                        level.addToDraw(trait2);
+                    }
                 }
                 
                 //nouvel emplacement du pinceau
@@ -1763,12 +1780,17 @@ public class ViewPlaying extends ViewGame{
                 Point translation=new Point(blackBoard.x-origin.x, blackBoard.y-origin.y);
                 
                 if(blackBoard.drawing){//ajout du vecteur dans le dessin du joueur
-                    Point square1=v.destinationLine(center.x, center.y, 90, rad);//haut du carre
-                    square1=v.destinationLine(square1.x, square1.y, 180, rad);//coin gauche du carre
-                    Point square2=new Point(square1.x+translation.x, square1.y+translation.y);//carre translate
-                    Vector.VectorArc arc=v.new VectorArc(square2.x, square2.y, rad*2, 
+                    Point square=v.destinationLine(center.x, center.y, 90, rad);//haut du carre
+                    square=v.destinationLine(square.x, square.y, 180, rad);//coin gauche du carre
+                    square=new Point(square.x+translation.x, square.y+translation.y);//carre translate
+                    Vector.VectorArc arc=v.new VectorArc(square.x, square.y, rad*2, 
                         blackBoard.angle-90*sens, sens*angleS, blackBoard.brushColor);//-90*sens car translation
                     level.addToDraw(arc);
+                    if(blackBoard.brush2){
+                        Vector.VectorArc arc2=v.new VectorArc(400-square.x-rad*2, square.y, rad*2, 
+                            180-(blackBoard.angle-90*sens), -sens*angleS, blackBoard.brushColor);
+                        level.addToDraw(arc2);
+                    }
                 }
                 
                 //nouvel emplacement du pinceau
@@ -1814,6 +1836,50 @@ public class ViewPlaying extends ViewGame{
         }//fin classe interne RaisePutBrush
 
 
+        class CommandMoveTo extends Command{//classe interne
+            private NumberField positionY=new NumberField(this);
+
+            CommandMoveTo(int x, int y){
+                super("moveTo", Color.LIGHT_GRAY.darker(), y);
+                super.input=new NumberField(this);//positionX
+                
+                this.add(new JLabel("  Move pen to (  "));
+                this.add(this.input);
+                this.add(new JLabel("  ,  "));
+                this.add(this.positionY);
+                this.add(new JLabel("  )  "));
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+                super.commandW=getPreferredSize().width-input.getPreferredSize().width-positionY.getPreferredSize().width;
+            }
+            
+            boolean canExecute(){
+                boolean isEmpty=input.isEmpty() || positionY.isEmpty();
+                if(isEmpty){
+                    if(input.isEmpty()) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                    if(positionY.isEmpty()) positionY.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                }
+                else{
+                    input.setBorder(variables.isEmpty()?null:borderV);
+                    positionY.setBorder(variables.isEmpty()?null:borderV);
+                }
+                return !isEmpty;
+            }
+            
+            int maxCoordinate(int coord){
+                if(coord<0) return 0;
+                if(coord>400) return 400;
+                return coord;
+            }
+
+            Command execute(){
+                blackBoard.x=maxCoordinate(input.getNumber());
+                blackBoard.y=maxCoordinate(positionY.getNumber());
+                ViewPlaying.this.blackBoard.repaint();
+                return next;
+            }
+        }//fin de classe interne MoveTo
+
+
         class CommandSetAngle extends Command{//classe interne
             CommandSetAngle(int x, int y){
                 super("setAngle", Color.LIGHT_GRAY.darker(), y);
@@ -1832,6 +1898,26 @@ public class ViewPlaying extends ViewGame{
                 return next;
             }
         }//fin de classe interne ShiftAngle
+
+
+        class CommandAddAngle extends Command{//classe interne
+            CommandAddAngle(int x, int y){
+                super("addAngle", Color.LIGHT_GRAY.darker(), y);
+                super.input=new NumberField(this);
+                
+                this.add(new JLabel("  Add  "));
+                this.add(input);
+                this.add(new JLabel("  to angle  "));
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+                super.commandW=getPreferredSize().width-input.getPreferredSize().width;
+            }
+
+            Command execute(){
+                blackBoard.angle=(blackBoard.angle+input.getNumber())%360;
+                ViewPlaying.this.blackBoard.repaint();
+                return next;
+            }
+        }//fin de classe interne AddAngle
 
 
         class CommandSetColor extends Command{//classe interne
@@ -1891,70 +1977,6 @@ public class ViewPlaying extends ViewGame{
                 }
             }//fin de classe interne interne ColorComboRenderer
         }//fin de classe interne ChangeColor
-
-
-        class CommandMoveTo extends Command{//classe interne
-            private NumberField positionY=new NumberField(this);
-
-            CommandMoveTo(int x, int y){
-                super("moveTo", Color.LIGHT_GRAY.darker(), y);
-                super.input=new NumberField(this);//positionX
-                
-                this.add(new JLabel("  Move pen to (  "));
-                this.add(this.input);
-                this.add(new JLabel("  ,  "));
-                this.add(this.positionY);
-                this.add(new JLabel("  )  "));
-                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
-                super.commandW=getPreferredSize().width-input.getPreferredSize().width-positionY.getPreferredSize().width;
-            }
-            
-            boolean canExecute(){
-                boolean isEmpty=input.isEmpty() || positionY.isEmpty();
-                if(isEmpty){
-                    if(input.isEmpty()) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                    if(positionY.isEmpty()) positionY.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                }
-                else{
-                    input.setBorder(variables.isEmpty()?null:borderV);
-                    positionY.setBorder(variables.isEmpty()?null:borderV);
-                }
-                return !isEmpty;
-            }
-            
-            int maxCoordinate(int coord){
-                if(coord<0) return 0;
-                if(coord>400) return 400;
-                return coord;
-            }
-
-            Command execute(){
-                blackBoard.x=maxCoordinate(input.getNumber());
-                blackBoard.y=maxCoordinate(positionY.getNumber());
-                ViewPlaying.this.blackBoard.repaint();
-                return next;
-            }
-        }//fin de classe interne MoveTo
-
-
-        class CommandAddAngle extends Command{//classe interne
-            CommandAddAngle(int x, int y){
-                super("addAngle", Color.LIGHT_GRAY.darker(), y);
-                super.input=new NumberField(this);
-                
-                this.add(new JLabel("  Add  "));
-                this.add(input);
-                this.add(new JLabel("  to angle  "));
-                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
-                super.commandW=getPreferredSize().width-input.getPreferredSize().width;
-            }
-
-            Command execute(){
-                blackBoard.angle=(blackBoard.angle+input.getNumber())%360;
-                ViewPlaying.this.blackBoard.repaint();
-                return next;
-            }
-        }//fin de classe interne AddAngle
         
 
         class CommandShiftColor extends Command{
@@ -1986,6 +2008,39 @@ public class ViewPlaying extends ViewGame{
                 return next;
             }
         }//fin de classe interne shiftColor
+
+
+        class CommandSymmetry extends Command{//classe interne
+            private JComboBox choiceBox=new JComboBox();
+            private boolean choiceRes;//symetrie off=false, on=true
+            
+            CommandSymmetry(int x, int y){
+                super("symmetry", Color.LIGHT_GRAY.darker(), y);
+                
+                choiceBox.addItemListener(new ItemListener(){
+                    public void itemStateChanged(ItemEvent e){
+                        if(e.getStateChange()==ItemEvent.SELECTED) choiceRes=!choiceRes;
+                    }
+                });
+                choiceBox.addItem(" on ");
+                choiceBox.addItem(" off ");
+                
+                this.add(new JLabel("  Turn  "));
+                this.add(choiceBox);
+                this.add(new JLabel("  vertical symmetry  "));
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+            }
+            
+            boolean canExecute(){
+                return true;
+            }
+
+            Command execute(){
+                blackBoard.brush2=choiceRes;
+                ViewPlaying.this.blackBoard.repaint();
+                return (next!=null)?next.execute():null;
+            }
+        }//fin classe interne Symmetry
         
         
         class NumberField extends JTextField{

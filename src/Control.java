@@ -161,7 +161,7 @@ public class Control implements Serializable{
     void submit(String name, Level level, String[] mainCode, String[] functions){
         if(name==null) return;
     	ViewPlaying tmp=(ViewPlaying)this.view;
-    	LinkedList<Vector> newPattern=model.getPlayer().getLevel().getSimplifyPattern();
+    	LinkedList<Vector> newPattern=level.getSimplifyDraw(level.getPlayerDraw());
     	int[] numbers=tmp.getNumbersFromHead();
     	String[] commandsAvailable=tmp.getCommandsArray();
         Rectangle screenRect=new Rectangle(tmp.getX()+tmp.getInsets().left+20,
