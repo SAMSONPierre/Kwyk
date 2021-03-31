@@ -27,6 +27,7 @@ import java.util.LinkedList;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -51,16 +52,16 @@ import javax.swing.text.PlainDocument;
 public class ViewPlaying extends ViewGame{
     final int buttonHeight=super.getButtonHeight();//hauteur d un bouton
     final JLabel errorName=new JLabel("Please enter a valid name :");
+    private Level level;//niveau en cours
     private PanelBlackBoard blackBoard;//patron + visualisation du resultat du code
     private PanelDragDropBoard dragDrop;//fusion de WhiteBoard et CommandBoard
     private JPanel features=new JPanel();//panel avec tous les boutons sous BlackBoard
-    private Level level;//niveau en cours
-    private JProgressBar limite;
-    private HashMap<String, Integer> variables=new HashMap<String, Integer>();//nom, valeur
+    private JButton run=new JButton("Run"), stop=new JButton("Stop"), reset=new JButton("Reset");
     private Timer timer=new Timer(200, null);
     private JSlider slider=new JSlider();//regulation de la vitesse
-    private JButton run=new JButton("Run"), stop=new JButton("Stop"), reset=new JButton("Reset");
     private PanelDragDropBoard.Command runC;//la commande en execution
+    private JProgressBar limite;
+    private HashMap<String, Integer> variables=new HashMap<String, Integer>();//nom, valeur
     private LinkedList<JLabel[]> varDisplay=new LinkedList<JLabel[]>();//affichage des variables
     
     ViewPlaying(Player player, boolean isCreating) throws IOException{
@@ -68,7 +69,7 @@ public class ViewPlaying extends ViewGame{
         errorName.setForeground(Color.RED);
         this.level=player.getLevel();
         addBoard();//ajout des tableaux, avec des marges de 20 (haut, bas et entre tableaux)
-        addFeatures(isCreating);//ajout des fonctionnalites
+        addFeatures(isCreating, player.username.equals("GM"));//ajout des fonctionnalites
         if(level.functions!=null) dragDrop.loadFunctions();
         if(level.mainCode!=null) dragDrop.loadMainCode();
     }
@@ -86,7 +87,7 @@ public class ViewPlaying extends ViewGame{
         return (p.x>0 && p.x<dragDrop.width/2 && p.y>0 && p.y<dragDrop.height);
     }
     
-    void addFeatures(boolean isCreating){
+    void addFeatures(boolean isCreating, boolean isGM){
         features.setBounds(20, 440+buttonHeight, 400, heightFS-460-buttonHeight);
         this.add(features);
         
@@ -108,15 +109,21 @@ public class ViewPlaying extends ViewGame{
         reset.setVisible(false);//idem, pour stop
         
         if(isCreating){//creer un niveau -> que pour la page Create
+            JCheckBox saveCode=new JCheckBox("Save main code");
+            JCheckBox saveFun=new JCheckBox("Save functions");
             JButton submit=new JButton("Submit");
             submit.addActionListener((event)->{
                 String name=JOptionPane.showInputDialog(this,"Level's name ?", null);
                 while(name!=null && (name.equals("") || !name.matches("^[a-zA-Z0-9]*$")))
                     name=JOptionPane.showInputDialog(this,errorName, null);
-                if(name!=null) super.control.submit(name, level,
-                    dragDrop.convertStart(), dragDrop.convertFunctions());//---a changer---
+                if(name!=null) control.submit(name, level, saveCode.isSelected()?dragDrop.convertStart():null,
+                    saveFun.isSelected()?dragDrop.convertFunctions():null);
             });
             features.add(submit);
+            if(isGM){
+                features.add(saveCode);
+                features.add(saveFun);
+            }
         }
         else{//limite des commandes si on est dans un niveau
             limite=new JProgressBar(0, level.numberOfCommands){
@@ -130,6 +137,7 @@ public class ViewPlaying extends ViewGame{
     }
     
     void run(){
+        updateVariableDisplay();
         run.setVisible(false);
         stop.setVisible(true);
         runC=dragDrop.commands.getFirst();
@@ -742,7 +750,6 @@ public class ViewPlaying extends ViewGame{
                 }
             }
             if(firstSet){
-                for(NumberField f : fields) f.setBorder(borderV);
                 lastPositionY+=addCommand("affectation", lastPositionY);
                 lastPositionY+=addCommand("addition", lastPositionY);
                 lastPositionY+=addCommand("soustraction", lastPositionY);
@@ -753,6 +760,7 @@ public class ViewPlaying extends ViewGame{
                 lastPositionY+=variable.getHeight()+10;
                 SwingUtilities.updateComponentTreeUI(this);//refresh affichage
             }
+            for(NumberField f : fields) f.setBorder(borderV);
             for(Component c : getComponents()){//ajout dans tous les comboBox
                 if((!firstSet && (c instanceof CommandOperationV || c instanceof Variable))
                 || c instanceof CommandIf || c instanceof CommandWhile) resizeBox(c, name, true);
@@ -771,10 +779,14 @@ public class ViewPlaying extends ViewGame{
             for(JLabel[] label : varDisplay){
                 if(label[0].getText().equals(name)){
                     varDisplay.remove(label);
+                    features.remove(label[0]);
+                    features.remove(label[1]);
+                    SwingUtilities.updateComponentTreeUI(features);
                     break;
                 }
             }
             if(variables.isEmpty()){//efface toutes les variables
+                for(NumberField f : fields) f.setBorder(null);
                 for(Component c : getComponents()){
                     if(c instanceof CommandOperationV || c instanceof Variable){
                         if(commands.remove(c)==true){//OperationV sur whiteBoard
@@ -1106,6 +1118,15 @@ public class ViewPlaying extends ViewGame{
                     this.previous.next=null;
                     this.previous=null;
                 }
+                if(input!=null){
+                    input.setBorder(variables.isEmpty()?null:borderV);
+                    if(this instanceof CommandMoveTo || this instanceof CommandDrawArc){
+                        NumberField field=(this instanceof CommandMoveTo)?
+                            ((CommandMoveTo)this).positionY:((CommandDrawArc)this).angleScan;
+                        field.setBorder(variables.isEmpty()?null:borderV);
+                    }
+                }
+                if(limite!=null) limite.setValue(getNumbersFromHead()[0]);
             }
             
             Command inCWC(){//cherche fin du bloc imbriquant
@@ -1402,13 +1423,25 @@ public class ViewPlaying extends ViewGame{
             }
             
             boolean canExecute(){//ne peut pas etre vide
-                if(!(this instanceof CommandFunctionInit)){
-                    boolean isEmpty=input.isEmpty();
-                    if(isEmpty) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                boolean ok=true;
+                if(!(this instanceof CommandFunctionInit)){//input vide
+                    ok=!input.isEmpty();
+                    if(!ok) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
                     else input.setBorder(variables.isEmpty()?null:borderV);
-                    if(isEmpty) return false;
                 }
-                return this.next!=this.hookH;
+                else{//vide dans la fonction
+                    Command tmp=this.next;
+                    while(tmp!=hookH){
+                        if(!(tmp.canExecute())) ok=false;//on ne s arrete pas
+                        tmp=tmp.next;
+                    }
+                }
+                if(ok && next==hookH){//champs remplis mais cwc vide
+                    hookH.setBackground(Color.RED.darker());
+                    return false;
+                }
+                hookH.setBackground(color);//cwc rempli
+                return ok;
             }
             
             Command execute(){//sera complete par ses enfants
