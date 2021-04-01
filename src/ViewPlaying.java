@@ -23,6 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.LinkedList;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -43,6 +44,8 @@ import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.LineBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.MouseInputListener;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -57,7 +60,7 @@ public class ViewPlaying extends ViewGame{
     private PanelDragDropBoard dragDrop;//fusion de WhiteBoard et CommandBoard
     private JPanel features=new JPanel();//panel avec tous les boutons sous BlackBoard
     private JButton run=new JButton("Run"), stop=new JButton("Stop"), reset=new JButton("Reset");
-    private Timer timer=new Timer(200, null);
+    private Timer timer=new Timer(30, null);//vitesse par defaut
     private JSlider slider=new JSlider();//regulation de la vitesse
     private PanelDragDropBoard.Command runC;//la commande en execution
     private JProgressBar limite;
@@ -134,6 +137,29 @@ public class ViewPlaying extends ViewGame{
             limite.setStringPainted(true);
             features.add(limite);
         }
+        
+        Hashtable<Integer, JLabel> labels=new Hashtable<>();
+        labels.put(0, new JLabel("Slower"));
+        labels.put(100, new JLabel("Faster"));
+        slider.setLabelTable(labels);
+        slider.setPaintLabels(true);
+        slider.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				JSlider source=(JSlider)e.getSource();
+				if(!source.getValueIsAdjusting()) {
+					int speed=(int)source.getValue();
+					if(speed==0) ViewPlaying.this.stop();
+					else if (speed==100) ViewPlaying.this.timer.setDelay(0);//ne saute pas vraiment l'animation...
+					else {
+						if(speed>50) {//pour qu'on puisse voir un peu plus la difference
+							ViewPlaying.this.timer.setDelay(1000/speed);
+						} 
+						else ViewPlaying.this.timer.setDelay(1500/speed);
+					}
+				}
+			}
+        });
+        features.add(slider);       
     }
     
     void run(){
