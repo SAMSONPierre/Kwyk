@@ -1897,16 +1897,10 @@ public class ViewPlaying extends ViewGame{
                 }
                 return !isEmpty;
             }
-            
-            int maxCoordinate(int coord){
-                if(coord<0) return 0;
-                if(coord>400) return 400;
-                return coord;
-            }
 
             Command execute(){
-                blackBoard.x=maxCoordinate(input.getNumber());
-                blackBoard.y=maxCoordinate(positionY.getNumber());
+                blackBoard.x=input.getNumber();
+                blackBoard.y=positionY.getNumber();
                 ViewPlaying.this.blackBoard.repaint();
                 return next;
             }
@@ -2263,7 +2257,7 @@ public class ViewPlaying extends ViewGame{
                 }
                 
                 //ouvre eventuellement la poubelle
-                try{//ouvre eventuellement la poubelle
+                try{
                     updateBinState();
                 }
                 catch(IOException e1){}

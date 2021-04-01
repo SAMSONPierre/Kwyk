@@ -45,7 +45,7 @@ public class Level implements Serializable{
         this.functions=null;
     }
     
-    Level(Player p, int x, int y, int angle, Color color, String[] mainCode, String[] functions){//pour construire tutoriel
+    Level(Player p, int x, int y, int angle, Color color){//pour construire tutoriel
         this.brushX=x;
         this.brushY=y;
         this.brushAngle=angle;
@@ -53,13 +53,13 @@ public class Level implements Serializable{
         this.numberOfCommands=0;
         this.numberOfFunctions=-1;
         this.numberOfVariables=-1;
-        this.name="GMVersion";
+        this.name="GM";
         String[] c={"for", "if", "while", "drawLine", "drawArc", "raisePutBrush",
             "moveTo", "setAngle", "addAngle", "setColor", "shiftColor", "symmetry"};
         this.availableCommands=c;
         this.pattern=new LinkedList<Vector>();
-        this.mainCode=mainCode;
-        this.functions=functions;
+        this.mainCode=null;
+        this.functions=null;
     }
     
     LinkedList<Vector> getPlayerDraw(){

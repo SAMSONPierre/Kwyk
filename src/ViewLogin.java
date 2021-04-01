@@ -42,19 +42,19 @@ public class ViewLogin extends View{
         
         //ajout des listeners
         login.addActionListener((event)->{
-                String usernameS=username.getText();
-                String passwordS=new String(password.getPassword());//char[] en String
-                if(!usernameS.equals("") && !password.equals(""))
-                    super.control.login(usernameS, passwordS);
-            }
-        );
+            String usernameS=username.getText();
+            String passwordS=new String(password.getPassword());//char[] en String
+            if(!usernameS.equals("") && !password.equals(""))
+                super.control.login(usernameS, passwordS);
+            else errorLogin();
+        });
         createAccount.addActionListener((event)->{
-                String usernameS=username.getText();
-                String passwordS=new String(password.getPassword());//char[] en String
-                if(!usernameS.equals("") && !password.equals(""))
-                    super.control.createAccount(usernameS, passwordS);
-            }
-        );
+            String usernameS=username.getText();
+            String passwordS=new String(password.getPassword());//char[] en String
+            if(!usernameS.equals("") && !password.equals(""))
+                super.control.createAccount(usernameS, passwordS);
+            else errorLogin();
+        });
         tryWithoutAccount.addActionListener((event)->super.control.tryWithoutAccount());
     }
     
