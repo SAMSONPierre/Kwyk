@@ -111,6 +111,28 @@ public class ViewPlaying extends ViewGame{
         stop.setVisible(false);//apparait apres avoir clique sur run
         reset.setVisible(false);//idem, pour stop
         
+        Hashtable<Integer, JLabel> labels=new Hashtable<>();
+        labels.put(0, new JLabel("Slower"));
+        labels.put(100, new JLabel("Faster"));
+        slider.setLabelTable(labels);
+        slider.setPaintLabels(true);
+        slider.addChangeListener(new ChangeListener(){
+            public void stateChanged(ChangeEvent e){
+                JSlider source=(JSlider)e.getSource();
+                if(!source.getValueIsAdjusting()){
+                    int speed=(int)source.getValue();
+                    if(speed==0) ViewPlaying.this.stop();
+                    else if(speed==100) ViewPlaying.this.timer.setDelay(0);//ne saute pas vraiment l'animation...
+                    else{
+                        if(speed>50)//pour qu'on puisse voir un peu plus la difference
+                            ViewPlaying.this.timer.setDelay(1000/speed);
+                        else ViewPlaying.this.timer.setDelay(1500/speed);
+                    }
+                }
+            }
+        });
+        features.add(slider);
+        
         if(isCreating){//creer un niveau -> que pour la page Create
             JCheckBox saveCode=new JCheckBox("Save main code");
             JCheckBox saveFun=new JCheckBox("Save functions");
@@ -137,29 +159,6 @@ public class ViewPlaying extends ViewGame{
             limite.setStringPainted(true);
             features.add(limite);
         }
-        
-        Hashtable<Integer, JLabel> labels=new Hashtable<>();
-        labels.put(0, new JLabel("Slower"));
-        labels.put(100, new JLabel("Faster"));
-        slider.setLabelTable(labels);
-        slider.setPaintLabels(true);
-        slider.addChangeListener(new ChangeListener() {
-			public void stateChanged(ChangeEvent e) {
-				JSlider source=(JSlider)e.getSource();
-				if(!source.getValueIsAdjusting()) {
-					int speed=(int)source.getValue();
-					if(speed==0) ViewPlaying.this.stop();
-					else if (speed==100) ViewPlaying.this.timer.setDelay(0);//ne saute pas vraiment l'animation...
-					else {
-						if(speed>50) {//pour qu'on puisse voir un peu plus la difference
-							ViewPlaying.this.timer.setDelay(1000/speed);
-						} 
-						else ViewPlaying.this.timer.setDelay(1500/speed);
-					}
-				}
-			}
-        });
-        features.add(slider);       
     }
     
     void run(){
@@ -978,7 +977,7 @@ public class ViewPlaying extends ViewGame{
             }
             
             boolean canExecute(){//pour les commandes!=CWC qui ont exactement un NumberField
-                boolean isEmpty=input.isEmpty();
+                boolean isEmpty=input.isEmpty() || (this instanceof CommandDrawLine)?input.getNumber()<2:false;
                 if(isEmpty) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
                 else input.setBorder(variables.isEmpty()?null:borderV);
                 return !isEmpty;
@@ -1818,16 +1817,18 @@ public class ViewPlaying extends ViewGame{
             }
             
             boolean canExecute(){
-                boolean isEmpty=input.isEmpty() || angleScan.isEmpty();
-                if(isEmpty){
-                    if(input.isEmpty()) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                    if(angleScan.isEmpty()) angleScan.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                input.setBorder(variables.isEmpty()?null:borderV);
+                angleScan.setBorder(variables.isEmpty()?null:borderV);
+                boolean ok=true;
+                if(input.isEmpty() || input.getNumber()<2){
+                    input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                    ok=false;
                 }
-                else{
-                    input.setBorder(variables.isEmpty()?null:borderV);
-                    angleScan.setBorder(variables.isEmpty()?null:borderV);
+                if(angleScan.isEmpty() || angleScan.getNumber()<2){
+                    angleScan.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                    ok=false;
                 }
-                return !isEmpty;
+                return ok;
             }
 
             Command execute(){
@@ -1912,14 +1913,12 @@ public class ViewPlaying extends ViewGame{
             }
             
             boolean canExecute(){
+                input.setBorder(variables.isEmpty()?null:borderV);
+                positionY.setBorder(variables.isEmpty()?null:borderV);
                 boolean isEmpty=input.isEmpty() || positionY.isEmpty();
                 if(isEmpty){
                     if(input.isEmpty()) input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
                     if(positionY.isEmpty()) positionY.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-                }
-                else{
-                    input.setBorder(variables.isEmpty()?null:borderV);
-                    positionY.setBorder(variables.isEmpty()?null:borderV);
                 }
                 return !isEmpty;
             }

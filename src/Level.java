@@ -136,7 +136,7 @@ public class Level implements Serializable{
                         res.remove(combined[0]);
                         toAdd=null;
                         for(int k=v.length-1; k>-1; k--){//en [0] se trouve le plus recent
-                            if(v[k]!=null && v[k].moving()) again=res.add(v[k]);//vecteur valable
+                            if(v[k].moving()) again=res.add(v[k]);//vecteur valable
                         }
                     }
                 }
