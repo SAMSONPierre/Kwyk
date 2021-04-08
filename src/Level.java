@@ -5,14 +5,14 @@ import java.util.LinkedList;
 public class Level implements Serializable{
     final int brushX, brushY, brushAngle;
     final Color brushFirstColor;
-    final int numberOfCommands, numberOfFunctions, numberOfVariables;
+    final int numberOfCommands, numberOfFunctions, numberOfFunctionsInt, numberOfVariables;
     final String name;
     final String[] availableCommands;//nom des commandes disponibles
     final String[] mainCode, functions;//code principal a charger
     final LinkedList<Vector> pattern;//patron
     private LinkedList<Vector> playerDraw=new LinkedList<Vector>();
     
-    Level(Player p, int x, int y, int angle, Color color, int nbOfC, int nbOfF, int nbOfV,
+    Level(Player p, int x, int y, int angle, Color color, int nbOfC, int nbOfF, int nbOfFI, int nbOfV,
             String name, String[] nameOfC, LinkedList<Vector> v, String[] mainCode, String[] functions){
         this.brushX=x;
         this.brushY=y;
@@ -20,6 +20,7 @@ public class Level implements Serializable{
         this.brushFirstColor=color;
         this.numberOfCommands=nbOfC;
         this.numberOfFunctions=nbOfF;
+        this.numberOfFunctionsInt=nbOfFI;
         this.numberOfVariables=nbOfV;
         this.name=name;
         this.availableCommands=nameOfC;
@@ -35,6 +36,7 @@ public class Level implements Serializable{
         this.brushFirstColor=Color.WHITE;
         this.numberOfCommands=0;
         this.numberOfFunctions=-1;
+        this.numberOfFunctionsInt=-1;
         this.numberOfVariables=-1;
         this.name="editor";
         String[] c={"for", "if", "while", "drawLine", "drawArc", "raisePutBrush",
@@ -52,6 +54,7 @@ public class Level implements Serializable{
         this.brushFirstColor=color;
         this.numberOfCommands=0;
         this.numberOfFunctions=-1;
+        this.numberOfFunctionsInt=-1;
         this.numberOfVariables=-1;
         this.name="GM";
         String[] c={"for", "if", "while", "drawLine", "drawArc", "raisePutBrush",

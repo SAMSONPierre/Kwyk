@@ -176,8 +176,8 @@ public class Control implements Serializable{
         catch(Exception e){
             e.printStackTrace();
         }
-    	Level newLvl=new Level(model.getPlayer(),level.brushX,level.brushY,level.brushAngle,
-            level.brushFirstColor,numbers[0],numbers[1],numbers[2],name,commandsAvailable,newPattern,mainCode, functions);
+    	Level newLvl=new Level(model.getPlayer(),level.brushX,level.brushY,level.brushAngle,level.brushFirstColor,
+            numbers[0],numbers[1],numbers[2],numbers[3],name,commandsAvailable,newPattern,mainCode,functions);
     	try{
             String saveFile="levels/training/1Tutoriel/"+cpt+"- "+name+".lvl";
             File file=new File(saveFile);
