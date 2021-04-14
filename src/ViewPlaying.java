@@ -212,9 +212,11 @@ public class ViewPlaying extends ViewGame{
     void victoryMessage(){
     	if(!level.compare()) return;
         int lvl=Integer.parseInt(level.name.charAt(0)+"");
-        getModel().getPlayer().currentLevel[getNumberOfDirectory(level.name)][lvl]=true;
+        getModel().getPlayer().currentLevel[getNumberOfDirectory(level.name)][lvl+1]=true;
+        this.control.save();
         JOptionPane.showMessageDialog(this, "Victory !");
     }
+    
     
     String[] getCommandsArray(){
         return dragDrop.listToTab(dragDrop.getCommands());
