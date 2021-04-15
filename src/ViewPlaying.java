@@ -1350,6 +1350,7 @@ public class ViewPlaying extends ViewGame{
             /***** Mouse Override *****/
             
             public void mousePressed(MouseEvent e){
+                if(stop.isVisible()) return;
                 unStick();//detache si a un precedent
                 mouseX=e.getX();//position initiale de souris
                 mouseY=e.getY();
@@ -1375,7 +1376,7 @@ public class ViewPlaying extends ViewGame{
             }
 
             public void mouseDragged(MouseEvent e){
-                if(this instanceof CommandOperationV && variables.isEmpty()) return;//immobile
+                if(stop.isVisible() || this instanceof CommandOperationV && variables.isEmpty()) return;//immobile
                 //drag this et ses next + variables
                 int x=e.getXOnScreen()-x00-mouseX-ViewPlaying.this.getX();
                 int y=e.getYOnScreen()-y00-mouseY-ViewPlaying.this.getY();
@@ -1615,7 +1616,7 @@ public class ViewPlaying extends ViewGame{
             private boolean alreadyExecuted;
             
             CommandIf(int x, int y){
-                super("if", new Color(179, 0, 89), x, y);
+                super("if", new Color(188, 28, 132), x, y);
                 super.input=new NumberField(this);//choix libre du joueur donc pas une liste
                 
                 String[] tmp={"x", "y", "angle"};
@@ -1719,7 +1720,7 @@ public class ViewPlaying extends ViewGame{
                 try{
                     Image img=ImageIO.read(new File("images/engrenage.png"));
                     changeName.addImage(img);
-                    changeName.setBackground(new Color(212, 115, 212));
+                    changeName.setBackground(getBackground());
                 }
                 catch(IOException e){}
                 changeName.setPreferredSize(new Dimension(commandH-10, commandH-10));
@@ -1992,11 +1993,11 @@ public class ViewPlaying extends ViewGame{
             boolean canExecute(HashMap<String, Integer> map){
                 boolean ok=!input.isEmpty(map) && !angleScan.isEmpty(map);
                 if(input.getNumber(map)<2){//si vide, renvoie 0
-                    input.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                    input.border(BorderFactory.createLineBorder(Color.RED.darker(), 3));
                     ok=false;
                 }
                 if(Math.abs(angleScan.getNumber(map))<2){
-                    angleScan.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                    angleScan.border(BorderFactory.createLineBorder(Color.RED.darker(), 3));
                     ok=false;
                 }
                 return ok;
@@ -2080,8 +2081,8 @@ public class ViewPlaying extends ViewGame{
             }
             
             boolean canExecute(HashMap<String, Integer> map){
-                boolean ok=input.isEmpty(map) || positionY.isEmpty(map);//pour afficher tous les champs d erreur en meme temps
-                return !ok;
+                boolean empty=input.isEmpty(map);//pour afficher tous les champs d erreur en meme temps
+                return !positionY.isEmpty(map) && !empty;
             }
 
             Command execute(HashMap<String, Integer> map){
@@ -2257,6 +2258,7 @@ public class ViewPlaying extends ViewGame{
         
         class Variable extends JPanel implements MouseInputListener{
             final int positionY, variableH;
+            final Color color=new Color(255, 204, 255);
             private int mouseX, mouseY;
             protected int variableW;
             private boolean lastCreated=true;
@@ -2265,13 +2267,13 @@ public class ViewPlaying extends ViewGame{
             
             Variable(int x, int y, boolean notCall){
                 this.positionY=y;
-                this.setBackground(new Color(255, 204, 255));
+                this.setBackground(color);
                 this.setLayout(new GridBagLayout());
                 this.addMouseMotionListener(this);
                 this.addMouseListener(this);
                 
                 if(notCall){
-                    varChoice.setBackground(new Color(255, 204, 255));
+                    varChoice.setBackground(color);
                     for(String varName : variables.keySet()) varChoice.addItem(varName);
                     varChoice.setPreferredSize(new Dimension(largestVariable(varChoice),varChoice.getPreferredSize().height-5));
                     Component[] toAdd={new JLabel("     "), varChoice, new JLabel("     ")};
@@ -2370,6 +2372,7 @@ public class ViewPlaying extends ViewGame{
             }
             
             public void mousePressed(MouseEvent e){
+                if(stop.isVisible()) return;
                 unStick();//detache si etait attache
                 mouseX=e.getX();//position initiale de souris
                 mouseY=e.getY();
@@ -2377,7 +2380,7 @@ public class ViewPlaying extends ViewGame{
             }
 
             public void mouseDragged(MouseEvent e){
-                if(variables.isEmpty() && !(this instanceof CommandFunctionCallInt)) return;//immobile
+                if(stop.isVisible() || (variables.isEmpty() && !(this instanceof CommandFunctionCallInt))) return;//immobile
                 int x=e.getXOnScreen()-x00-mouseX-ViewPlaying.this.getX();
                 int y=e.getYOnScreen()-y00-mouseY-ViewPlaying.this.getY();
                 this.setLocation(regularize(x, getWidth(), true), regularize(y, getHeight(), false));
@@ -2559,17 +2562,22 @@ public class ViewPlaying extends ViewGame{
                     if(head instanceof CommandFunctionInitInt) empty=call.input.isEmpty(map);
                     else empty=!call.function.canExecute(null);
                     if(empty) call.setBackground(Color.RED.darker());
-                    else call.setBackground(new Color(255, 204, 255));
+                    else call.setBackground(call.color);
                     return call.input.isEmpty(map) || empty;
                 }
                 if(container instanceof CommandDrawLine) empty=Math.abs(getNumber(map))<3;
                 else if(container instanceof CommandDivision) empty=getNumber(map)==0;
                 if(empty){
-                    setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                    border(BorderFactory.createLineBorder(Color.RED.darker(), 3));
                     return true;
                 }
-                setBorder((variables.isEmpty() && nbOfFunI==0)?null:borderV);
+                border((variables.isEmpty() && nbOfFunI==0)?null:borderV);
                 return false;
+            }
+            
+            void border(Border border){
+                if(variable!=null) variable.setBackground((border==null)?variable.color:Color.RED.darker());
+                else this.setBorder(border);
             }
 
             protected Document createDefaultModel(){

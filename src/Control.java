@@ -129,9 +129,11 @@ public class Control implements Serializable{
     }
     
     void switchCreate() throws IOException{
-        this.exitFrame();
-        Level level=new Level(this.model.getPlayer());
-        playLevel(level, true);
+        if(!model.getPlayer().username.equals("default")){
+            this.exitFrame();
+            Level level=new Level(this.model.getPlayer());
+            playLevel(level, true);
+        }
     }
     
     void logout(){
