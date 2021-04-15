@@ -2097,7 +2097,7 @@ public class ViewPlaying extends ViewGame{
             Command execute(HashMap<String, Integer> map){
                 int[] newValues={input.getNumber(map),positionY.getNumber(map)};//x, y
             	if(newValues[0]<0 || newValues[0]>400 || newValues[1]<0 || newValues[1]>400) {
-                	JOptionPane.showMessageDialog(new JFrame(), "Le dessin sort du cadre !", "Attention !", JOptionPane.WARNING_MESSAGE);
+            		JOptionPane.showMessageDialog(new JFrame(), "You are out of bounds!", "Warning!", JOptionPane.WARNING_MESSAGE);
                 	return null;
             	}
                 blackBoard.x=input.getNumber(map);
