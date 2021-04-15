@@ -136,10 +136,27 @@ public class ViewPlaying extends ViewGame{
             JButton submit=new JButton("Submit");
             submit.addActionListener((event)->{
                 String name=JOptionPane.showInputDialog(this,"Level's name ?", null);
-                while(name!=null && (name.equals("") || !name.matches("^[a-zA-Z0-9]*$")))
-                    name=JOptionPane.showInputDialog(this,errorName, null);
-                if(name!=null) control.submit(name,level,saveCode.isSelected()?dragDrop.convertStart():null,
-                    saveFun.isSelected()?dragDrop.convertFunctions():null);
+                if(isGM) {
+                	File[] arrayLevels=nombreNiveau("levels/training/");
+                	String lvls = "";
+                	for(int i = 0;i<arrayLevels.length;i++) {
+                		lvls +=arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length())+" ; ";
+                	}
+                	lvls += " or challenge";
+                	String dest=JOptionPane.showInputDialog(this,"Destination ? choice : "+lvls, null);
+                	while(name!=null && (name.equals("") || !name.matches("^[a-zA-Z0-9]*$")))
+                        name=JOptionPane.showInputDialog(this,errorName, null);
+                    if(name!=null) control.submit(name, level, saveCode.isSelected()?dragDrop.convertStart():null,
+                        saveFun.isSelected()?dragDrop.convertFunctions():null,dest);
+                	
+                }
+                else {
+                	while(name!=null && (name.equals("") || !name.matches("^[a-zA-Z0-9]*$")))
+                        name=JOptionPane.showInputDialog(this,errorName, null);
+                    if(name!=null) control.submit(name, level, saveCode.isSelected()?dragDrop.convertStart():null,
+                        saveFun.isSelected()?dragDrop.convertFunctions():null);
+                }
+                
             });
             features.add(submit);
             if(isGM){
