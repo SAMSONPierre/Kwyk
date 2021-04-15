@@ -1,6 +1,8 @@
 import java.awt.Color;
 import java.io.Serializable;
 import java.util.LinkedList;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 public class Level implements Serializable{
     final int brushX, brushY, brushAngle;
@@ -71,8 +73,12 @@ public class Level implements Serializable{
         return res;
     }
     
-    void addToDraw(Vector vector){
-        if(vector.moving()) playerDraw.add(vector);
+    boolean addToDraw(Vector vector) {
+    	boolean b=(vector instanceof Vector.VectorLine)?!(((Vector.VectorLine)vector).tooLong()):true;
+        boolean res=vector.moving() && b;//on dessine effectivement
+    	if(res) playerDraw.add(vector);
+    	else if(!b) JOptionPane.showMessageDialog(new JFrame(), "Le dessin sort du cadre !", "Attention !", JOptionPane.WARNING_MESSAGE);
+    	return(res);
     }
     
     void initializePlayerDraw(){

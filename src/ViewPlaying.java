@@ -29,6 +29,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -1944,24 +1945,28 @@ public class ViewPlaying extends ViewGame{
                 int hypotenuse=input.getNumber(map);
                 Vector v=new Vector();//pour creer objet interne
                 Point p=v.destinationLine(blackBoard.x, blackBoard.y, blackBoard.angle, hypotenuse);
+                boolean brushMoves=true;
                 
                 //ajout du vecteur dans le dessin du joueur
                 if(blackBoard.drawing){
                     Vector.VectorLine trait=v.new VectorLine(blackBoard.x,
                         blackBoard.y, p.x, p.y, blackBoard.angle, blackBoard.brushColor);
-                    level.addToDraw(trait);
+                    brushMoves=level.addToDraw(trait);
                     if(blackBoard.brush2){//symetrie
                         Vector.VectorLine trait2=v.new VectorLine(400-blackBoard.x,
                             blackBoard.y, 400-p.x, p.y, blackBoard.angle, blackBoard.brushColor);
-                        level.addToDraw(trait2);
+                        brushMoves=level.addToDraw(trait2);
                     }
                 }
                 
                 //nouvel emplacement du pinceau
-                blackBoard.x=p.x;
-                blackBoard.y=p.y;
-                ViewPlaying.this.blackBoard.repaint();
-                return next;
+                if(brushMoves) {
+                	blackBoard.x=p.x;
+                	blackBoard.y=p.y;
+                	ViewPlaying.this.blackBoard.repaint();
+                	return next;
+                }
+                return null;
             }
         }//fin classe interne DrawLine
 
@@ -2010,6 +2015,7 @@ public class ViewPlaying extends ViewGame{
                 Point center=v.destinationLine(blackBoard.x, blackBoard.y, 180+blackBoard.angle, rad);//milieu du cercle
                 Point origin=v.destinationLine(center.x, center.y, blackBoard.angle-sens*90, rad);//-90 pour gauche, +90 pour droite
                 Point translation=new Point(blackBoard.x-origin.x, blackBoard.y-origin.y);
+                boolean brushMoves=true;
                 
                 if(blackBoard.drawing){//ajout du vecteur dans le dessin du joueur
                     Point square=v.destinationLine(center.x, center.y, 90, rad);//haut du carre
@@ -2017,21 +2023,24 @@ public class ViewPlaying extends ViewGame{
                     square=new Point(square.x+translation.x, square.y+translation.y);//carre translate
                     Vector.VectorArc arc=v.new VectorArc(square.x, square.y, rad*2, 
                         blackBoard.angle-90*sens, sens*angleS, blackBoard.brushColor);//-90*sens car translation
-                    level.addToDraw(arc);
+                    brushMoves=level.addToDraw(arc);
                     if(blackBoard.brush2){
                         Vector.VectorArc arc2=v.new VectorArc(400-square.x-rad*2, square.y, rad*2, 
                             180-(blackBoard.angle-90*sens), -sens*angleS, blackBoard.brushColor);
-                        level.addToDraw(arc2);
+                        brushMoves=level.addToDraw(arc2);
                     }
                 }
                 
                 //nouvel emplacement du pinceau
-                Point dest=v.destinationLine(center.x, center.y, blackBoard.angle+(angleS-90)*sens, rad);
-                blackBoard.x=dest.x+translation.x;
-                blackBoard.y=dest.y+translation.y;
-                blackBoard.angle=(angleS*sens+blackBoard.angle)%360;
-                ViewPlaying.this.blackBoard.repaint();
-                return next;
+                if(brushMoves) {
+                	Point dest=v.destinationLine(center.x, center.y, blackBoard.angle+(angleS-90)*sens, rad);
+                	blackBoard.x=dest.x+translation.x;
+                	blackBoard.y=dest.y+translation.y;
+                	blackBoard.angle=(angleS*sens+blackBoard.angle)%360;
+                	ViewPlaying.this.blackBoard.repaint();
+                	return next;
+                }
+                return null;
             }
         }//fin classe interne DrawArc
 
@@ -2086,6 +2095,11 @@ public class ViewPlaying extends ViewGame{
             }
 
             Command execute(HashMap<String, Integer> map){
+                int[] newValues={input.getNumber(map),positionY.getNumber(map)};//x, y
+            	if(newValues[0]<0 || newValues[0]>400 || newValues[1]<0 || newValues[1]>400) {
+                	JOptionPane.showMessageDialog(new JFrame(), "Le dessin sort du cadre !", "Attention !", JOptionPane.WARNING_MESSAGE);
+                	return null;
+            	}
                 blackBoard.x=input.getNumber(map);
                 blackBoard.y=positionY.getNumber(map);
                 ViewPlaying.this.blackBoard.repaint();
@@ -2250,8 +2264,8 @@ public class ViewPlaying extends ViewGame{
                 return (next!=null)?next.execute(map):null;
             }
         }//fin classe interne Symmetry
-
-
+        
+        
         /*************************
         *        Variable        *
         *************************/
@@ -2598,5 +2612,8 @@ public class ViewPlaying extends ViewGame{
                 }
             }
         }//fin classe interne NumberField
+
+        
     }//fin classe interne PanelDragDropBoard
+
 }

@@ -133,6 +133,10 @@ class Vector implements Serializable{
             return Math.sqrt((b.x-a.x)*(b.x-a.x)+(b.y-a.y)*(b.y-a.y));
         }
         
+        boolean tooLong() {
+        	return(this.x2<-1 || this.x2>401 || this.y2<-1 || this.y2>401);
+        }
+        
         Point[] sort(Point[] points){//trie de haut en bas/gauche vers droite
             for(int i=1; i<points.length; i++){
                 int j=i;
