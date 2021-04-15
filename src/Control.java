@@ -192,6 +192,71 @@ public class Control implements Serializable{
         }
     }
     
+    void submit(String name, Level level, String[] mainCode, String[] functions,String dest){
+        if(name==null) return;
+        if(dest.equals("challenge")) {
+        	ViewPlaying tmp=(ViewPlaying)this.view;
+        	LinkedList<Vector> newPattern=level.getSimplifyDraw(level.getPlayerDraw());
+        	int[] numbers=tmp.getNumbersFromHead();
+        	String[] commandsAvailable=tmp.getCommandsArray();
+            Rectangle screenRect=new Rectangle(tmp.getX()+tmp.getInsets().left+20,
+                    tmp.getY()+tmp.getInsets().top+tmp.buttonHeight+20, 400, 400);
+            BufferedImage capture;
+            File[] arrayLevels=((ViewGame)view).nombreNiveau("levels/challenge/");
+            int cpt = arrayLevels.length;
+            try{
+                capture=new Robot().createScreenCapture(screenRect);
+                ImageIO.write(capture, "png", new File("preview/challenge/"+cpt+"- "+name+".png"));
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }
+        	Level newLvl=new Level(model.getPlayer(),level.brushX,level.brushY,level.brushAngle,level.brushFirstColor,
+                numbers[0],numbers[1],numbers[2],numbers[3],cpt+"- "+name,commandsAvailable,newPattern,mainCode,functions);
+        	try{
+                String saveFile="levels/challenge/"+cpt+"- "+name+".lvl";
+                File file=new File(saveFile);
+                ObjectOutputStream oos=new ObjectOutputStream(new FileOutputStream(file));
+                oos.writeObject(newLvl);
+                oos.close();
+            }
+            catch(Exception e){
+                System.out.println("Fail to submit.");
+            }
+        }
+        else {
+        	ViewPlaying tmp=(ViewPlaying)this.view;
+        	LinkedList<Vector> newPattern=level.getSimplifyDraw(level.getPlayerDraw());
+        	int[] numbers=tmp.getNumbersFromHead();
+        	String[] commandsAvailable=tmp.getCommandsArray();
+            Rectangle screenRect=new Rectangle(tmp.getX()+tmp.getInsets().left+20,
+                    tmp.getY()+tmp.getInsets().top+tmp.buttonHeight+20, 400, 400);
+            BufferedImage capture;
+            File[] arrayLevels=((ViewGame)view).nombreNiveau("levels/training/"+dest+"/");
+            int cpt = arrayLevels.length;
+            try{
+                capture=new Robot().createScreenCapture(screenRect);
+                ImageIO.write(capture, "png", new File("preview/training/"+dest+"/"+cpt+"- "+name+".png"));
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }
+        	Level newLvl=new Level(model.getPlayer(),level.brushX,level.brushY,level.brushAngle,level.brushFirstColor,
+                numbers[0],numbers[1],numbers[2],numbers[3],cpt+"- "+name,commandsAvailable,newPattern,mainCode,functions);
+        	try{
+                String saveFile="levels/training/"+dest+"/"+cpt+"- "+name+".lvl";
+                File file=new File(saveFile);
+                ObjectOutputStream oos=new ObjectOutputStream(new FileOutputStream(file));
+                oos.writeObject(newLvl);
+                oos.close();
+            }
+            catch(Exception e){
+                System.out.println("Fail to submit.");
+            }
+        }
+    	
+    }
+    
     
     /*****************
     *   Load level   *
