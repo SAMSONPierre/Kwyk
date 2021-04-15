@@ -248,5 +248,11 @@ class Vector implements Serializable{
         boolean moving(){
             return scanAngle>0;
         }
+        
+        boolean tooLong() {
+        	boolean res=this.y1+this.diameter/2>400 || this.y1-this.diameter/2<0;
+        	res|=(this.scanAngle<0)?this.x1-this.diameter<0:this.x1+this.diameter>400;
+        	return res;
+        }
     }
 }

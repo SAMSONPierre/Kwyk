@@ -74,7 +74,7 @@ public class Level implements Serializable{
     }
     
     boolean addToDraw(Vector vector) {
-    	boolean b=(vector instanceof Vector.VectorLine)?!(((Vector.VectorLine)vector).tooLong()):true;
+    	boolean b=(vector instanceof Vector.VectorLine)?!(((Vector.VectorLine)vector).tooLong()):!(((Vector.VectorArc)vector).tooLong());
         boolean res=vector.moving() && b;//on dessine effectivement
     	if(res) playerDraw.add(vector);
     	else if(!b) JOptionPane.showMessageDialog(new JFrame(), "Le dessin sort du cadre !", "Attention !", JOptionPane.WARNING_MESSAGE);
