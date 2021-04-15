@@ -51,14 +51,10 @@ public class ViewLogin extends View{
         createAccount.addActionListener((event)->{
             String usernameS=username.getText();
             String passwordS=new String(password.getPassword());//char[] en String
-            if(!usernameS.equals("") && password.getPassword().length != 0) {
+            if(!usernameS.equals("") && password.getPassword().length!=0)
                 super.control.createAccount(usernameS, passwordS);
-            }
-            else {
-            	errorLogin();
-            }
-        }
-    );
+            else errorLogin();
+        });
         tryWithoutAccount.addActionListener((event)->super.control.tryWithoutAccount());
     }
     
@@ -102,7 +98,6 @@ public class ViewLogin extends View{
         this.add(center);
         this.add(end, BorderLayout.SOUTH);
     }
-
     
     void errorLogin(){//incorrect ou username=default(==nom du fichier pour jouer sans compte)
         error.setText("<html><i>Incorrect username/password.</i></html>");

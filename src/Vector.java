@@ -77,7 +77,7 @@ class Vector implements Serializable{
         }
         
         VectorLine[] toMerge(VectorLine v2){//this=ancien, v2=recent
-            if(angle%180==v2.angle%180){//this et v2 sont alignes
+            if(isAligned(v2)){//this et v2 sont alignes
                 Point a=new Point(this.x1, this.y1);
                 Point b=new Point(this.x2, this.y2);
                 Point c=new Point(v2.x1, v2.y1);
@@ -114,6 +114,19 @@ class Vector implements Serializable{
                 }
             }
             return new VectorLine[0];//pas de superposition
+        }
+        
+        boolean isAligned(VectorLine v2){
+            if(angle%180==v2.angle%180){
+                Point a=new Point(x1, y1);
+                Point b=new Point(x2, y2);
+                return isAligned(a,b,new Point(v2.x1, v2.y1)) && isAligned(a,b,new Point(v2.x2, v2.y2));
+            }
+            return false;
+        }
+        
+        boolean isAligned(Point a, Point b, Point c){
+            return (b.x-a.x)*(c.y-b.y)-(b.y-a.y)*(c.x-b.x)==0;
         }
         
         double distance(Point a, Point b){

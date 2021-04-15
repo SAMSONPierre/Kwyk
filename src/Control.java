@@ -14,9 +14,7 @@ import javax.imageio.ImageIO;
 public class Control implements Serializable{
     private Model model;
     private View view;
-    private LinkedList<String> database=new LinkedList<String>();//pair=username, impair=password
-    // Gestion des mots de passe
-    final String secretKey = "ssshhhhhhhhhhh!!!!";
+    final String secretKey="ssshhhhhhhhhhh!!!!";//gestion des mots de passe
     
     Control(View view){
         this.view=view;
@@ -33,91 +31,41 @@ public class Control implements Serializable{
     *      Login      *
     ******************/
     
-    int checkLogin(String username, String password){//verification des identifiants
-        int res=0;
-        if(username.equals("default") || database.isEmpty() || !database.contains(username))
-            return -1;
-        while(true){
-            if(database.get(res).equals(username)){
-                if(database.get(res+1).equals(password)) return res;//login ok
-                return -1;//mauvais password
-            }
-            res+=2;//les username se trouvent dans les cases pairs
-        }
-    }
-    
     void login(String username, String password){//se connecter
-//        int index=checkLogin(username, password);//indice d username dans database (-1 sinon)
-//        if(index!=-1){//identifiants correctes
-//            String saveFile=database.get(index)+".bin";//extension .bin pour tous les fichiers de sauvegarde
-//            try{
-//                File file=new File(saveFile);
-//                ObjectInputStream ois=new ObjectInputStream(new FileInputStream(file));
-//                Player player=(Player)ois.readObject();//celui qu on recupere depuis le fichier de sauvegarde
-//                this.exitFrame();//quitte la fenetre courante
-//                this.view=new ViewSummaryTraining(player);//pour en ouvrir une autre
-//                this.model=view.getModel();
-//                ois.close();
-//            }
-//            catch(Exception e) {
-//                System.out.println("Fail to retake user's account.");
-//            }
-//        }
-//        else ((ViewLogin)view).errorLogin();//affichage du message d erreur
-    	if(!alreadyExists(username)) {
-    		System.out.print("this username isnt linked to any account");
-    	}
-    	else {
-    		try{
+        if(!alreadyExists(username)) ((ViewLogin)view).errorLogin();//affichage du message d erreur
+        else{
+            try{
                 FileInputStream fis=new FileInputStream("players/"+username+".player");
                 ObjectInputStream ois=new ObjectInputStream(fis);
                 Player p=(Player)ois.readObject();
-                String decryptedPassword = AES.decrypt(p.password, secretKey);
-                if(decryptedPassword.equals(password)) {
-                	this.exitFrame();//quitte la fenetre courante
-                	this.view=new ViewSummaryTraining(p);//pour en ouvrir une autre
-                	this.model=view.getModel();
-                	ois.close();
+                String decryptedPassword=AES.decrypt(p.password, secretKey);
+                if(decryptedPassword.equals(password)){
+                    this.exitFrame();//quitte la fenetre courante
+                    this.view=new ViewSummaryTraining(p);//pour en ouvrir une autre
+                    this.model=view.getModel();
+                    ois.close();
                 }
-                else {
-                	System.out.println("Fail to retake user's account.");
-                }
+                else ((ViewLogin)view).errorLogin();//affichage du message d erreur
             }
-            catch(Exception e){
-                e.printStackTrace();
-            }
-    	}
+            catch(Exception e){}
+        }
     }
     
     void createAccount(String username, String password){//creer un compte
-    	//if(database.contains(username)) ((ViewLogin)view).usernameAlreadyExists();
-        //Player player=new Player(username);//creer un nouveau joueur=nouveau compte
-        //database.add(username);//ajout dans la database
-        //database.add(password);
-        //this.exitFrame();//quitte la fenetre courante
-        //this.view=new ViewSummaryTraining(player);//pour en ouvrir une autre
-        //this.model=view.getModel();
-        //this.save();//on cree le fichier de sauvegarde qui lui est associe
-    	if(alreadyExists(username)) {
-    		((ViewLogin)view).usernameAlreadyExists();
-    	}
-    	else {
-    		Player p = new Player(username,AES.encrypt(password, secretKey));
-    		try{
-    			
-    			File file=new File("players/"+username+".player");
+        if(alreadyExists(username)) ((ViewLogin)view).usernameAlreadyExists();//affichage du message d erreur
+        else{
+            Player p=new Player(username, AES.encrypt(password, secretKey));
+            try{
+                File file=new File("players/"+username+".player");
                 ObjectOutputStream oos=new ObjectOutputStream(new FileOutputStream(file));
                 oos.writeObject(p);
                 oos.close();
             }
-            catch(Exception e){
-                e.printStackTrace();
-            }
-    		this.exitFrame();//quitte la fenetre courante
+            catch(Exception e){}
+            this.exitFrame();//quitte la fenetre courante
             this.view=new ViewSummaryTraining(p);//pour en ouvrir une autre
             this.model=view.getModel();
-            //this.save();//on cree le fichier de sauvegarde qui lui est associe
-    	}
+        }
     }
     
     void save(){//sauvegarde du joueur apres chaque niveau reussi
@@ -133,7 +81,6 @@ public class Control implements Serializable{
                 System.out.println("Fail to save.");
             }
         }
-        
     }
     
     void tryWithoutAccount(){//login to default account
@@ -146,19 +93,14 @@ public class Control implements Serializable{
             this.model=view.getModel();
             ois.close();
         }
-        catch(Exception e) {
-            System.out.println("Fail to retake default account.");
-        }
+        catch(Exception e){}
     }
     
-    boolean alreadyExists(String username) {
+    boolean alreadyExists(String username){
     	File file=new File("players/");
     	File[] files=file.listFiles();
-    	
-    	for(int i=0;i<files.length;i++) {
-    		if(files[i].getName().equals(username+".player")){
-    			return true;
-    		}
+    	for(int i=0; i<files.length; i++){
+            if(files[i].getName().equals(username+".player")) return true;
     	}
     	return false;
     }
@@ -262,6 +204,6 @@ public class Control implements Serializable{
         }
         catch(Exception e){
             e.printStackTrace();
-	}
+        }
     }
 }
