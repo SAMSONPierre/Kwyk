@@ -1,7 +1,6 @@
 import java.awt.Color;
 import java.io.Serializable;
 import java.util.LinkedList;
-import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 public class Level implements Serializable{
@@ -73,12 +72,14 @@ public class Level implements Serializable{
         return res;
     }
     
-    boolean addToDraw(Vector vector) {
-    	boolean b=(vector instanceof Vector.VectorLine)?!(((Vector.VectorLine)vector).tooLong()):!(((Vector.VectorArc)vector).tooLong());
-        boolean res=vector.moving() && b;//on dessine effectivement
-    	if(res) playerDraw.add(vector);
-    	else if(!b) JOptionPane.showMessageDialog(new JFrame(), "You are out of bounds!", "Warning!", JOptionPane.WARNING_MESSAGE);
-    	return(res);
+    boolean addToDraw(Vector vector){
+        boolean sizeOk=!vector.tooLong();
+        if(vector.moving() && sizeOk) playerDraw.add(vector);
+        else if(!sizeOk){
+            JOptionPane.showMessageDialog(null, "You are out of bounds!", "Warning!", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        return true;
     }
     
     void initializePlayerDraw(){

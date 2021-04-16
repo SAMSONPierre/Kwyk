@@ -29,7 +29,6 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -78,7 +77,7 @@ public class ViewPlaying extends ViewGame{
     }
     
     void addBoard() throws IOException{
-        blackBoard=new PanelBlackBoard();
+        blackBoard=new PanelBlackBoard(400);
         this.add(blackBoard);//taille fixee
         //setUIFont(new javax.swing.plaf.FontUIResource("Times New Roman", Font.BOLD, 14));
         dragDrop=new PanelDragDropBoard();
@@ -136,27 +135,23 @@ public class ViewPlaying extends ViewGame{
             JButton submit=new JButton("Submit");
             submit.addActionListener((event)->{
                 String name=JOptionPane.showInputDialog(this,"Level's name ?", null);
-                if(isGM) {
-                	File[] arrayLevels=nombreNiveau("levels/training/");
-                	String lvls = "";
-                	for(int i = 0;i<arrayLevels.length;i++) {
-                		lvls +=arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length())+" ; ";
-                	}
-                	lvls += " or challenge";
-                	String dest=JOptionPane.showInputDialog(this,"Destination ? choice : "+lvls, null);
-                	while(name!=null && (name.equals("") || !name.matches("^[a-zA-Z0-9]*$")))
-                        name=JOptionPane.showInputDialog(this,errorName, null);
-                    if(name!=null) control.submit(name, level, saveCode.isSelected()?dragDrop.convertStart():null,
-                        saveFun.isSelected()?dragDrop.convertFunctions():null,dest);
-                	
+                while(name!=null && (name.equals("") || !name.matches("^[a-zA-Z0-9]*$")))
+                    name=JOptionPane.showInputDialog(this,errorName, null);
+                if(name!=null){
+                    String dest="challenge/";
+                    if(isGM){
+                        File[] arrayLevels=nombreNiveau("levels/training/");
+                        JComboBox choice=new JComboBox();
+                        for(int i=0; i<arrayLevels.length; i++)
+                            choice.addItem("training/"+arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length())+"/");
+                        choice.addItem("challenge/");
+                        JOptionPane.showOptionDialog(null, choice, "Destination", JOptionPane.DEFAULT_OPTION,
+                            JOptionPane.QUESTION_MESSAGE, null, null, null);
+                        dest=choice.getItemAt(choice.getSelectedIndex()).toString();
+                    }
+                    control.submit(name,level,saveCode.isSelected()?dragDrop.convertStart():null,
+                        saveFun.isSelected()?dragDrop.convertFunctions():null, dest);
                 }
-                else {
-                	while(name!=null && (name.equals("") || !name.matches("^[a-zA-Z0-9]*$")))
-                        name=JOptionPane.showInputDialog(this,errorName, null);
-                    if(name!=null) control.submit(name, level, saveCode.isSelected()?dragDrop.convertStart():null,
-                        saveFun.isSelected()?dragDrop.convertFunctions():null);
-                }
-                
             });
             features.add(submit);
             if(isGM){
@@ -228,6 +223,7 @@ public class ViewPlaying extends ViewGame{
     	if(!level.compare()) return;
         int lvl=Integer.parseInt(level.name.charAt(0)+"")+1;
         getModel().getPlayer().currentLevel[getNumberOfDirectory(level.name)][lvl]=true;
+        this.control.save();
         JOptionPane.showMessageDialog(this, "Victory !");
     }
     
@@ -277,8 +273,8 @@ public class ViewPlaying extends ViewGame{
         private Color brushColor;
         private boolean drawing=true, brush2;//pinceau posé par defaut, 2e pinceau de symetrie
 
-        PanelBlackBoard(){
-            this.setBounds(20, 20+buttonHeight, 400, 400);//marge gauche=20, 20+hauteur d un bouton en haut, taille 400*400
+        PanelBlackBoard(int size){
+            this.setBounds(20, 20+buttonHeight, size, size);//marge gauche=20, 20+hauteur d un bouton en haut, taille 400*400
             this.setBackground(Color.BLACK);//fond noir
             this.x=level.brushX;
             this.y=level.brushY;
@@ -1962,28 +1958,24 @@ public class ViewPlaying extends ViewGame{
                 int hypotenuse=input.getNumber(map);
                 Vector v=new Vector();//pour creer objet interne
                 Point p=v.destinationLine(blackBoard.x, blackBoard.y, blackBoard.angle, hypotenuse);
-                boolean brushMoves=true;
                 
                 //ajout du vecteur dans le dessin du joueur
                 if(blackBoard.drawing){
                     Vector.VectorLine trait=v.new VectorLine(blackBoard.x,
                         blackBoard.y, p.x, p.y, blackBoard.angle, blackBoard.brushColor);
-                    brushMoves=level.addToDraw(trait);
+                    if(!level.addToDraw(trait)) return null;//sort du tableau, on arrete
                     if(blackBoard.brush2){//symetrie
                         Vector.VectorLine trait2=v.new VectorLine(400-blackBoard.x,
                             blackBoard.y, 400-p.x, p.y, blackBoard.angle, blackBoard.brushColor);
-                        brushMoves=level.addToDraw(trait2);
+                        level.addToDraw(trait2);
                     }
                 }
                 
                 //nouvel emplacement du pinceau
-                if(brushMoves) {
-                	blackBoard.x=p.x;
-                	blackBoard.y=p.y;
-                	ViewPlaying.this.blackBoard.repaint();
-                	return next;
-                }
-                return null;
+                blackBoard.x=p.x;
+                blackBoard.y=p.y;
+                ViewPlaying.this.blackBoard.repaint();
+                return next;
             }
         }//fin classe interne DrawLine
 
@@ -2032,7 +2024,6 @@ public class ViewPlaying extends ViewGame{
                 Point center=v.destinationLine(blackBoard.x, blackBoard.y, 180+blackBoard.angle, rad);//milieu du cercle
                 Point origin=v.destinationLine(center.x, center.y, blackBoard.angle-sens*90, rad);//-90 pour gauche, +90 pour droite
                 Point translation=new Point(blackBoard.x-origin.x, blackBoard.y-origin.y);
-                boolean brushMoves=true;
                 
                 if(blackBoard.drawing){//ajout du vecteur dans le dessin du joueur
                     Point square=v.destinationLine(center.x, center.y, 90, rad);//haut du carre
@@ -2040,24 +2031,21 @@ public class ViewPlaying extends ViewGame{
                     square=new Point(square.x+translation.x, square.y+translation.y);//carre translate
                     Vector.VectorArc arc=v.new VectorArc(square.x, square.y, rad*2, 
                         blackBoard.angle-90*sens, sens*angleS, blackBoard.brushColor);//-90*sens car translation
-                    brushMoves=level.addToDraw(arc);
+                    if(!level.addToDraw(arc)) return null;//sort du tableau, on arrete
                     if(blackBoard.brush2){
                         Vector.VectorArc arc2=v.new VectorArc(400-square.x-rad*2, square.y, rad*2, 
                             180-(blackBoard.angle-90*sens), -sens*angleS, blackBoard.brushColor);
-                        brushMoves=level.addToDraw(arc2);
+                        level.addToDraw(arc2);
                     }
                 }
                 
                 //nouvel emplacement du pinceau
-                if(brushMoves) {
-                	Point dest=v.destinationLine(center.x, center.y, blackBoard.angle+(angleS-90)*sens, rad);
-                	blackBoard.x=dest.x+translation.x;
-                	blackBoard.y=dest.y+translation.y;
-                	blackBoard.angle=(angleS*sens+blackBoard.angle)%360;
-                	ViewPlaying.this.blackBoard.repaint();
-                	return next;
-                }
-                return null;
+                Point dest=v.destinationLine(center.x, center.y, blackBoard.angle+(angleS-90)*sens, rad);
+                blackBoard.x=dest.x+translation.x;
+                blackBoard.y=dest.y+translation.y;
+                blackBoard.angle=(angleS*sens+blackBoard.angle)%360;
+                ViewPlaying.this.blackBoard.repaint();
+                return next;
             }
         }//fin classe interne DrawArc
 
@@ -2112,11 +2100,11 @@ public class ViewPlaying extends ViewGame{
             }
 
             Command execute(HashMap<String, Integer> map){
-                int[] newValues={input.getNumber(map),positionY.getNumber(map)};//x, y
-            	if(newValues[0]<0 || newValues[0]>400 || newValues[1]<0 || newValues[1]>400) {
-            		JOptionPane.showMessageDialog(new JFrame(), "You are out of bounds!", "Warning!", JOptionPane.WARNING_MESSAGE);
-                	return null;
-            	}
+                int[] newValues={input.getNumber(map), positionY.getNumber(map)};//x, y
+                if(newValues[0]<0 || newValues[0]>400 || newValues[1]<0 || newValues[1]>400){
+                    JOptionPane.showMessageDialog(null, "You are out of bounds!", "Warning!", JOptionPane.WARNING_MESSAGE);
+                    return null;
+                }
                 blackBoard.x=input.getNumber(map);
                 blackBoard.y=positionY.getNumber(map);
                 ViewPlaying.this.blackBoard.repaint();
@@ -2164,25 +2152,10 @@ public class ViewPlaying extends ViewGame{
 
 
         class CommandSetColor extends Command{//classe interne
-            private JComboBox colorChoice=new JComboBox();
-            final Color[] palette={Color.BLUE,Color.CYAN,Color.GREEN,Color.MAGENTA,Color.RED,Color.WHITE,Color.YELLOW};
-            private Color colorRes=level.brushFirstColor;
+            private ColorBox colorChoice=new ColorBox();
 
             CommandSetColor(int x, int y){
                 super("setColor", Color.LIGHT_GRAY.darker(), y);
-                
-                colorChoice.addItemListener(new ItemListener(){
-                    public void itemStateChanged(ItemEvent e){
-                        for(int i=0; i<7; i++){
-                            if(palette[i].equals(colorChoice.getSelectedItem())){
-                                colorRes=palette[i];
-                                return;
-                            }
-                        }
-                    }
-                });
-                for(int i=0; i<7; i++) colorChoice.addItem(palette[i]);
-                colorChoice.setRenderer(new ColorComboRenderer());
                 
                 Component[] toAdd={new JLabel("  Set color to  "), colorChoice, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
@@ -2194,30 +2167,10 @@ public class ViewPlaying extends ViewGame{
             }
 
             Command execute(HashMap<String, Integer> map){
-                blackBoard.brushColor=colorRes;
+                blackBoard.brushColor=colorChoice.colorRes;
                 ViewPlaying.this.blackBoard.repaint();
                 return next;
             }
-            
-            class ColorComboRenderer extends JPanel implements ListCellRenderer{
-                Color main=Color.BLUE;//couleur en tete d affichage
-                
-                ColorComboRenderer(){
-                    super();
-                    this.setPreferredSize(new Dimension(30,15));
-                    setBorder(new CompoundBorder(new LineBorder(Color.WHITE), new LineBorder(Color.BLACK)));
-                }
-                
-                public Component getListCellRendererComponent(JList l,Object o,int row,boolean b,boolean focus){
-                    if(o instanceof Color) main=(Color)o;
-                    return this;
-                }
-                
-                public void paint(Graphics g){
-                    setBackground(main);
-                    super.paint(g);
-                }
-            }//fin de classe interne interne ColorComboRenderer
         }//fin de classe interne ChangeColor
         
 
@@ -2281,8 +2234,8 @@ public class ViewPlaying extends ViewGame{
                 return (next!=null)?next.execute(map):null;
             }
         }//fin classe interne Symmetry
-        
-        
+
+
         /*************************
         *        Variable        *
         *************************/
@@ -2629,8 +2582,5 @@ public class ViewPlaying extends ViewGame{
                 }
             }
         }//fin classe interne NumberField
-
-        
     }//fin classe interne PanelDragDropBoard
-
 }

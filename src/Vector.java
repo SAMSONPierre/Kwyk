@@ -23,6 +23,10 @@ class Vector implements Serializable{
     boolean moving(){//override
         return true;
     }
+    
+    boolean tooLong(){
+        return false;
+    }
 
     Point destinationLine(int x1, int y1, int angle, int distance){//trigo
         angle%=360;
@@ -133,10 +137,6 @@ class Vector implements Serializable{
             return Math.sqrt((b.x-a.x)*(b.x-a.x)+(b.y-a.y)*(b.y-a.y));
         }
         
-        boolean tooLong() {
-        	return(this.x2<-1 || this.x2>401 || this.y2<-1 || this.y2>401);
-        }
-        
         Point[] sort(Point[] points){//trie de haut en bas/gauche vers droite
             for(int i=1; i<points.length; i++){
                 int j=i;
@@ -156,6 +156,10 @@ class Vector implements Serializable{
         
         boolean moving(){//ne prend pas en compte les traits fixes ou trop petits
             return (x1!=x2 || y1!=y2) && (Math.abs(x1-x2)>1 || Math.abs(y1-y2)>1);
+        }
+        
+        boolean tooLong(){
+            return (this.x2<0 || this.x2>400 || this.y2<0 || this.y2>400);
         }
     }
     
@@ -249,10 +253,8 @@ class Vector implements Serializable{
             return scanAngle>0;
         }
         
-        boolean tooLong() {
-        	boolean res=this.y1+this.diameter/2>400 || this.y1-this.diameter/2<0;
-        	res|=(this.scanAngle<0)?this.x1-this.diameter<0:this.x1+this.diameter>400;
-        	return res;
+        boolean tooLong(){//----a regaire correctement----
+            return y1+diameter>400 || y1-diameter<0 || (scanAngle<0)?x1-diameter<0:x1+diameter>400;
         }
     }
 }
