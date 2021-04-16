@@ -30,19 +30,15 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JSlider;
 import javax.swing.JTextField;
-import javax.swing.ListCellRenderer;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.MouseInputListener;
@@ -77,7 +73,7 @@ public class ViewPlaying extends ViewGame{
     }
     
     void addBoard() throws IOException{
-        blackBoard=new PanelBlackBoard(400);
+        blackBoard=new PanelBlackBoard();
         this.add(blackBoard);//taille fixee
         //setUIFont(new javax.swing.plaf.FontUIResource("Times New Roman", Font.BOLD, 14));
         dragDrop=new PanelDragDropBoard();
@@ -100,6 +96,44 @@ public class ViewPlaying extends ViewGame{
             blackBoard.repaint();
         });
         features.add(seeGrid);
+        
+        JButton sizeS=new JButton("Size S");
+        sizeS.setEnabled(false);
+        JButton sizeM=new JButton("Size M");
+        JButton sizeL=new JButton("Size L");
+        sizeS.addActionListener((event)->{
+            this.add(dragDrop);
+            dragDrop.setBounds(440, dragDrop.getY(), widthFS-460, dragDrop.getHeight());
+            blackBoard.setBounds(20, 20+buttonHeight, 400, 400);
+            features.setBounds(20, 440+buttonHeight, 400, heightFS-460-buttonHeight);
+            sizeS.setEnabled(false);
+            sizeM.setEnabled(true);
+            sizeL.setEnabled(true);
+            SwingUtilities.updateComponentTreeUI(this);
+        });
+        sizeM.addActionListener((event)->{
+            this.add(dragDrop);
+            dragDrop.setBounds(640, dragDrop.getY(), widthFS-660, dragDrop.getHeight());
+            blackBoard.setBounds(20, 20+buttonHeight, 600, 600);
+            features.setBounds(20, 660+buttonHeight, 600, heightFS-660-buttonHeight);
+            sizeS.setEnabled(true);
+            sizeM.setEnabled(false);
+            sizeL.setEnabled(true);
+            SwingUtilities.updateComponentTreeUI(this);
+        });
+        sizeL.addActionListener((event)->{
+            this.remove(dragDrop);
+            int size=Math.min(widthFS-features.getWidth(), heightFS-buttonHeight-40);
+            blackBoard.setBounds(20, 20+buttonHeight, size, size);
+            features.setBounds(blackBoard.getWidth()+60, blackBoard.getY(), features.getWidth(), features.getHeight());
+            sizeS.setEnabled(true);
+            sizeM.setEnabled(true);
+            sizeL.setEnabled(false);
+            SwingUtilities.updateComponentTreeUI(this);
+        });
+        features.add(sizeS);
+        if(widthFS-660+dragDrop.width/2>200) features.add(sizeM);
+        features.add(sizeL);
         
         run.addActionListener((event)->run());
         stop.addActionListener((event)->stop());
@@ -269,17 +303,23 @@ public class ViewPlaying extends ViewGame{
     public class PanelBlackBoard extends JPanel{
         protected boolean gridApparent=true;//par defaut, on voit la grille
         private Brush brush=new Brush();//fleche vide
-        private int x, y, angle;//par defaut (0,0) et orientee "->" (angle 0° sur le cercle trigo)
+        private int x, y, angle, size;//par defaut (0,0) et orientee "->" (angle 0° sur le cercle trigo)
         private Color brushColor;
         private boolean drawing=true, brush2;//pinceau posé par defaut, 2e pinceau de symetrie
 
-        PanelBlackBoard(int size){
-            this.setBounds(20, 20+buttonHeight, size, size);//marge gauche=20, 20+hauteur d un bouton en haut, taille 400*400
+        PanelBlackBoard(){
+            this.setBounds(20, 20+buttonHeight, 400, 400);//marge gauche=20, 20+hauteur d un bouton en haut, taille 400*400
             this.setBackground(Color.BLACK);//fond noir
             this.x=level.brushX;
             this.y=level.brushY;
             this.angle=level.brushAngle;
             this.brushColor=level.brushFirstColor;
+            this.size=400;
+        }
+        
+        public void setBounds(int x, int y, int w, int h){
+            super.setBounds(x, y, w, h);
+            this.size=w;
         }
         
         
@@ -298,18 +338,19 @@ public class ViewPlaying extends ViewGame{
 
         void paintGrid(Graphics g){//dessin de la grille
             g.setColor(Color.gray.darker());
-            for(int i=100; i<400; i+=100){
-                g.drawLine(i, 20, i, 400);
-                g.drawLine(30, i, 400, i);
-                g.drawString(Integer.toString(i), i-10, 15);
-                g.drawString(Integer.toString(i), 3, i+5);
+            for(int i=1; i<4; i++){
+                int j=i*size/4;
+                g.drawLine(j, 20, j, size);
+                g.drawLine(30, j, size, j);
+                g.drawString(Integer.toString(i*100), j-10, 15);
+                g.drawString(Integer.toString(i*100), 3, j+5);
             }
             g.drawString("0", 5, 15);
         }
         
         void paintSymmetry(Graphics g){
-            g.setColor(Color.RED);
-            g.drawLine(200, 0, 200, 400);
+            g.setColor(Color.RED.darker());
+            g.drawLine(size/2, 20, size/2, size);
         }
         
         void paintVector(Graphics2D g2, Vector v, boolean darker){
@@ -317,16 +358,16 @@ public class ViewPlaying extends ViewGame{
             else g2.setColor(v.color);
             if(v instanceof Vector.VectorLine){
                 Vector.VectorLine tmp=(Vector.VectorLine)v;
-                g2.drawLine(tmp.x1, tmp.y1, tmp.x2, tmp.y2);
+                g2.drawLine(tmp.x1*size/400, tmp.y1*size/400, tmp.x2*size/400, tmp.y2*size/400);
             }
             else if(v instanceof Vector.VectorArc){
                 Vector.VectorArc tmp=(Vector.VectorArc)v;
-                g2.drawArc(tmp.x1, tmp.y1, tmp.diameter, tmp.diameter, tmp.startAngle, tmp.scanAngle);
+                g2.drawArc(tmp.x1*size/400, tmp.y1*size/400, tmp.diameter*size/400, tmp.diameter*size/400, tmp.startAngle, tmp.scanAngle);
             }
         }
         
         void paintBrush(Graphics2D g2, int x, int y, int angle, Color color){//dessin du pinceau
-            g2.translate(x, y);
+            g2.translate(x*size/400, y*size/400);
             g2.rotate(Math.toRadians(-angle), 0, 0);//tourne autour du point initial
             g2.setColor(color);
             g2.draw(brush);
@@ -366,7 +407,7 @@ public class ViewPlaying extends ViewGame{
     ************************/
     
     public class PanelDragDropBoard extends JPanel implements MouseWheelListener{
-        final int x00, y00, width, height;//position initiale, largeur, hauteur du panel
+        final int y00, width, height;//position initiale, largeur, hauteur du panel
         private LinkedList<Command> commands=new LinkedList<Command>();//commandes ayant ete drag sur whiteBoard
         private Command brightC;//commande allumee
         private LinkedList<NumberField> fields=new LinkedList<NumberField>();
@@ -376,13 +417,12 @@ public class ViewPlaying extends ViewGame{
         final Border borderV=BorderFactory.createLineBorder(new Color(255, 204, 255), 2);
         
         PanelDragDropBoard() throws IOException{
-            this.x00=440;
             this.y00=20+buttonHeight+ViewPlaying.this.getInsets().top;
             width=widthFS-460;//460=3 marges de colonne + taille blackBoard
             height=heightFS-40-buttonHeight;//40=marges haut+bas
             this.setBorder(BorderFactory.createLineBorder(Color.BLACK, 3));
             this.setLayout(null); 
-            this.setBounds(x00, y00-ViewPlaying.this.getInsets().top, width, height);
+            this.setBounds(440, y00-ViewPlaying.this.getInsets().top, width, height);
             this.addMouseWheelListener(this);
             
             this.bin=new Bin();
@@ -604,7 +644,7 @@ public class ViewPlaying extends ViewGame{
 
         public void mouseWheelMoved(MouseWheelEvent e){
             int addToY=(e.getWheelRotation()<0?1:-1)*e.getScrollAmount()*10;
-            if(e.getX()<this.getX()+width/2-x00){//whiteBoard
+            if(e.getX()<this.getX()+width/2-getX()){//whiteBoard
                 for(Component c : ViewPlaying.this.dragDrop.getComponents()){
                     if(c instanceof Command && commands.contains(c) && !(c instanceof HookHorizontal)
                     || (c instanceof Variable && !((Variable)c).lastCreated))
@@ -623,7 +663,7 @@ public class ViewPlaying extends ViewGame{
 
         protected void paintComponent(Graphics g){
             super.paintComponent(g);
-            Graphics2D g2 = (Graphics2D) g;
+            Graphics2D g2=(Graphics2D)g;
             g2.setColor(Color.WHITE);//WhiteBoard a gauche
             g2.fillRect(0, 0, width/2, height);
             g2.setColor(Color.LIGHT_GRAY);//CommandBoard a droite
@@ -641,8 +681,8 @@ public class ViewPlaying extends ViewGame{
             
         int regularize(int z, int w, boolean horizontal){
             if(z<0) return 0;
-            if(z+w>(horizontal?dragDrop.width:dragDrop.height))
-                return (horizontal?dragDrop.width:dragDrop.height)-w;
+            if(z+w>(horizontal?dragDrop.getSize().width:dragDrop.height))
+                return (horizontal?dragDrop.getSize().width:dragDrop.height)-w;
             return z;
         }
         
@@ -1392,7 +1432,7 @@ public class ViewPlaying extends ViewGame{
             public void mouseDragged(MouseEvent e){
                 if(stop.isVisible() || this instanceof CommandOperationV && variables.isEmpty()) return;//immobile
                 //drag this et ses next + variables
-                int x=e.getXOnScreen()-x00-mouseX-ViewPlaying.this.getX();
+                int x=e.getXOnScreen()-ViewPlaying.this.dragDrop.getX()-mouseX-ViewPlaying.this.getX();
                 int y=e.getYOnScreen()-y00-mouseY-ViewPlaying.this.getY();
                 this.setLocation(regularize(x, getWidth(), true), regularize(y, getHeight(), false));
                 stickVarToForeground();
@@ -1670,7 +1710,7 @@ public class ViewPlaying extends ViewGame{
         class CommandWhile extends CommandWithCommands implements ActionListener{//classe interne
             private JComboBox variableG=new JComboBox(), operateur=new JComboBox();
             private String op="<";
-            private int whatIsVarG=0, limit=2000;//x<=>0, y<=>1, angle<=>2, variables<=>3 ; pour simuler la terminaison
+            private int whatIsVarG=0, limit=500;//x<=>0, y<=>1, angle<=>2, variables<=>3 ; pour simuler la terminaison
             
             CommandWhile(int x, int y){
                 super("while", new Color(204, 102, 102), x, y);
@@ -1714,7 +1754,7 @@ public class ViewPlaying extends ViewGame{
             }
             
             void reset(){
-                limit=2000;
+                limit=500;
                 error(this, false);
             }
         }//fin classe interne While
@@ -2365,7 +2405,7 @@ public class ViewPlaying extends ViewGame{
 
             public void mouseDragged(MouseEvent e){
                 if(stop.isVisible() || (variables.isEmpty() && !(this instanceof CommandFunctionCallInt))) return;//immobile
-                int x=e.getXOnScreen()-x00-mouseX-ViewPlaying.this.getX();
+                int x=e.getXOnScreen()-ViewPlaying.this.dragDrop.getX()-mouseX-ViewPlaying.this.getX();
                 int y=e.getYOnScreen()-y00-mouseY-ViewPlaying.this.getY();
                 this.setLocation(regularize(x, getWidth(), true), regularize(y, getHeight(), false));
                 if(this instanceof CommandFunctionCallInt){
