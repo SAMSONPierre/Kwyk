@@ -77,7 +77,7 @@ public class ViewGame extends View{//a une barre de controle superieur en plus
     	JProgressBar res=new JProgressBar();
     	boolean[][] playerBool=player.currentLevel;
     	int succeded=nbSucceded(playerBool);
-    	int nbLvl=playerBool[0].length+playerBool[1].length;
+    	int nbLvl=playerBool[0].length+playerBool[1].length-2;
     	res.setStringPainted(true);
     	res.setForeground(Color.DARK_GRAY);
     	res.setValue(100*succeded/nbLvl);
