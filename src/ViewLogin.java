@@ -5,6 +5,10 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -20,42 +24,67 @@ public class ViewLogin extends View{
     
     ViewLogin(){//aucun Player pour l instant
         super(null);
-        initialisation();//initialisation des elements
+        initialisationFieldsProperties();//initialisation des champs de saisie id et pwd
+        initialisationButtons();//initialisation des boutons login et create account
+        error=new JLabel("");//vide au debut
+    	error.setForeground(Color.red);//les erreurs seront ecrites en rouge
         setPage();//ajout de tous les elements
     }
     
-    void initialisation(){
-        username=new JTextField();
-        password=new JPasswordField();
-        login=new JButton("Log In");
-        createAccount=new JButton("Create Account");
-        tryWithoutAccount=new JButton("Try without account");
-        tryWithoutAccount.setFont(new Font("Arial", Font.ITALIC, 16));
-        error=new JLabel("");//vide au debut
-        error.setForeground(Color.red);//les erreurs seront ecrites en rouge
-        
-        //taille des composants
-        Dimension textSize=new Dimension(150, username.getPreferredSize().height);//largeur, hauteur
-        username.setPreferredSize(textSize);
-        password.setPreferredSize(textSize);
-        login.setPreferredSize(createAccount.getPreferredSize());
-        
-        //ajout des listeners
-        login.addActionListener((event)->{
-            String usernameS=username.getText();
-            String passwordS=new String(password.getPassword());//char[] en String
-            if(!usernameS.equals("") && !password.equals(""))
-                super.control.login(usernameS, passwordS);
-            else errorLogin();
-        });
-        createAccount.addActionListener((event)->{
-            String usernameS=username.getText();
-            String passwordS=new String(password.getPassword());//char[] en String
-            if(!usernameS.equals("") && password.getPassword().length!=0)
-                super.control.createAccount(usernameS, passwordS);
-            else errorLogin();
-        });
-        tryWithoutAccount.addActionListener((event)->super.control.tryWithoutAccount());
+    void initialisationFieldsProperties(){
+    	username=new JTextField();
+    	password=new JPasswordField();
+    	
+    	//ajout des listeners
+    	username.addKeyListener(new KeyAdapter() {
+    		public void keyReleased(KeyEvent e){
+    			if(containsSpecialChar(username) && e.getKeyCode()!=KeyEvent.VK_BACK_SPACE) 
+    				errorSpecialChar(username);
+    			else if(username.getText().length()!=0 && !usernameStartOk() && e.getKeyCode()!=KeyEvent.VK_BACK_SPACE) 
+    				errorFirstCharUsername();
+    			else if(!containsSpecialChar(username) && e.getKeyCode()==KeyEvent.VK_BACK_SPACE && !error.getText().equals(""))
+    				resetError(username);
+    		}
+    	});
+    	password.addKeyListener(new KeyAdapter() {
+    		public void keyReleased(KeyEvent e){
+    			if(containsSpecialChar(password) && e.getKeyCode()!=KeyEvent.VK_BACK_SPACE) 
+    				errorSpecialChar(password);
+    			else if(!containsSpecialChar(password) && e.getKeyCode()==KeyEvent.VK_BACK_SPACE && !error.getText().equals("")) 
+    				resetError(password);
+    		}
+    	});
+    	
+    	//taille des composants
+    	Dimension textSize=new Dimension(150, username.getPreferredSize().height);//largeur, hauteur
+    	username.setPreferredSize(textSize);
+    	password.setPreferredSize(textSize);
+    }
+    
+    void initialisationButtons(){
+    	login=new JButton("Log In");
+    	createAccount=new JButton("Create Account");
+    	login.setPreferredSize(createAccount.getPreferredSize());
+    	tryWithoutAccount=new JButton("Try without account");
+    	tryWithoutAccount.setFont(new Font("Arial", Font.ITALIC, 16)); 	   	
+    	
+    	//ajout des listeners
+    	login.addActionListener((event)->{
+    		String usernameS=username.getText();
+    		String passwordS=new String(password.getPassword());//char[] en String
+    		if(!usernameS.equals("") && !password.equals("") && (noErrorMessage() || error.getText().equals("<html><i>Incorrect username/password.</i></html>")))
+    			super.control.login(usernameS, passwordS);
+    		else errorLogin();
+    	});
+    	createAccount.addActionListener((event)->{
+    		String usernameS=username.getText();
+    		String passwordS=new String(password.getPassword());//char[] en String
+    		if(usernameS.equals(passwordS) && usernameS.length()!=0) errorSafety();
+    		else if(canCreateAccount())
+	    		super.control.createAccount(usernameS, passwordS);
+	    	else errorLogin();
+    	});
+    	tryWithoutAccount.addActionListener((event)->super.control.tryWithoutAccount());
     }
     
     void setPage(){
@@ -99,8 +128,52 @@ public class ViewLogin extends View{
         this.add(end, BorderLayout.SOUTH);
     }
     
+    boolean noErrorMessage(){
+    	return error.getText().equals("");
+    }
+    
+    boolean canCreateAccount() {
+    	return !username.getText().equals("") && password.getPassword().length!=0 
+    			&& !containsSpecialChar(username) && !containsSpecialChar(password) 
+    			&& usernameStartOk()
+    			&& (noErrorMessage() || error.getText().equals("<html><i>Incorrect username/password.</i></html>"));
+    }
+    
+    boolean usernameStartOk(){
+    	return Character.isLetter(username.getText().charAt(0));
+    }
+    
+    boolean containsSpecialChar(JTextField source){
+    	for(int i=0; i<source.getText().length(); i++){
+    		if(!(Character.isLetterOrDigit(source.getText().charAt(i)))) return true;
+    	}
+    	return false;
+    }
+    
+    //differents messages d'erreur
+    void resetError(JTextField source){//supprimer le message d erreur quand on revient dans la bonne direction (e.g plus de caracteres speciaux)
+    	source.setBorder(null);
+    	error.setText("");
+    }
+    
     void errorLogin(){//incorrect ou username=default(==nom du fichier pour jouer sans compte)
         error.setText("<html><i>Incorrect username/password.</i></html>");
+    }
+    
+    void errorSpecialChar(JTextField errorSource){//saisie de caracteres speciaux (interdite)
+    	error.setText("<html><i>Special characters are not allowed.</i></html>");
+    	errorSource.setBorder(BorderFactory.createLineBorder(Color.RED.darker(), 3));
+    }
+    
+    void errorFirstCharUsername() {
+    	error.setText("<html><i>Username must start with a letter.</i></html>");
+    	username.setBorder(BorderFactory.createLineBorder(Color.RED.darker(), 3));    	
+    }
+    
+    void errorSafety(){
+    	error.setText("<html><i>For safety reasons, please choose a username different from your password.</i></html>");
+    	username.setBorder(BorderFactory.createLineBorder(Color.RED.darker(), 3));    	
+    	password.setBorder(BorderFactory.createLineBorder(Color.RED.darker(), 3));    	
     }
     
     void usernameAlreadyExists(){
