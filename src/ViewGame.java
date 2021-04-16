@@ -65,8 +65,7 @@ public class ViewGame extends View{//a une barre de controle superieur en plus
         right.setLayout(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         
         right.add(new JLabel(super.getModel().getPlayer().username));//username
-        right.add(new JLabel("     "));//separation entre username et barre de progression
-        right.add(new JLabel("  Total progress  "));
+        right.add(new JLabel("       Total progress  "));
         right.add(createProgressBar(this.getModel().getPlayer()));//barre de progression
         right.add(new JLabel("     "));//separation entre barre de progression et bouton
         right.add(logout);
@@ -87,10 +86,10 @@ public class ViewGame extends View{//a une barre de controle superieur en plus
     private int nbSucceded(boolean[][] playerBool) {
     	int res=0;
     	for(boolean b:playerBool[0]) {
-    		if(b) res++;
+            if(b) res++;
     	}
     	for(boolean b:playerBool[1]) {
-    		if(b) res++;
+            if(b) res++;
     	}
     	return res-2;//niveau reussi si le suivant est deverouille
     }

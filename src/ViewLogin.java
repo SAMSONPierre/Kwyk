@@ -7,7 +7,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -33,26 +32,22 @@ public class ViewLogin extends View{
     
     void initialisationFieldsProperties(){
     	username=new JTextField();
-    	password=new JPasswordField();
-    	
-    	//ajout des listeners
     	username.addKeyListener(new KeyAdapter() {
-    		public void keyReleased(KeyEvent e){
-    			if(containsSpecialChar(username) && e.getKeyCode()!=KeyEvent.VK_BACK_SPACE) 
-    				errorSpecialChar(username);
-    			else if(username.getText().length()!=0 && !usernameStartOk() && e.getKeyCode()!=KeyEvent.VK_BACK_SPACE) 
-    				errorFirstCharUsername();
-    			else if(!containsSpecialChar(username) && e.getKeyCode()==KeyEvent.VK_BACK_SPACE && !error.getText().equals(""))
-    				resetError(username);
-    		}
+            public void keyReleased(KeyEvent e){
+                if(containsSpecialChar(username) && !isDeleteKey(e)) errorSpecialChar(username);
+                else if(!usernameStartOk()) errorFirstCharUsername();
+                else if(!containsSpecialChar(username) && usernameStartOk() && !error.getText().equals(""))
+                    resetError(username);
+            }
     	});
+        
+    	password=new JPasswordField();
     	password.addKeyListener(new KeyAdapter() {
-    		public void keyReleased(KeyEvent e){
-    			if(containsSpecialChar(password) && e.getKeyCode()!=KeyEvent.VK_BACK_SPACE) 
-    				errorSpecialChar(password);
-    			else if(!containsSpecialChar(password) && e.getKeyCode()==KeyEvent.VK_BACK_SPACE && !error.getText().equals("")) 
-    				resetError(password);
-    		}
+            public void keyReleased(KeyEvent e){
+                if(containsSpecialChar(password) && !isDeleteKey(e)) errorSpecialChar(password);
+                else if(!containsSpecialChar(password) && isDeleteKey(e) && !error.getText().equals("")) 
+                    resetError(password);
+            }
     	});
     	
     	//taille des composants
@@ -62,28 +57,30 @@ public class ViewLogin extends View{
     }
     
     void initialisationButtons(){
-    	login=new JButton("Log In");
     	createAccount=new JButton("Create Account");
+    	createAccount.addActionListener((event)->{
+            String usernameS=username.getText();
+            String passwordS=new String(password.getPassword());//char[] en String
+            if(usernameS.equals(passwordS) && usernameS.length()!=0) errorSafety();
+            else if(canCreateAccount()) super.control.createAccount(usernameS, passwordS);
+            else errorLogin();
+    	});
+        
+    	login=new JButton("Log In");
     	login.setPreferredSize(createAccount.getPreferredSize());
+    	login.addActionListener((event)->{
+            String usernameS=username.getText();
+            String passwordS=new String(password.getPassword());//char[] en String
+            if(!usernameS.equals("") && password.getPassword().length!=0 && noErrorMessage())
+                super.control.login(usernameS, passwordS);
+            else{
+                System.out.println("nooooo");
+                errorLogin();
+            }
+    	});
+        
     	tryWithoutAccount=new JButton("Try without account");
     	tryWithoutAccount.setFont(new Font("Arial", Font.ITALIC, 16)); 	   	
-    	
-    	//ajout des listeners
-    	login.addActionListener((event)->{
-    		String usernameS=username.getText();
-    		String passwordS=new String(password.getPassword());//char[] en String
-    		if(!usernameS.equals("") && !password.equals("") && (noErrorMessage() || error.getText().equals("<html><i>Incorrect username/password.</i></html>")))
-    			super.control.login(usernameS, passwordS);
-    		else errorLogin();
-    	});
-    	createAccount.addActionListener((event)->{
-    		String usernameS=username.getText();
-    		String passwordS=new String(password.getPassword());//char[] en String
-    		if(usernameS.equals(passwordS) && usernameS.length()!=0) errorSafety();
-    		else if(canCreateAccount())
-	    		super.control.createAccount(usernameS, passwordS);
-	    	else errorLogin();
-    	});
     	tryWithoutAccount.addActionListener((event)->super.control.tryWithoutAccount());
     }
     
@@ -129,29 +126,37 @@ public class ViewLogin extends View{
     }
     
     boolean noErrorMessage(){
-    	return error.getText().equals("");
+    	return error.getText().equals("") || error.getText().equals("<html><i>Incorrect username/password.</i></html>")
+            || error.getText().equals("<html><i>Please choose another username.</i></html>");
     }
     
     boolean canCreateAccount() {
     	return !username.getText().equals("") && password.getPassword().length!=0 
-    			&& !containsSpecialChar(username) && !containsSpecialChar(password) 
-    			&& usernameStartOk()
-    			&& (noErrorMessage() || error.getText().equals("<html><i>Incorrect username/password.</i></html>"));
+            && !containsSpecialChar(username) && !containsSpecialChar(password) && usernameStartOk()
+            && noErrorMessage();
     }
     
     boolean usernameStartOk(){
-    	return Character.isLetter(username.getText().charAt(0));
+    	return username.getText().isEmpty() || Character.isLetter(username.getText().charAt(0));
     }
     
     boolean containsSpecialChar(JTextField source){
     	for(int i=0; i<source.getText().length(); i++){
-    		if(!(Character.isLetterOrDigit(source.getText().charAt(i)))) return true;
+            if(!(Character.isLetterOrDigit(source.getText().charAt(i)))) return true;
     	}
     	return false;
     }
     
-    //differents messages d'erreur
-    void resetError(JTextField source){//supprimer le message d erreur quand on revient dans la bonne direction (e.g plus de caracteres speciaux)
+    boolean isDeleteKey(KeyEvent e){
+        return e.getKeyCode()==KeyEvent.VK_BACK_SPACE || e.getKeyCode()==KeyEvent.VK_DELETE;
+    }
+    
+    
+    /*********************************
+    *  differents messages d'erreur  *
+    *********************************/
+    
+    void resetError(JTextField source){//supprimer le message d erreur quand on enleve erreur
     	source.setBorder(null);
     	error.setText("");
     }
@@ -171,7 +176,7 @@ public class ViewLogin extends View{
     }
     
     void errorSafety(){
-    	error.setText("<html><i>For safety reasons, please choose a username different from your password.</i></html>");
+    	error.setText("<html><i>For safety reasons, please choose an username different from your password.</i></html>");
     	username.setBorder(BorderFactory.createLineBorder(Color.RED.darker(), 3));    	
     	password.setBorder(BorderFactory.createLineBorder(Color.RED.darker(), 3));    	
     }

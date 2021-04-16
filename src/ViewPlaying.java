@@ -52,7 +52,7 @@ public class ViewPlaying extends ViewGame{
     private PanelBlackBoard blackBoard;//patron + visualisation du resultat du code
     private PanelDragDropBoard dragDrop;//fusion de WhiteBoard et CommandBoard
     private JPanel features=new JPanel();//panel avec tous les boutons sous BlackBoard
-    private JButton run=new JButton("Run"), stop=new JButton("Stop"), reset=new JButton("Reset");
+    private CustomJButton run, stop, reset;
     private Timer timer=new Timer(30, null);//vitesse par defaut
     private JSlider slider=new JSlider();//regulation de la vitesse
     private PanelDragDropBoard.Command runC;//commande a executer -> permettre passage au suivant dans lambda expression
@@ -62,8 +62,16 @@ public class ViewPlaying extends ViewGame{
     
     ViewPlaying(Player player, boolean isCreating) throws IOException{
         super(player);
-        errorName.setForeground(Color.RED);
         this.level=player.getLevel();
+        errorName.setForeground(Color.RED);
+        
+        run=new CustomJButton("",ImageIO.read(new File("images/run.png")));
+        run.setPreferredSize(new Dimension(41, 41));
+        stop=new CustomJButton("", ImageIO.read(new File("images/stop.png")));
+        stop.setPreferredSize(new Dimension(41, 41));
+        reset=new CustomJButton("", ImageIO.read(new File("images/reset.png")));
+        reset.setPreferredSize(new Dimension(41, 41));
+        
         addBoard();//ajout des tableaux, avec des marges de 20 (haut, bas et entre tableaux)
         addFeatures(isCreating, player.username.equals("GM"));//ajout des fonctionnalites
         if(level.functions!=null) dragDrop.loadFunctions();
@@ -77,7 +85,7 @@ public class ViewPlaying extends ViewGame{
         this.add(dragDrop);//taille relative a l ecran
     }
     
-    void addFeatures(boolean isCreating, boolean isGM){
+    void addFeatures(boolean isCreating, boolean isGM) throws IOException{
         features.setBounds(20, 440+buttonH, 400, heightFS-460-buttonH);
         this.add(features);
         
@@ -89,10 +97,13 @@ public class ViewPlaying extends ViewGame{
         });
         features.add(seeGrid);
         
-        JButton sizeS=new JButton("Size S");
+        CustomJButton sizeS=new CustomJButton("", ImageIO.read(new File("images/sizeS.png")));
+        sizeS.setPreferredSize(new Dimension(buttonH, buttonH));
         sizeS.setEnabled(false);
-        JButton sizeM=new JButton("Size M");
-        JButton sizeL=new JButton("Size L");
+        CustomJButton sizeM=new CustomJButton("", ImageIO.read(new File("images/sizeM.png")));
+        sizeM.setPreferredSize(new Dimension(buttonH, buttonH));
+        CustomJButton sizeL=new CustomJButton("", ImageIO.read(new File("images/sizeL.png")));
+        sizeL.setPreferredSize(new Dimension(buttonH, buttonH));
         sizeS.addActionListener((event)->{
             this.add(dragDrop);
             dragDrop.setBounds(440, dragDrop.getY(), widthFS-460, dragDrop.getHeight());
