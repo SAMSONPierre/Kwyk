@@ -2,7 +2,6 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagLayout;
@@ -37,7 +36,6 @@ import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
-import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -48,19 +46,19 @@ import javax.swing.text.Document;
 import javax.swing.text.PlainDocument;
 
 public class ViewPlaying extends ViewGame{
-    final int buttonHeight=super.getButtonHeight();//hauteur d un bouton
+    final int buttonH=super.getButtonHeight();//hauteur d un bouton
     final JLabel errorName=new JLabel("Please enter a valid name :");
-    private Level level;//niveau en cours
+    final Level level;//niveau en cours
     private PanelBlackBoard blackBoard;//patron + visualisation du resultat du code
     private PanelDragDropBoard dragDrop;//fusion de WhiteBoard et CommandBoard
     private JPanel features=new JPanel();//panel avec tous les boutons sous BlackBoard
     private JButton run=new JButton("Run"), stop=new JButton("Stop"), reset=new JButton("Reset");
     private Timer timer=new Timer(30, null);//vitesse par defaut
     private JSlider slider=new JSlider();//regulation de la vitesse
-    private PanelDragDropBoard.Command runC;//la commande en execution
+    private PanelDragDropBoard.Command runC;//commande a executer -> permettre passage au suivant dans lambda expression
     private JProgressBar limite;
-    private HashMap<String, Integer> variables=new HashMap<String, Integer>();//nom, valeur
-    private LinkedList<JLabel[]> varDisplay=new LinkedList<JLabel[]>();//affichage des variables
+    private HashMap<String, Integer> variables=new HashMap<String, Integer>();//nom, valeur des variables globales
+    private JPanel varPanel=new JPanel(new WrapLayout(WrapLayout.CENTER, 20, 10));
     
     ViewPlaying(Player player, boolean isCreating) throws IOException{
         super(player);
@@ -75,18 +73,12 @@ public class ViewPlaying extends ViewGame{
     void addBoard() throws IOException{
         blackBoard=new PanelBlackBoard();
         this.add(blackBoard);//taille fixee
-        //setUIFont(new javax.swing.plaf.FontUIResource("Times New Roman", Font.BOLD, 14));
         dragDrop=new PanelDragDropBoard();
         this.add(dragDrop);//taille relative a l ecran
     }
-
-    boolean inWhiteBoard(Component c){//est dans whiteBoard
-        Point p=c.getLocation();
-        return p.x+c.getWidth()>0 && p.x<dragDrop.width/2 && p.y+c.getHeight()>0 && p.y<dragDrop.height;
-    }
     
     void addFeatures(boolean isCreating, boolean isGM){
-        features.setBounds(20, 440+buttonHeight, 400, heightFS-460-buttonHeight);
+        features.setBounds(20, 440+buttonH, 400, heightFS-460-buttonH);
         this.add(features);
         
         JButton seeGrid=new JButton("Hide grid");//voir la grille
@@ -104,8 +96,9 @@ public class ViewPlaying extends ViewGame{
         sizeS.addActionListener((event)->{
             this.add(dragDrop);
             dragDrop.setBounds(440, dragDrop.getY(), widthFS-460, dragDrop.getHeight());
-            blackBoard.setBounds(20, 20+buttonHeight, 400, 400);
-            features.setBounds(20, 440+buttonHeight, 400, heightFS-460-buttonHeight);
+            blackBoard.setBounds(20, 20+buttonH, 400, 400);
+            features.setBounds(20, 440+buttonH, 400, heightFS-460-buttonH);
+            varPanel.setPreferredSize(new Dimension(features.getWidth()-30, features.getHeight()/2));
             sizeS.setEnabled(false);
             sizeM.setEnabled(true);
             sizeL.setEnabled(true);
@@ -114,8 +107,9 @@ public class ViewPlaying extends ViewGame{
         sizeM.addActionListener((event)->{
             this.add(dragDrop);
             dragDrop.setBounds(640, dragDrop.getY(), widthFS-660, dragDrop.getHeight());
-            blackBoard.setBounds(20, 20+buttonHeight, 600, 600);
-            features.setBounds(20, 660+buttonHeight, 600, heightFS-660-buttonHeight);
+            blackBoard.setBounds(20, 20+buttonH, 600, 600);
+            features.setBounds(20, 640+buttonH, 600, heightFS-660-buttonH);
+            varPanel.setPreferredSize(new Dimension(features.getWidth()-30, features.getHeight()/2));
             sizeS.setEnabled(true);
             sizeM.setEnabled(false);
             sizeL.setEnabled(true);
@@ -123,9 +117,10 @@ public class ViewPlaying extends ViewGame{
         });
         sizeL.addActionListener((event)->{
             this.remove(dragDrop);
-            int size=Math.min(widthFS-features.getWidth(), heightFS-buttonHeight-40);
-            blackBoard.setBounds(20, 20+buttonHeight, size, size);
-            features.setBounds(blackBoard.getWidth()+60, blackBoard.getY(), features.getWidth(), features.getHeight());
+            int size=Math.min(widthFS-features.getWidth(), heightFS-buttonH-40);
+            blackBoard.setBounds(20, 20+buttonH, size, size);
+            features.setBounds(blackBoard.getWidth()+60, blackBoard.getY(), widthFS-blackBoard.getWidth()-100, features.getHeight());
+            varPanel.setPreferredSize(new Dimension(features.getWidth()-30, features.getHeight()/2));
             sizeS.setEnabled(true);
             sizeM.setEnabled(true);
             sizeL.setEnabled(false);
@@ -168,9 +163,10 @@ public class ViewPlaying extends ViewGame{
             JCheckBox saveFun=new JCheckBox("Save functions");
             JButton submit=new JButton("Submit");
             submit.addActionListener((event)->{
-                String name=JOptionPane.showInputDialog(this,"Level's name ?", null);
+                if(level.getPlayerDraw().isEmpty()) return;
+                String name=JOptionPane.showInputDialog(null, "Level's name ?", "Submit level", JOptionPane.QUESTION_MESSAGE);
                 while(name!=null && (name.equals("") || !name.matches("^[a-zA-Z0-9]*$")))
-                    name=JOptionPane.showInputDialog(this,errorName, null);
+                    name=JOptionPane.showInputDialog(null, errorName, "Submit level", JOptionPane.QUESTION_MESSAGE);
                 if(name!=null){
                     String dest="challenge/";
                     if(isGM){
@@ -179,12 +175,12 @@ public class ViewPlaying extends ViewGame{
                         for(int i=0; i<arrayLevels.length; i++)
                             choice.addItem("training/"+arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length())+"/");
                         choice.addItem("challenge/");
-                        JOptionPane.showOptionDialog(null, choice, "Destination", JOptionPane.DEFAULT_OPTION,
+                        JOptionPane.showOptionDialog(null, choice, "Destination of level", JOptionPane.DEFAULT_OPTION,
                             JOptionPane.QUESTION_MESSAGE, null, null, null);
                         dest=choice.getItemAt(choice.getSelectedIndex()).toString();
                     }
                     control.submit(name,level,saveCode.isSelected()?dragDrop.convertStart():null,
-                        saveFun.isSelected()?dragDrop.convertFunctions():null, dest);
+                        saveFun.isSelected()?dragDrop.convertFunctions():null, dest, blackBoard.getHeight());
                 }
             });
             features.add(submit);
@@ -202,14 +198,21 @@ public class ViewPlaying extends ViewGame{
             limite.setStringPainted(true);
             features.add(limite);
         }
+        
+        varPanel.setVisible(false);
+        features.add(varPanel);
+        varPanel.setPreferredSize(new Dimension(features.getWidth()-30, features.getHeight()/2));
     }
     
     void run(){
-        updateVariableDisplay();
         run.setVisible(false);
         stop.setVisible(true);
         runC=dragDrop.commands.getFirst();
         runC=runC.canExecute(variables)?runC.next:null;
+        if(variables.size()>0){
+            updateVariableDisplay();
+            varPanel.setVisible(true);
+        }
         ActionListener taskPerformed=new ActionListener(){
             public void actionPerformed(ActionEvent e){
                 if(runC!=null) runC=runC.execute(variables);
@@ -236,7 +239,7 @@ public class ViewPlaying extends ViewGame{
         blackBoard.brush2=false;//pas de symetrie
         if(!variables.isEmpty()){
             for(String key : variables.keySet()) variables.replace(key, 0);
-            updateVariableDisplay();
+            varPanel.setVisible(false);
         }
         for(PanelDragDropBoard.Command c : dragDrop.commands) c.reset();
         repaint();
@@ -245,10 +248,9 @@ public class ViewPlaying extends ViewGame{
     }
             
     void updateVariableDisplay(){
-        for(JLabel[] label : varDisplay){
-            label[1].setText(variables.get(label[0].getText()).toString());
-            features.add(label[0]);
-            features.add(label[1]);
+        for(Component c : varPanel.getComponents()){
+            if(c instanceof VariablePanel)
+                ((VariablePanel)c).setValue(variables.get(((VariablePanel)c).getVarName()));
         }
         SwingUtilities.updateComponentTreeUI(features);
     }
@@ -283,14 +285,9 @@ public class ViewPlaying extends ViewGame{
         return 0;
     }
 
-    public static void setUIFont(javax.swing.plaf.FontUIResource f){
-        java.util.Enumeration keys=UIManager.getDefaults().keys();
-        while(keys.hasMoreElements()){
-            Object key=keys.nextElement();
-            Object value=UIManager.get(key);
-            if(value instanceof javax.swing.plaf.FontUIResource)
-            UIManager.put(key, f);
-        }
+    boolean inWhiteBoard(Component c){//est dans whiteBoard
+        Point p=c.getLocation();
+        return p.x+c.getWidth()>0 && p.x<dragDrop.width/2 && p.y+c.getHeight()>0 && p.y<dragDrop.height;
     }
     
     
@@ -308,7 +305,7 @@ public class ViewPlaying extends ViewGame{
         private boolean drawing=true, brush2;//pinceau posé par defaut, 2e pinceau de symetrie
 
         PanelBlackBoard(){
-            this.setBounds(20, 20+buttonHeight, 400, 400);//marge gauche=20, 20+hauteur d un bouton en haut, taille 400*400
+            this.setBounds(20, 20+buttonH, 400, 400);//marge gauche=20, 20+hauteur d un bouton en haut, taille 400*400
             this.setBackground(Color.BLACK);//fond noir
             this.x=level.brushX;
             this.y=level.brushY;
@@ -417,9 +414,9 @@ public class ViewPlaying extends ViewGame{
         final Border borderV=BorderFactory.createLineBorder(new Color(255, 204, 255), 2);
         
         PanelDragDropBoard() throws IOException{
-            this.y00=20+buttonHeight+ViewPlaying.this.getInsets().top;
+            this.y00=20+buttonH+ViewPlaying.this.getInsets().top;
             width=widthFS-460;//460=3 marges de colonne + taille blackBoard
-            height=heightFS-40-buttonHeight;//40=marges haut+bas
+            height=heightFS-40-buttonH;//40=marges haut+bas
             this.setBorder(BorderFactory.createLineBorder(Color.BLACK, 3));
             this.setLayout(null); 
             this.setBounds(440, y00-ViewPlaying.this.getInsets().top, width, height);
@@ -568,10 +565,10 @@ public class ViewPlaying extends ViewGame{
                 removeV.setBounds(createV.getX(), 30+dR.height, dR.width, dR.height);
                 
                 createV.addActionListener((event)->{
-                    String name=JOptionPane.showInputDialog("Name of this variable ?");
-                    while(name!=null && ((name.equals("") || name.contains(" ") || name.equals("x")
-                       || name.equals("y") || name.equals("angle") || variables.containsKey(name))))
-                        name=JOptionPane.showInputDialog(errorName);
+                    String name=JOptionPane.showInputDialog(null, "Name of this variable ?", "Create variable", JOptionPane.QUESTION_MESSAGE);
+                    while(name!=null && ((name.equals("") || !name.matches("^[a-zA-Z]*$") || name.equals("x")
+                    || name.equals("y") || name.equals("angle") || variables.containsKey(name)) || name.length()>10))
+                        name=JOptionPane.showInputDialog(null, errorName, "Create variable", JOptionPane.QUESTION_MESSAGE);
                     if(name!=null){
                         addVariable(name, null);
                         removeV.setEnabled(true);
@@ -586,7 +583,7 @@ public class ViewPlaying extends ViewGame{
                     int i=0;
                     for(String name : variables.keySet()) choice[i++]=name;
                     Object name=JOptionPane.showInputDialog(null, "Name of this variable ?",
-                        "", JOptionPane.QUESTION_MESSAGE, null, choice, choice[0]);
+                        "Delete variable", JOptionPane.QUESTION_MESSAGE, null, choice, choice[0]);
                     if(name==null) return;//bouton annuler
                     removeVariable(name.toString());
                     if(variables.size()+1==level.numberOfVariables){//etait au max
@@ -604,9 +601,9 @@ public class ViewPlaying extends ViewGame{
                 Dimension dF=createF.getPreferredSize();
                 createF.setBounds(width/2-20-dF.width, 50+2*dF.height, dF.width, dF.height);
                 createF.addActionListener((event)->{
-                    String name=JOptionPane.showInputDialog("Name of this fonction ?");
-                    while(name!=null && (name.equals("") || nameFunAlreadySet(name)))
-                        name=JOptionPane.showInputDialog(errorName);
+                    String name=JOptionPane.showInputDialog(null, "Name of this fonction ?", "Create function", JOptionPane.QUESTION_MESSAGE);
+                    while(name!=null && (name.equals("") || String.valueOf(name.charAt(0)).matches("[0-9]") || nameFunAlreadySet(name) || !name.matches("^[a-zA-Z0-9]*$")))
+                        name=JOptionPane.showInputDialog(null, errorName, "Create function", JOptionPane.QUESTION_MESSAGE);
                     if(name!=null) addFunction(name, width/2-20-dF.width, 70+4*dF.height, false);
                     if(nbOfFunV==level.numberOfFunctions){//max atteint
                         createF.setEnabled(false);
@@ -620,9 +617,9 @@ public class ViewPlaying extends ViewGame{
                 Dimension dF=createF.getPreferredSize();
                 createF.setBounds(width/2-20-dF.width, 60+3*dF.height, dF.width, dF.height);
                 createF.addActionListener((event)->{
-                    String name=JOptionPane.showInputDialog("Name of this fonction ?");
-                    while(name!=null && (name.equals("") || nameFunAlreadySet(name)))
-                        name=JOptionPane.showInputDialog(errorName);
+                    String name=JOptionPane.showInputDialog(null, "Name of this fonction ?", "Create function with return", JOptionPane.QUESTION_MESSAGE);
+                    while(name!=null && (name.equals("") || String.valueOf(name.charAt(0)).matches("[0-9]") || nameFunAlreadySet(name) || !name.matches("^[a-zA-Z0-9]*$")))
+                        name=JOptionPane.showInputDialog(null, errorName, "Create function with return", JOptionPane.QUESTION_MESSAGE);
                     if(name!=null) addFunction(name, width/2-20-dF.width, 70+4*dF.height, true);
                     if(nbOfFunI==level.numberOfFunctionsInt){//max atteint
                         createF.setEnabled(false);
@@ -805,7 +802,7 @@ public class ViewPlaying extends ViewGame{
                 default ://fonction void
                     if(!nameFunAlreadySet(name)){//init
                         nbOfFunV++;
-                        return new CommandFunctionInit(name, width/2-200, 60+3*ViewPlaying.this.buttonHeight);
+                        return new CommandFunctionInit(name, width/2-200, 60+3*ViewPlaying.this.buttonH);
                     }
                     for(Command c : commands){//trouve initialisateur
                         if(c instanceof CommandFunctionInit
@@ -841,8 +838,7 @@ public class ViewPlaying extends ViewGame{
         
         void addVariable(String name, CommandFunctionInitInt fC){//nouvelle variable
             variables.put(name, 0);//met dans HashMap, par defaut variable=0
-            JLabel[] tmp={new JLabel(name), new JLabel("0")};
-            varDisplay.add(tmp);
+            varPanel.add(new VariablePanel(name, 0));//ajout de l'affichage            
             boolean firstSet=variables.size()==1;//ajout blocs de commande ou non
             if(firstSet){
                 for(NumberField f : fields) f.setBorder(borderV);
@@ -893,11 +889,9 @@ public class ViewPlaying extends ViewGame{
         
         void removeVariable(String name){
             variables.remove(name);
-            for(JLabel[] label : varDisplay){
-                if(label[0].getText().equals(name)){
-                    varDisplay.remove(label);
-                    features.remove(label[0]);
-                    features.remove(label[1]);
+            for(Component c : varPanel.getComponents()){
+                if(c instanceof VariablePanel && ((VariablePanel)c).getVarName().equals(name)){
+                    varPanel.remove(c);
                     SwingUtilities.updateComponentTreeUI(features);
                     break;
                 }
@@ -1486,7 +1480,6 @@ public class ViewPlaying extends ViewGame{
             public void mouseDragged(MouseEvent e){}//empeche Start d etre deplacee
             
             boolean canExecute(HashMap<String, Integer> map){//verifie qu il n y a pas de champs vide, et champs vide en rouge
-                //if(!variables.isEmpty()) .setVisible(false); ----cacher affichage des variables dans verifications----
                 Command tmp=this.next;
                 boolean ok=true;
                 while(tmp!=null){
@@ -1495,7 +1488,6 @@ public class ViewPlaying extends ViewGame{
                     tmp=tmp.next;
                 }
                 for(String s : variables.keySet()) variables.replace(s, 0);
-                // .setVisible(true); ----afficher le tableau des variables----
                 return ok;
             }
         }//fin classe interne Start
@@ -1779,10 +1771,10 @@ public class ViewPlaying extends ViewGame{
                 catch(IOException e){}
                 changeName.setPreferredSize(new Dimension(commandH-10, commandH-10));
                 changeName.addActionListener((event)->{
-                    String newName=JOptionPane.showInputDialog("New name ?");
-                    while(newName!=null && (newName.equals("") || nameFunAlreadySet(newName)))
-                        newName=JOptionPane.showInputDialog(errorName);
-                    if(newName!=null) rename(newName);
+                    String newN=JOptionPane.showInputDialog(null, "New name ?", "Rename function", JOptionPane.QUESTION_MESSAGE);
+                    while(newN!=null && (newN.equals("") || String.valueOf(newN.charAt(0)).matches("[0-9]") || nameFunAlreadySet(newN) || !newN.matches("^[a-zA-Z0-9]*$")))
+                        newN=JOptionPane.showInputDialog(null, errorName, "Rename function", JOptionPane.QUESTION_MESSAGE);
+                    if(newN!=null) rename(newN);
                 });
                 nameFunction=new JLabel("  "+name+"  ");
                 
@@ -2047,11 +2039,11 @@ public class ViewPlaying extends ViewGame{
             boolean canExecute(HashMap<String, Integer> map){
                 boolean ok=!input.isEmpty(map) && !angleScan.isEmpty(map);
                 if(input.getNumber(map)<2){//si vide, renvoie 0
-                    input.border(BorderFactory.createLineBorder(Color.RED.darker(), 3));
+                    input.border(true);
                     ok=false;
                 }
                 if(Math.abs(angleScan.getNumber(map))<2){
-                    angleScan.border(BorderFactory.createLineBorder(Color.RED.darker(), 3));
+                    angleScan.border(true);
                     ok=false;
                 }
                 return ok;
@@ -2592,16 +2584,17 @@ public class ViewPlaying extends ViewGame{
                 if(container instanceof CommandDrawLine) empty=Math.abs(getNumber(map))<3;
                 else if(container instanceof CommandDivision) empty=getNumber(map)==0;
                 if(empty){
-                    border(BorderFactory.createLineBorder(Color.RED.darker(), 3));
+                    border(true);
                     return true;
                 }
-                border((variables.isEmpty() && nbOfFunI==0)?null:borderV);
+                border(false);
                 return false;
             }
             
-            void border(Border border){
-                if(variable!=null) variable.setBackground((border==null)?variable.color:Color.RED.darker());
-                else this.setBorder(border);
+            void border(boolean error){
+                if(variable!=null) variable.setBackground(error?Color.RED.darker():variable.color);
+                else setBorder(error?BorderFactory.createLineBorder(Color.RED.darker(), 3):
+                    (variables.isEmpty() && nbOfFunI==0)?null:borderV);
             }
 
             protected Document createDefaultModel(){

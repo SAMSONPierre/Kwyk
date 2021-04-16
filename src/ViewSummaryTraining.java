@@ -5,13 +5,13 @@ import java.io.File;
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 
 public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
     final int buttonHeight=super.getButtonHeight();//hauteur d un bouton
     
     ViewSummaryTraining(Player player){
         super(player);
-        //listeNiveau();
         sommaire();
     }
     
@@ -40,16 +40,17 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
     }
     
     void listeNiveau(String path){
-        JPanel summary=new JPanel();
-        summary.setLayout(new FlowLayout());
-        summary.setBounds(0,50+buttonHeight,widthFS,heightFS);
+        JPanel summary=new JPanel(new WrapLayout(WrapLayout.CENTER, 50, 50));
+        JScrollPane scrollP=new JScrollPane(summary, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollP.setBounds(0,50+buttonHeight,widthFS,heightFS);
+        scrollP.getVerticalScrollBar().setUnitIncrement(12);//vitesse de scroll
         int directory=Integer.parseInt(path.charAt(0)+"")-1;
         File[] arrayLevels=nombreNiveau("levels/training/"+path);
         for(int i=0; i<arrayLevels.length; i++){
             try{
                 String name=arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length()-4);
                 Image img=ImageIO.read(new File("preview/training/"+path+name+".png"));
-                CustomJButton jb=new CustomJButton(name, img,super.getModel().getPlayer().currentLevel[directory][i+1]);
+                CustomJButton jb=new CustomJButton(name,img,super.getModel().getPlayer().currentLevel[directory][i+1]);
                 jb.setEnabled(super.getModel().getPlayer().currentLevel[directory][i]);
                 jb.addActionListener((event)->super.control.load("training/"+path+name));
                 jb.setPreferredSize(new Dimension(200, 200));
@@ -59,6 +60,6 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
                 e.printStackTrace();
             }
         }
-        this.add(summary);
+        this.add(scrollP);
     }
 }

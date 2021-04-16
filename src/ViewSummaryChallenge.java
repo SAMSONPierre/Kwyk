@@ -14,8 +14,7 @@ public class ViewSummaryChallenge extends ViewGame{//sommaire des defis
     }
     
     void listeNiveau(){
-        JPanel summary=new JPanel();
-        summary.setLayout(new WrapLayout(WrapLayout.CENTER, 50, 50));
+        JPanel summary=new JPanel(new WrapLayout(WrapLayout.CENTER, 50, 50));
         JScrollPane scrollP=new JScrollPane(summary, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollP.setBounds(0,50+buttonHeight,widthFS,heightFS);
         scrollP.getVerticalScrollBar().setUnitIncrement(12);//vitesse de scroll

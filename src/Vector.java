@@ -253,8 +253,8 @@ class Vector implements Serializable{
             return scanAngle>0;
         }
         
-        boolean tooLong(){//----a regaire correctement----
-            return y1+diameter>400 || y1-diameter<0 || (scanAngle<0)?x1-diameter<0:x1+diameter>400;
+        boolean tooLong(){
+            return y1+diameter>400 || y1<0 || x1<0 || x1+diameter>400;
         }
     }
 }

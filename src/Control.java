@@ -23,9 +23,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
 
 public class Control implements Serializable{
     private Model model;
@@ -237,13 +234,13 @@ public class Control implements Serializable{
     * Submit new level *
     *******************/
     
-    void submit(String name, Level level, String[] mainCode, String[] functions, String dest){
+    void submit(String name, Level level, String[] mainCode, String[] functions, String dest, int size){
     	ViewPlaying tmp=(ViewPlaying)this.view;
     	LinkedList<Vector> newPattern=level.getSimplifyDraw(level.getPlayerDraw());
     	int[] numbers=tmp.getNumbersFromHead();
     	String[] commandsAvailable=tmp.getCommandsArray();
         Rectangle screenRect=new Rectangle(tmp.getX()+tmp.getInsets().left+20,
-                tmp.getY()+tmp.getInsets().top+tmp.buttonHeight+20, 400, 400);
+                tmp.getY()+tmp.getInsets().top+tmp.buttonH+20, size, size);
         BufferedImage capture;
         File[] arrayLevels=((ViewGame)view).nombreNiveau("levels/"+dest);
         int cpt = arrayLevels.length;
