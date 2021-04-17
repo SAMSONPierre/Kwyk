@@ -9,6 +9,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -26,7 +27,7 @@ import javax.swing.JTextField;
 public class Control implements Serializable{
     private Model model;
     private View view;
-    final private String secretKey="ssshhhhhhhhhhh!!!!";//gestion des mots de passe
+    final static private String secretKey="ssshhhhhhhhhhh!!!!";//gestion des mots de passe
     
     Control(View view){
         this.view=view;
@@ -36,6 +37,17 @@ public class Control implements Serializable{
     void exitFrame(){//quand on change de fenetre
         view.setVisible(false);
         view.dispose();
+    }
+    
+    protected static void initializeAccount() throws IOException{
+        Player[] players={new Player("GM", AES.encrypt("Azozo", secretKey)), 
+                new Player("default", AES.encrypt("default", secretKey))};
+        for(Player p : players){
+            File file=new File("players/"+p.username+".player");
+            ObjectOutputStream oos=new ObjectOutputStream(new FileOutputStream(file));
+            oos.writeObject(p);
+            oos.close();
+        }
     }
     
     
