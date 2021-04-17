@@ -17,7 +17,7 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
     
     ViewSummaryTraining(Player player, String path){
         super(player);
-        listeNiveau(path);
+        listeNiveau(path, player.getCurrentLevel());
     }
     
     void sommaire(){
@@ -27,9 +27,9 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
         File[] arrayLevels=nombreNiveau("levels/training/");
         for(int i=0; i<arrayLevels.length; i++){
             try{
-                String name=arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length())+"/";
-                JButton jb=new JButton(name);
-                jb.addActionListener((event)->super.control.switchTraining(name));
+                String name=arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length());
+                JButton jb=new JButton(name.substring(name.indexOf("_")+1));
+                jb.addActionListener((event)->super.control.switchTraining(name+"/"));
                 summary.add(jb);
             }
             catch(Exception e){
@@ -39,19 +39,19 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
         this.add(summary);
     }
     
-    void listeNiveau(String path){
+    void listeNiveau(String path, boolean[][] currentL){
         JPanel summary=new JPanel(new WrapLayout(WrapLayout.CENTER, 50, 50));
         JScrollPane scrollP=new JScrollPane(summary, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollP.setBounds(0,50+buttonHeight,widthFS,heightFS);
+        scrollP.setBounds(0, 50+buttonHeight, widthFS, heightFS);
         scrollP.getVerticalScrollBar().setUnitIncrement(12);//vitesse de scroll
         int directory=Integer.parseInt(path.charAt(0)+"")-1;
-        File[] arrayLevels=nombreNiveau("levels/training/"+path);
+        File[] arrayLevels=sortedFiles(path);
         for(int i=0; i<arrayLevels.length; i++){
             try{
                 String name=arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length()-4);
                 Image img=ImageIO.read(new File("preview/training/"+path+name+".png"));
-                CustomJButton jb=new CustomJButton(name,img,super.getModel().getPlayer().currentLevel[directory][i+1]);
-                jb.setEnabled(super.getModel().getPlayer().currentLevel[directory][i]);
+                CustomJButton jb=new CustomJButton(name.substring(name.indexOf('-')+1), img, currentL[directory][i+1]);
+                jb.setEnabled(currentL[directory][i]);
                 jb.addActionListener((event)->super.control.load("training/"+path+name));
                 jb.setPreferredSize(new Dimension(200, 200));
                 summary.add(jb);
@@ -61,5 +61,15 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
             }
         }
         this.add(scrollP);
+    }
+    
+    File[] sortedFiles(String path){//sinon niveau 11 avant niveau 2 par exemple
+        File[] toChange=nombreNiveau("levels/training/"+path);
+        File[] res=new File[toChange.length];
+        for(int i=0; i<res.length; i++){
+            String name=toChange[i].getName();
+            res[Integer.parseInt(name.substring(0, name.indexOf('-')-1))]=toChange[i];
+        }
+        return res;
     }
 }

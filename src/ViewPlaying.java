@@ -190,7 +190,7 @@ public class ViewPlaying extends ViewGame{
                             JOptionPane.QUESTION_MESSAGE, null, null, null);
                         dest=choice.getItemAt(choice.getSelectedIndex()).toString();
                     }
-                    control.submit(name,level,saveCode.isSelected()?dragDrop.convertStart():null,
+                    control.submit(name, !dest.equals("challenge/"), level, saveCode.isSelected()?dragDrop.convertStart():null,
                         saveFun.isSelected()?dragDrop.convertFunctions():null, dest, blackBoard.getHeight());
                 }
             });
@@ -268,9 +268,7 @@ public class ViewPlaying extends ViewGame{
     
     void victoryMessage(){
     	if(!level.compare()) return;
-        int lvl=Integer.parseInt(level.name.charAt(0)+"")+1;
-        getModel().getPlayer().currentLevel[getNumberOfDirectory(level.name)][lvl]=true;
-        this.control.save();
+        control.win(getNumberOfDirectory(level.name), level.name);
         JOptionPane.showMessageDialog(this, "Victory !");
     }
     
@@ -285,15 +283,17 @@ public class ViewPlaying extends ViewGame{
     }
     
     int getNumberOfDirectory(String name){
-        File[] arrayLevels=nombreNiveau("levels/training/");
-        for(int i=0; i<arrayLevels.length; i++){
-            File[] arrayLevels2=nombreNiveau("levels/training/"+arrayLevels[i].getName());
-            for(int j=0; j<arrayLevels2.length; j++){
-                String str=arrayLevels2[j].getName().substring(0, arrayLevels2[j].getName().length()-4);
-                if(str.equals(level.name)) return i;
+        if(level.isTraining){
+            File[] arrayLevels=nombreNiveau("levels/training/");
+            for(int i=0; i<arrayLevels.length; i++){
+                File[] arrayLevels2=nombreNiveau("levels/training/"+arrayLevels[i].getName());
+                for(int j=0; j<arrayLevels2.length; j++){
+                    String str=arrayLevels2[j].getName().substring(0, arrayLevels2[j].getName().length()-4);
+                    if(str.equals(level.name)) return i;
+                }
             }
         }
-        return 0;
+        return -1;//pas un training
     }
 
     boolean inWhiteBoard(Component c){//est dans whiteBoard

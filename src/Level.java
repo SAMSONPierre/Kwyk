@@ -8,13 +8,14 @@ public class Level implements Serializable{
     final Color brushFirstColor;
     final int numberOfCommands, numberOfFunctions, numberOfFunctionsInt, numberOfVariables;
     final String name;
+    final boolean isTraining;
     final String[] availableCommands;//nom des commandes disponibles
     final String[] mainCode, functions;//code principal a charger
     final LinkedList<Vector> pattern;//patron
     private LinkedList<Vector> playerDraw=new LinkedList<Vector>();
     
-    Level(Player p, int x, int y, int angle, Color color, int nbOfC, int nbOfF, int nbOfFI, int nbOfV,
-            String name, String[] nameOfC, LinkedList<Vector> v, String[] mainCode, String[] functions){
+    Level(int x, int y, int angle, Color color, int nbOfC, int nbOfF, int nbOfFI, int nbOfV, String name,
+            boolean isT, String[] nameOfC, LinkedList<Vector> v, String[] mainCode, String[] functions){
         this.brushX=x;
         this.brushY=y;
         this.brushAngle=angle;
@@ -24,13 +25,14 @@ public class Level implements Serializable{
         this.numberOfFunctionsInt=nbOfFI;
         this.numberOfVariables=nbOfV;
         this.name=name;
+        this.isTraining=isT;
         this.availableCommands=nameOfC;
         this.pattern=v;
         this.mainCode=mainCode;
         this.functions=functions;
     }
     
-    Level(Player p){//pour creer des niveaux
+    Level(){//pour creer des niveaux
         this.brushX=200;
         this.brushY=200;
         this.brushAngle=0;
@@ -40,6 +42,7 @@ public class Level implements Serializable{
         this.numberOfFunctionsInt=-1;
         this.numberOfVariables=-1;
         this.name="editor";
+        this.isTraining=false;
         String[] c={"for", "if", "while", "drawLine", "drawArc", "raisePutBrush",
             "moveTo", "setAngle", "addAngle", "setColor", "shiftColor", "symmetry"};
         this.availableCommands=c;
@@ -48,7 +51,7 @@ public class Level implements Serializable{
         this.functions=null;
     }
     
-    Level(Player p, int x, int y, int angle, Color color){//pour construire tutoriel
+    Level(int x, int y, int angle, Color color){//pour construire tutoriel
         this.brushX=x;
         this.brushY=y;
         this.brushAngle=angle;
@@ -58,6 +61,7 @@ public class Level implements Serializable{
         this.numberOfFunctionsInt=-1;
         this.numberOfVariables=-1;
         this.name="GM";
+        this.isTraining=false;
         String[] c={"for", "if", "while", "drawLine", "drawArc", "raisePutBrush",
             "moveTo", "setAngle", "addAngle", "setColor", "shiftColor", "symmetry"};
         this.availableCommands=c;

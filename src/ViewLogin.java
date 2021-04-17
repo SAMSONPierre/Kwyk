@@ -71,17 +71,13 @@ public class ViewLogin extends View{
     	login.addActionListener((event)->{
             String usernameS=username.getText();
             String passwordS=new String(password.getPassword());//char[] en String
-            if(!usernameS.equals("") && password.getPassword().length!=0 && noErrorMessage())
-                super.control.login(usernameS, passwordS);
-            else{
-                System.out.println("nooooo");
-                errorLogin();
-            }
+            if(!usernameS.equals("") && password.getPassword().length!=0) control.login(usernameS, passwordS);
+            else errorLogin();
     	});
         
     	tryWithoutAccount=new JButton("Try without account");
     	tryWithoutAccount.setFont(new Font("Arial", Font.ITALIC, 16)); 	   	
-    	tryWithoutAccount.addActionListener((event)->super.control.tryWithoutAccount());
+    	tryWithoutAccount.addActionListener((event)->super.control.login("default", "default"));
     }
     
     void setPage(){
@@ -125,15 +121,9 @@ public class ViewLogin extends View{
         this.add(end, BorderLayout.SOUTH);
     }
     
-    boolean noErrorMessage(){
-    	return error.getText().equals("") || error.getText().equals("<html><i>Incorrect username/password.</i></html>")
-            || error.getText().equals("<html><i>Please choose another username.</i></html>");
-    }
-    
     boolean canCreateAccount() {
     	return !username.getText().equals("") && password.getPassword().length!=0 
-            && !containsSpecialChar(username) && !containsSpecialChar(password) && usernameStartOk()
-            && noErrorMessage();
+            && !containsSpecialChar(username) && !containsSpecialChar(password) && usernameStartOk();
     }
     
     boolean usernameStartOk(){
