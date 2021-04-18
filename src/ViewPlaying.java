@@ -1,4 +1,5 @@
 import java.awt.BasicStroke;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -23,8 +24,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedList;
+
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -437,6 +440,16 @@ public class ViewPlaying extends ViewGame{
             this.add(bin);
             this.setFunctionVariableButton();
             this.addAvailableCommands();
+            this.addTrigoCircle();            
+        }
+        
+        void addTrigoCircle() throws IOException{//sert de guide au joueur
+        	JPanel pane=new JPanel();
+        	JLabel circle=new JLabel(new ImageIcon("images/cercleTrigo.png"));
+        	pane.setLayout(new BorderLayout());
+        	pane.add(circle, BorderLayout.CENTER);
+        	pane.setBounds(width-303, 3, 300, 300);
+        	this.add(pane);
         }
         
         int countConvert(Command c){
