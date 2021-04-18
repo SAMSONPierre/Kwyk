@@ -2139,10 +2139,14 @@ public class ViewPlaying extends ViewGame{
                     square=new Point(square.x+translation.x, square.y+translation.y);//carre translate
                     Vector.VectorArc arc=v.new VectorArc(square.x, square.y, rad*2, 
                         blackBoard.angle-90*sens, sens*angleS, blackBoard.brushColor);//-90*sens car translation
+                    arc.center=center;
+                    arc.origin=origin;
                     if(!level.addToDraw(arc)) return null;//sort du tableau, on arrete
                     if(blackBoard.brush2){
                         Vector.VectorArc arc2=v.new VectorArc(400-square.x-rad*2, square.y, rad*2, 
                             180-(blackBoard.angle-90*sens), -sens*angleS, blackBoard.brushColor);
+                        /*arc2.center=center;
+						arc2.origin=origin;*/
                         level.addToDraw(arc2);
                     }
                 }

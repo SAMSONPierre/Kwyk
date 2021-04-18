@@ -165,11 +165,13 @@ class Vector implements Serializable{
     
     
     class VectorArc extends Vector{//arc
-        final int diameter, startAngle, scanAngle;
+        final int diameter, startAngle, scanAngle, realStart;
+        Point center, origin;//initialisation lors de l execution de la commande
         
         VectorArc(int x1, int y1, int diameter, int startA, int scanA, Color color){
             super(x1, y1, color);
             this.diameter=diameter;
+            this.realStart=startA;
             if(scanA<0){
                 this.startAngle=(startA+scanA+360)%360;
                 this.scanAngle=maxAngle(-scanA);
@@ -178,6 +180,8 @@ class Vector implements Serializable{
                 this.startAngle=(startA+360)%360;
                 this.scanAngle=maxAngle(scanA);
             }
+            this.center=null;
+            this.origin=null;
         }
             
         int maxAngle(int n){
@@ -253,8 +257,22 @@ class Vector implements Serializable{
             return scanAngle>0;
         }
         
-        boolean tooLong(){
-            return y1+diameter>400 || y1<0 || x1<0 || x1+diameter>400;
+        boolean tooLong(){//on cherche a connaitre les coordonnees des points du cercle
+        	int angle=this.realStart;
+        	System.out.println(angle+" coord centre : "+this.center.y+","+this.center.x);
+        	boolean res=false;
+        	for(int i=1;i<=this.scanAngle;i++) {
+        		int j=angle>=0?-i:i;//angle<0 <=> sens trigo
+        		int x=(int)(this.center.getY()+((diameter/2)*Math.cos(Math.toRadians(angle+j))));
+        		int y=(int)(this.center.getX()+((diameter/2)*Math.sin(Math.toRadians(angle+j))));
+        		System.out.println("(x,y)=("+x+","+y+") ; angle="+(angle+j));
+        		res|=!inBounds(new int[]{x,y});
+        	}
+        	return res;
+        }
+        
+        private boolean inBounds(int[] pt) {
+        	return(pt[0]>=0 && pt[0]<=400 && pt[1]>=0 && pt[1]<=400);
         }
     }
 }
