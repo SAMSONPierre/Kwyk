@@ -5,6 +5,7 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import javax.swing.BorderFactory;
@@ -13,6 +14,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 
 public class ViewLogin extends View{
     private JTextField username;//champ pour remplir l username
@@ -39,6 +41,10 @@ public class ViewLogin extends View{
                 else if(!containsSpecialChar(username) && usernameStartOk() && !error.getText().equals(""))
                     resetError(username);
             }
+            
+            public void keyPressed(KeyEvent e) {
+            	if(e.getKeyCode()==KeyEvent.VK_ENTER) login.doClick();
+            }
     	});
         
     	password=new JPasswordField();
@@ -47,6 +53,10 @@ public class ViewLogin extends View{
                 if(containsSpecialChar(password) && !isDeleteKey(e)) errorSpecialChar(password);
                 else if(!containsSpecialChar(password) && isDeleteKey(e) && !error.getText().equals("")) 
                     resetError(password);
+            }
+            
+            public void keyPressed(KeyEvent e) {
+            	if(e.getKeyCode()==KeyEvent.VK_ENTER) login.doClick();
             }
     	});
     	
@@ -74,6 +84,11 @@ public class ViewLogin extends View{
             if(!usernameS.equals("") && password.getPassword().length!=0) control.login(usernameS, passwordS);
             else errorLogin();
     	});
+    	login.addKeyListener(new KeyAdapter() {
+        	public void keyPressed(KeyEvent e) {
+            	if(e.getKeyCode()==KeyEvent.VK_ENTER) login.doClick();
+            }
+        });
         
     	tryWithoutAccount=new JButton("Try without account");
     	tryWithoutAccount.setFont(new Font("Arial", Font.ITALIC, 16)); 	   	
@@ -116,6 +131,12 @@ public class ViewLogin extends View{
         this.setLayout(new BorderLayout());
         this.add(center);
         this.add(end, BorderLayout.SOUTH);
+        
+        this.addKeyListener(new KeyAdapter() {
+        	public void keyPressed(KeyEvent e) {
+            	if(e.getKeyCode()==KeyEvent.VK_ENTER) login.doClick();
+            }
+        });
     }
     
     boolean canCreateAccount() {

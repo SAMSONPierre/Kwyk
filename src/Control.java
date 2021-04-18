@@ -5,6 +5,8 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
@@ -142,6 +144,11 @@ public class Control implements Serializable{
                 JTextField angle=new JTextField("0", 4);
                 ColorBox color=new ColorBox();
                 JButton confirmChoice=new JButton("Confirm");
+                confirmChoice.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER) confirmChoice.doClick();
+                    }
+                });
                 confirmChoice.addActionListener((event)->{
                     try{
                         int xval=Integer.parseInt(x.getText());
@@ -175,6 +182,13 @@ public class Control implements Serializable{
                 JLabel[] labels=new JLabel[] {new JLabel("x :"), new JLabel("y :"), new JLabel("angle :"), new JLabel("color :")};
                 Component[] fields={x, y, angle, color};
                 for(int i=0; i<4; i++) addLabelAndTextField(labels[i], i, settings, fields[i], c);
+                for(int i=0;i<3;i++) {
+                	fields[i].addKeyListener(new KeyAdapter() {
+                    	public void keyPressed(KeyEvent e) {
+                        	if(e.getKeyCode()==KeyEvent.VK_ENTER) confirmChoice.doClick();
+                        }
+                    });
+                }
                 c.insets=new Insets(20, 25, 0, 50);
                 c.gridy=4;
                 settings.add(confirmChoice, c);
