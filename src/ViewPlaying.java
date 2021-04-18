@@ -1,12 +1,15 @@
 import java.awt.BasicStroke;
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -19,12 +22,10 @@ import java.awt.event.MouseWheelListener;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedList;
-
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -54,7 +55,8 @@ public class ViewPlaying extends ViewGame{
     final Level level;//niveau en cours
     private PanelBlackBoard blackBoard;//patron + visualisation du resultat du code
     private PanelDragDropBoard dragDrop;//fusion de WhiteBoard et CommandBoard
-    private JPanel features=new JPanel();//panel avec tous les boutons sous BlackBoard
+    private JPanel features=new JPanel(new GridBagLayout());//panel avec tous les boutons sous BlackBoard
+    private JPanel topFeatures=new JPanel(new GridLayout());//panel avec tous les boutons au-dessus de BlackBoard
     private CustomJButton run, stop, reset;
     private Timer timer=new Timer(30, null);//vitesse par defaut
     private JSlider slider=new JSlider();//regulation de la vitesse
@@ -67,15 +69,8 @@ public class ViewPlaying extends ViewGame{
         super(player);
         this.level=player.getLevel();
         errorName.setForeground(Color.RED);
-        
-        run=new CustomJButton("",ImageIO.read(new File("images/run.png")));
-        run.setPreferredSize(new Dimension(41, 41));
-        stop=new CustomJButton("", ImageIO.read(new File("images/stop.png")));
-        stop.setPreferredSize(new Dimension(41, 41));
-        reset=new CustomJButton("", ImageIO.read(new File("images/reset.png")));
-        reset.setPreferredSize(new Dimension(41, 41));
-        
         addBoard();//ajout des tableaux, avec des marges de 20 (haut, bas et entre tableaux)
+        addTopFeatures();//ajout des boutons en rapport avec blackBoard
         addFeatures(isCreating, player.username.equals("GM"));//ajout des fonctionnalites
         if(level.functions!=null) dragDrop.loadFunctions();
         if(level.mainCode!=null) dragDrop.loadMainCode();
@@ -88,9 +83,9 @@ public class ViewPlaying extends ViewGame{
         this.add(dragDrop);//taille relative a l ecran
     }
     
-    void addFeatures(boolean isCreating, boolean isGM) throws IOException{
-        features.setBounds(20, 440+buttonH, 400, heightFS-460-buttonH);
-        this.add(features);
+    void addTopFeatures() throws IOException{
+        topFeatures.setBounds(20, 20+buttonH, blackBoard.getWidth(),buttonH);
+        this.add(topFeatures);
         
         JButton seeGrid=new JButton("Hide grid");//voir la grille
         seeGrid.addActionListener((event)->{
@@ -98,64 +93,84 @@ public class ViewPlaying extends ViewGame{
             seeGrid.setText(blackBoard.gridApparent?"Hide grid":"Show grid");
             blackBoard.repaint();
         });
-        features.add(seeGrid);
         
         CustomJButton sizeS=new CustomJButton("", ImageIO.read(new File("images/sizeS.png")));
-        sizeS.setPreferredSize(new Dimension(buttonH, buttonH));
-        sizeS.setEnabled(false);
         CustomJButton sizeM=new CustomJButton("", ImageIO.read(new File("images/sizeM.png")));
-        sizeM.setPreferredSize(new Dimension(buttonH, buttonH));
         CustomJButton sizeL=new CustomJButton("", ImageIO.read(new File("images/sizeL.png")));
+        sizeS.setPreferredSize(new Dimension(buttonH, buttonH));
+        sizeM.setPreferredSize(new Dimension(buttonH, buttonH));
         sizeL.setPreferredSize(new Dimension(buttonH, buttonH));
+        
+        sizeS.setEnabled(false);
         sizeS.addActionListener((event)->{
-            this.add(dragDrop);
+            dragDrop.setVisible(true);
             dragDrop.setBounds(440, dragDrop.getY(), widthFS-460, dragDrop.getHeight());
-            blackBoard.setBounds(20, 20+buttonH, 400, 400);
-            features.setBounds(20, 440+buttonH, 400, heightFS-460-buttonH);
-            varPanel.setPreferredSize(new Dimension(features.getWidth()-30, features.getHeight()/2));
+            blackBoard.setBounds(20, 20+buttonH*2, 400, 400);
+            topFeatures.setBounds(20, 20+buttonH, 400, buttonH);
+            features.setBounds(20, 440+buttonH*2, 400, features.getHeight());
+            varPanel.setBounds(20, 460+buttonH*2+features.getHeight(),
+                400, heightFS-480-buttonH*2-features.getHeight());
+            varPanel.setVisible(!run.isVisible() && varPanel.getHeight()>50);
             sizeS.setEnabled(false);
             sizeM.setEnabled(true);
             sizeL.setEnabled(true);
             SwingUtilities.updateComponentTreeUI(this);
         });
+        
         sizeM.addActionListener((event)->{
-            this.add(dragDrop);
+            dragDrop.setVisible(true);
             dragDrop.setBounds(640, dragDrop.getY(), widthFS-660, dragDrop.getHeight());
-            blackBoard.setBounds(20, 20+buttonH, 600, 600);
-            features.setBounds(20, 640+buttonH, 600, heightFS-660-buttonH);
-            varPanel.setPreferredSize(new Dimension(features.getWidth()-30, features.getHeight()/2));
+            blackBoard.setBounds(20, 20+buttonH*2, 600, 600);
+            topFeatures.setBounds(20, 20+buttonH, 600, buttonH);
+            features.setBounds(20, 640+buttonH*2, 600, features.getHeight());
+            varPanel.setBounds(20, 660+buttonH*2+features.getHeight(),
+                600, heightFS-680-buttonH*2-features.getHeight());
+            varPanel.setVisible(!run.isVisible() && varPanel.getHeight()>50);
             sizeS.setEnabled(true);
             sizeM.setEnabled(false);
             sizeL.setEnabled(true);
             SwingUtilities.updateComponentTreeUI(this);
         });
+        
         sizeL.addActionListener((event)->{
-            this.remove(dragDrop);
-            int size=Math.min(widthFS-features.getWidth(), heightFS-buttonH-40);
-            blackBoard.setBounds(20, 20+buttonH, size, size);
-            features.setBounds(blackBoard.getWidth()+60, blackBoard.getY(), widthFS-blackBoard.getWidth()-100, features.getHeight());
-            varPanel.setPreferredSize(new Dimension(features.getWidth()-30, features.getHeight()/2));
+            dragDrop.setVisible(false);
+            int size=Math.min(widthFS-features.getWidth(), heightFS-buttonH*2-40);
+            blackBoard.setBounds(20, 20+buttonH*2, size, size);
+            topFeatures.setBounds(20, 20+buttonH, size, buttonH);
+            features.setBounds(size+60, blackBoard.getY(), widthFS-size-100, features.getHeight());
+            varPanel.setBounds(size+60, blackBoard.getY()+features.getHeight()+40,
+                features.getWidth(), heightFS-blackBoard.getY()-features.getHeight()-60);
+            varPanel.setVisible(!run.isVisible() && varPanel.getHeight()>50);
             sizeS.setEnabled(true);
             sizeM.setEnabled(true);
             sizeL.setEnabled(false);
             SwingUtilities.updateComponentTreeUI(this);
         });
-        features.add(sizeS);
-        if(widthFS-660+dragDrop.width/2>200) features.add(sizeM);
-        features.add(sizeL);
         
-        run.addActionListener((event)->run());
-        stop.addActionListener((event)->stop());
-        reset.addActionListener((event)->reset());
-        features.add(run);
-        features.add(stop);
-        features.add(reset);
-        stop.setVisible(false);//apparait apres avoir clique sur run
-        reset.setVisible(false);//idem, pour stop
+        JPanel left=new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));//hide/show grid
+        left.add(seeGrid);
+        topFeatures.add(left);
         
+        JPanel right=new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        right.add((sizeS));
+        if(widthFS-660-dragDrop.width/2>200) right.add((sizeM));//CommandBoard manipulable
+        right.add((sizeL));
+        topFeatures.add(right);
+    }
+    
+    void addFeatures(boolean isCreating, boolean isGM) throws IOException{
+        int featuresH=50;//hauteur de features
+        GridBagConstraints c=new GridBagConstraints();
+        
+        //1ere ligne avec slider de vitesse + boutons run/stop/reset
         Hashtable<Integer, JLabel> labels=new Hashtable<>();
-        labels.put(0, new JLabel("Slower"));
-        labels.put(100, new JLabel("Faster"));
+        JLabel g=new JLabel("Slower");
+        g.setForeground(Color.WHITE);
+        labels.put(0, g);
+        JLabel d=new JLabel("Faster");
+        d.setForeground(Color.WHITE);
+        labels.put(100, d);
+        slider.setBackground(new Color(0, 0, 128));
         slider.setLabelTable(labels);
         slider.setPaintLabels(true);
         slider.addChangeListener(new ChangeListener(){
@@ -170,18 +185,38 @@ public class ViewPlaying extends ViewGame{
                 }
             }
         });
-        features.add(slider);
+        run=new CustomJButton("",ImageIO.read(new File("images/run.png")));
+        stop=new CustomJButton("", ImageIO.read(new File("images/stop.png")));
+        reset=new CustomJButton("", ImageIO.read(new File("images/reset.png")));
+        run.setPreferredSize(new Dimension(41, 41));
+        stop.setPreferredSize(new Dimension(41, 41));
+        reset.setPreferredSize(new Dimension(41, 41));
+        run.addActionListener((event)->run());
+        stop.addActionListener((event)->stop());
+        reset.addActionListener((event)->reset());
+        stop.setVisible(false);//apparait apres avoir clique sur run
+        reset.setVisible(false);//idem, pour stop
         
+        c.insets=new Insets(0, 20, 15, 20);
+        features.add(slider, c);
+        features.add(run, c);
+        features.add(stop, c);
+        features.add(reset, c);
+        featuresH+=Math.max(slider.getPreferredSize().height, 41);
+        
+        //2e ligne avec soit progressBar, soit submit (ou checkBox)
+        c.gridwidth=2;
+        c.insets=new Insets(15, 10, 0, 10);
         if(isCreating){//creer un niveau -> que pour la page Create
             JCheckBox saveCode=new JCheckBox("Save main code");
             JCheckBox saveFun=new JCheckBox("Save functions");
             JButton submit=new JButton("Submit");
             submit.addActionListener((event)->{
-                if(level.getPlayerDraw().isEmpty()) return;
+                if(level.getPlayerDraw().isEmpty()) return;//on n enregistre pas un dessin vide
                 String name=JOptionPane.showInputDialog(null, "Level's name ?", "Submit level", JOptionPane.QUESTION_MESSAGE);
                 while(name!=null && (name.equals("") || !name.matches("^[a-zA-Z0-9]*$")))
                     name=JOptionPane.showInputDialog(null, errorName, "Submit level", JOptionPane.QUESTION_MESSAGE);
-                if(name!=null){
+                if(name!=null){//choix de la destination dans l arborescence
                     String dest="challenge/";
                     if(isGM){
                         File[] arrayLevels=nombreNiveau("levels/training/");
@@ -197,10 +232,22 @@ public class ViewPlaying extends ViewGame{
                         saveFun.isSelected()?dragDrop.convertFunctions():null, dest, blackBoard.getHeight());
                 }
             });
-            features.add(submit);
+            c.gridy=2;
+            features.add(submit, c);
+            featuresH+=30+buttonH;
+            submit.setBackground(Color.DARK_GRAY);
+            submit.setForeground(Color.WHITE);
             if(isGM){
-                features.add(saveCode);
-                features.add(saveFun);
+                saveCode.setBackground(new Color(0, 0, 128));
+                saveCode.setForeground(Color.WHITE);
+                saveFun.setBackground(new Color(0, 0, 128));
+                saveFun.setForeground(Color.WHITE);
+                c.gridwidth=1;
+                c.gridy=1;
+                c.anchor=GridBagConstraints.LINE_START;
+                features.add(saveCode, c);
+                features.add(saveFun, c);
+                featuresH+=15+saveCode.getPreferredSize().height;
             }
         }
         else{//limite des commandes si on est dans un niveau
@@ -210,12 +257,20 @@ public class ViewPlaying extends ViewGame{
                 }
             };
             limite.setStringPainted(true);
-            features.add(limite);
+            limite.setForeground(Color.DARK_GRAY);
+            c.gridy=1;
+            features.add(limite, c);
+            featuresH+=30+limite.getPreferredSize().height;
         }
         
+        features.setBounds(20, 440+buttonH*2, 400, featuresH);
+        features.setBackground(new Color(0, 0, 128));
+        this.add(features);
+        
         varPanel.setVisible(false);
-        features.add(varPanel);
-        varPanel.setPreferredSize(new Dimension(features.getWidth()-30, features.getHeight()/2));
+        varPanel.setBounds(20, 460+buttonH*2+featuresH, 400, heightFS-480-buttonH*2-featuresH);
+        varPanel.setBorder(BorderFactory.createLineBorder(Color.MAGENTA.darker(), 3));
+        this.add(varPanel);
     }
     
     void run(){
@@ -225,7 +280,7 @@ public class ViewPlaying extends ViewGame{
         runC=runC.canExecute(variables)?runC.next:null;
         if(variables.size()>0){
             updateVariableDisplay();
-            varPanel.setVisible(true);
+            if(varPanel.getHeight()>50) varPanel.setVisible(true);
         }
         ActionListener taskPerformed=new ActionListener(){
             public void actionPerformed(ActionEvent e){
@@ -319,7 +374,7 @@ public class ViewPlaying extends ViewGame{
         private boolean drawing=true, brush2;//pinceau posé par defaut, 2e pinceau de symetrie
 
         PanelBlackBoard(){
-            this.setBounds(20, 20+buttonH, 400, 400);//marge gauche=20, 20+hauteur d un bouton en haut, taille 400*400
+            this.setBounds(20, 20+buttonH*2, 400, 400);//marge gauche=20, 20+hauteur d un bouton en haut, taille 400*400
             this.setBackground(Color.BLACK);//fond noir
             this.x=level.brushX;
             this.y=level.brushY;
@@ -440,16 +495,6 @@ public class ViewPlaying extends ViewGame{
             this.add(bin);
             this.setFunctionVariableButton();
             this.addAvailableCommands();
-            this.addTrigoCircle();            
-        }
-        
-        void addTrigoCircle() throws IOException{//sert de guide au joueur
-        	JPanel pane=new JPanel();
-        	JLabel circle=new JLabel(new ImageIcon("images/cercleTrigo.png"));
-        	pane.setLayout(new BorderLayout());
-        	pane.add(circle, BorderLayout.CENTER);
-        	pane.setBounds(width-303, 3, 300, 300);
-        	this.add(pane);
         }
         
         int countConvert(Command c){
@@ -710,12 +755,24 @@ public class ViewPlaying extends ViewGame{
         
         /***** Gestion Blocs *****/
         
-        void addAvailableCommands(){//premier ajout des commandes disponibles
+        void addAvailableCommands() throws IOException{//premier ajout des commandes disponibles
             //ajout dans WhiteBoard
             commands.add(new CommandStart());//toujours le premier de la liste de commandes
             this.add(commands.getFirst());
             //ajout dans CommandBoard
-            for(String c : level.availableCommands) lastPositionY+=addCommand(c, lastPositionY);
+            for(String c : level.availableCommands){
+                if(c.equals("setAngle")) addTrigoCircle();
+                lastPositionY+=addCommand(c, lastPositionY);
+            }
+        }
+        
+        void addTrigoCircle() throws IOException{//sert de guide au joueur
+            JPanel pane=new JPanel();
+            JLabel circle=new JLabel(new ImageIcon("images/cercleTrigo.png"));
+            pane.add(circle);
+            pane.setBounds(3, height-303, 300, 300);
+            pane.setBackground(Color.WHITE);
+            this.add(pane);
         }
         
         int addCommand(String name, int positionY){//(re)generation des commandes
@@ -1100,11 +1157,8 @@ public class ViewPlaying extends ViewGame{
             }
 
             void loadBin(String path) throws IOException{//ouverte ou fermee
-                try{
-                    this.state=ImageIO.read(new File(path));
-                    this.repaint();
-                }
-                catch(FileNotFoundException e){}
+                this.state=ImageIO.read(new File(path));
+                this.repaint();
             }
 
             public void paintComponent(Graphics g){
@@ -1150,7 +1204,7 @@ public class ViewPlaying extends ViewGame{
             
             /***** Delete Command *****/
             
-            void deleteSteps() throws IOException{//enleve de commands et du panel
+            void deleteSteps(){//enleve de commands et du panel
             	if(this instanceof CommandWithCommands){
                     ((CommandWithCommands)this).hookH.removeHH();
                     ((CommandWithCommands)this).hookV.removeHV();
@@ -1171,12 +1225,15 @@ public class ViewPlaying extends ViewGame{
                     addCommandCall(tmp.function, tmp.positionY);
                 }
                 else addCommand(this.name, this.positionY);
-                bin.loadBin("images/closedBin.png");
+                try{
+                    bin.loadBin("images/closedBin.png");
+                }
+                catch(IOException e){}
                 SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
                 if(this.next!=null) this.next.deleteSteps();
             }
             
-            void deleteVar(NumberField field) throws IOException{//fonction annexe
+            void deleteVar(NumberField field){//fonction annexe
                 if(field.variable!=null) field.variable.deleteSteps();
                 else fields.remove(field);
             }
@@ -1469,12 +1526,7 @@ public class ViewPlaying extends ViewGame{
             }
 
             public void mouseReleased(MouseEvent e){
-                if(toDelete(this)){
-                    try{
-                        this.deleteSteps();
-                    }
-                    catch(IOException e1){}
-                }
+                if(toDelete(this)) this.deleteSteps();
                 else{
                     newDrag();
                     if(brightC!=null) foundPrevious();
@@ -2328,7 +2380,7 @@ public class ViewPlaying extends ViewGame{
             
             /***** Delete Variable *****/
             
-            void deleteSteps() throws IOException{//enleve variable du panel
+            void deleteSteps(){//enleve variable du panel
                 PanelDragDropBoard.this.remove(this);
                 if(this instanceof CommandFunctionCallInt){
                     CommandFunctionCallInt tmp=(CommandFunctionCallInt)this;
@@ -2338,7 +2390,10 @@ public class ViewPlaying extends ViewGame{
                 }
                 if(lastCreated) addSettedVariables(positionY, (this instanceof CommandFunctionCallInt)?
                     ((CommandFunctionCallInt)this).function:null);//regeneration
-                bin.loadBin("images/closedBin.png");
+                try{
+                    bin.loadBin("images/closedBin.png");
+                }
+                catch(IOException e){}
                 SwingUtilities.updateComponentTreeUI(ViewPlaying.this.dragDrop);//refresh affichage
             }
 
@@ -2443,12 +2498,7 @@ public class ViewPlaying extends ViewGame{
             }
 
             public void mouseReleased(MouseEvent e){
-                if(toDelete(this)){
-                    try{
-                        this.deleteSteps();
-                    }
-                    catch(IOException e1){}
-                }
+                if(toDelete(this)) this.deleteSteps();
                 else{
                     if(inWhiteBoard(this) && lastCreated){
                         lastCreated=false;

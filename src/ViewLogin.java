@@ -81,8 +81,7 @@ public class ViewLogin extends View{
     }
     
     void setPage(){
-        JPanel center=new JPanel();//panneau du centre (contiendra tout, sauf tryWithoutAccount)
-        center.setLayout(new GridBagLayout());
+        JPanel center=new JPanel(new GridBagLayout());//contiendra tout, sauf tryWithoutAccount
         GridBagConstraints constraints=new GridBagConstraints();//contraintes d ajout dans center
         
         //en cas d erreur d username/password, s affiche tout en haut dans center
@@ -103,8 +102,7 @@ public class ViewLogin extends View{
         center.add(line2, constraints);
         
         //boutons login et createAccount sur la même ligne, en bas de password
-        JPanel line3=new JPanel();
-        line3.setLayout(new FlowLayout(FlowLayout.CENTER, 15, 15));//alignement, hgap, vgap
+        JPanel line3=new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));//alignement, hgap, vgap
         line3.add(login);
         line3.add(new JLabel("or"));
         line3.add(createAccount);
@@ -112,8 +110,7 @@ public class ViewLogin extends View{
         center.add(line3, constraints);
         
         //bouton tryWithoutAccount en fin de page, tout a droite
-        JPanel end=new JPanel();
-        end.setLayout(new FlowLayout(FlowLayout.RIGHT));//ajout a droite
+        JPanel end=new JPanel(new FlowLayout(FlowLayout.RIGHT));//ajout a droite
         end.add(tryWithoutAccount);        
         
         this.setLayout(new BorderLayout());

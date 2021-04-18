@@ -43,24 +43,20 @@ public class ViewGame extends View{//a une barre de controle superieur en plus
     }    
     
     void setTop(boolean[][] playerBool){
-        JPanel topBar=new JPanel();
-        topBar.setLayout(new GridLayout());
+        JPanel topBar=new JPanel(new GridLayout());
         int width=GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().width;
         topBar.setBounds(0, 0, width, create.getPreferredSize().height);//hauteur d un bouton
         this.add(topBar);
         
         //panel de gauche
-        JPanel left=new JPanel();//training, challenge, create
-        left.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        JPanel left=new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));//training, challenge, create
         left.add(training);
         left.add(challenge);
         left.add(create);
         topBar.add(left);
         
         //panel de droite
-        JPanel right=new JPanel();//username, progression, bouton logout
-        right.setLayout(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        
+        JPanel right=new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));//username, progression, bouton logout
         right.add(new JLabel(super.getModel().getPlayer().username));//username
         right.add(new JLabel("       Total progress  "));
         right.add(createProgressBar(playerBool));//barre de progression

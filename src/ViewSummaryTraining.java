@@ -21,8 +21,7 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
     }
     
     void sommaire(){
-        JPanel summary=new JPanel();
-        summary.setLayout(new FlowLayout());
+        JPanel summary=new JPanel(new FlowLayout());
         summary.setBounds(0,50+buttonHeight,widthFS,heightFS);
         File[] arrayLevels=nombreNiveau("levels/training/");
         for(int i=0; i<arrayLevels.length; i++){
