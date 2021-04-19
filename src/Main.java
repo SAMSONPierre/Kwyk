@@ -20,7 +20,8 @@ public class Main {
             Control.initializeAccount();
             
             //on lance le jeu
-            EventQueue.invokeLater(()->new Control(new ViewLogin()));
+            //EventQueue.invokeLater(()->new Control(new ViewLogin()));
+            EventQueue.invokeLater(()->new Control(new View(null)).login("GM", "Azozo"));
         }
         catch(Exception e){
             System.out.println("Failed to start the game.");

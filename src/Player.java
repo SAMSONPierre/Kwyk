@@ -47,7 +47,9 @@ public class Player implements Serializable{
     }
     
     void unlock(int directory, int nb, String name){
-        if(directory<0 && !clear.contains(name)) clear.add(name);
+        if(directory<0){
+            if(!clear.contains(name)) clear.add(name);
+        }
         else currentLevel[directory][nb]=true;
     }
 }

@@ -144,9 +144,9 @@ public class Control implements Serializable{
                 JTextField angle=new JTextField("0", 4);
                 ColorBox color=new ColorBox();
                 JButton confirmChoice=new JButton("Confirm");
-                confirmChoice.addKeyListener(new KeyAdapter() {
-                	public void keyPressed(KeyEvent e) {
-                    	if(e.getKeyCode()==KeyEvent.VK_ENTER) confirmChoice.doClick();
+                confirmChoice.addKeyListener(new KeyAdapter(){
+                    public void keyPressed(KeyEvent e){
+                        if(e.getKeyCode()==KeyEvent.VK_ENTER) confirmChoice.doClick();
                     }
                 });
                 confirmChoice.addActionListener((event)->{
@@ -182,10 +182,10 @@ public class Control implements Serializable{
                 JLabel[] labels=new JLabel[] {new JLabel("x :"), new JLabel("y :"), new JLabel("angle :"), new JLabel("color :")};
                 Component[] fields={x, y, angle, color};
                 for(int i=0; i<4; i++) addLabelAndTextField(labels[i], i, settings, fields[i], c);
-                for(int i=0;i<3;i++) {
-                	fields[i].addKeyListener(new KeyAdapter() {
-                    	public void keyPressed(KeyEvent e) {
-                        	if(e.getKeyCode()==KeyEvent.VK_ENTER) confirmChoice.doClick();
+                for(int i=0; i<3; i++){
+                    fields[i].addKeyListener(new KeyAdapter(){
+                        public void keyPressed(KeyEvent e){
+                            if(e.getKeyCode()==KeyEvent.VK_ENTER) confirmChoice.doClick();
                         }
                     });
                 }
@@ -250,7 +250,7 @@ public class Control implements Serializable{
     	int[] numbers=tmp.getNumbersFromHead();
     	String[] commandsAvailable=tmp.getCommandsArray();
         Rectangle screenRect=new Rectangle(tmp.getX()+tmp.getInsets().left+20,
-                tmp.getY()+tmp.getInsets().top+tmp.buttonH+20, size, size);
+                tmp.getY()+tmp.getInsets().top+tmp.buttonH*2+20, size, size);
         BufferedImage capture;
         int cpt=((ViewGame)view).nombreNiveau("levels/"+dest).length;
         try{

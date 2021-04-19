@@ -165,13 +165,12 @@ class Vector implements Serializable{
     
     
     class VectorArc extends Vector{//arc
-        final int diameter, startAngle, scanAngle, realStart;
-        Point center;//initialisation lors de l execution de la commande
+        final int diameter, startAngle, scanAngle;
+        protected Point center;//initilisation lors de l execution de la commande
         
         VectorArc(int x1, int y1, int diameter, int startA, int scanA, Color color){
             super(x1, y1, color);
             this.diameter=diameter;
-            this.realStart=startA;
             if(scanA<0){
                 this.startAngle=(startA+scanA+360)%360;
                 this.scanAngle=maxAngle(-scanA);
@@ -255,20 +254,17 @@ class Vector implements Serializable{
             return scanAngle>0;
         }
         
-        boolean tooLong(){//on cherche a connaitre les coordonnees des points du cercle
-        	int angle=this.realStart;
-        	boolean res=false;
-        	for(int i=1;i<=this.scanAngle;i++) {
-        		int j=angle>=0?-i:i;//angle<0 <=> sens trigo
-        		int x=(int)(this.center.getY()+((diameter/2)*Math.cos(Math.toRadians(angle+j+90))));
-        		int y=(int)(this.center.getX()+((diameter/2)*Math.sin(Math.toRadians(angle+j+90))));
-        		res|=!inBounds(new int[]{x,y});
-        	}
-        	return res;
+        boolean tooLong(){
+            if(center!=null){
+                for(int i=startAngle; i<=startAngle+scanAngle; i+=((scanAngle>0)?1:-1)){
+                    if(!inBounds(destinationLine(center.x, center.y, i, diameter/2))) return true;
+                }
+            }
+            return false;
         }
         
-        private boolean inBounds(int[] pt) {
-        	return(pt[0]>=0 && pt[0]<=400 && pt[1]>=0 && pt[1]<=400);
+        private boolean inBounds(Point p){
+            return (p.x>=0 && p.x<401 && p.y>=0 && p.y<401);
         }
     }
 }
