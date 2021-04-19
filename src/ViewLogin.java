@@ -21,8 +21,8 @@ public class ViewLogin extends View{
     private JButton login, createAccount, tryWithoutAccount;
     private JLabel error;//message qui s affiche en cas d erreur d username/password
     
-    ViewLogin(){//aucun Player pour l instant
-        super(null);
+    ViewLogin(Control control){//aucun Player pour l instant
+        super(control, null);
         initialisationFieldsProperties();//initialisation des champs de saisie id et pwd
         initialisationButtons();//initialisation des boutons login et create account
         error=new JLabel("");//vide au debut

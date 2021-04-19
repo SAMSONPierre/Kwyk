@@ -4,6 +4,7 @@ import java.awt.FlowLayout;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
 import java.io.File;
+import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -11,9 +12,10 @@ import javax.swing.JProgressBar;
 
 public class ViewGame extends View{//a une barre de controle superieur en plus
     private JButton training, challenge, create, logout;//boutons pour acceder aux autres pages
+    private CustomJButton music;
     
-    ViewGame(Player player){
-        super(player);
+    ViewGame(Control control, Player player){
+        super(control, player);
         setButton(!player.username.equals("default"));
         setTop(player.getCurrentLevel());
     }
@@ -33,14 +35,31 @@ public class ViewGame extends View{//a une barre de controle superieur en plus
         logout=new JButton("Log out");
         logout.addActionListener((event)->super.control.logout());
         
+        music=new CustomJButton("", null);
+        changeMusicState();//bonne image
+        music.setBackground(Color.WHITE);
+        music.addActionListener((event)->{
+            super.control.musicChangeState();
+            changeMusicState();
+        });
+        
         //largeur des boutons
         Dimension size=challenge.getPreferredSize();//le plus large
         size.width+=size.width/3;
         training.setPreferredSize(size);
         challenge.setPreferredSize(size);
         create.setPreferredSize(size);
-        logout.setPreferredSize(size);        
-    }    
+        logout.setPreferredSize(size);      
+        music.setPreferredSize(new Dimension(getButtonHeight(), getButtonHeight()));
+    }
+    
+    private void changeMusicState(){
+        try{
+            File f=new File("images/"+(control.musicIsActive()?"musicOff":"musicOn")+".png");
+            music.addImage(ImageIO.read(f));
+        }
+        catch(Exception e){}
+    }
     
     void setTop(boolean[][] playerBool){
         JPanel topBar=new JPanel(new GridLayout());
@@ -53,6 +72,7 @@ public class ViewGame extends View{//a une barre de controle superieur en plus
         left.add(training);
         left.add(challenge);
         left.add(create);
+        left.add(music);
         topBar.add(left);
         
         //panel de droite
@@ -73,7 +93,7 @@ public class ViewGame extends View{//a une barre de controle superieur en plus
         File[] arrayLevels=nombreNiveau("levels/training/");
         for(int i=0; i<arrayLevels.length; i++)
             nbLvl+=nombreNiveau("levels/training/"+arrayLevels[i].getName()).length;
-    	res.setValue(100*nbSucceded(playerBool)/nbLvl);
+    	if(nbLvl>0) res.setValue(100*nbSucceded(playerBool)/nbLvl);
     	return res;
     }
     

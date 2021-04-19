@@ -9,8 +9,8 @@ import javax.swing.JScrollPane;
 public class ViewSummaryChallenge extends ViewGame{//sommaire des defis
     final int buttonHeight=super.getButtonHeight();//hauteur d un bouton
     
-    ViewSummaryChallenge(Player player){
-        super(player);
+    ViewSummaryChallenge(Control control, Player player){
+        super(control, player);
         listeNiveau(player.getClear());
     }
     

@@ -8,9 +8,9 @@ public class View extends JFrame{
     final int heightFS;//hauteur de l ecran, sans getInsets().top=barre superieur de la fenetre
     final int widthFS;//largeur de l ecran
     
-    View(Player player){
+    View(Control control, Player player){
         this.model=new Model(this, player);
-        this.control=new Control(this);
+        this.control=control;
         
         this.setVisible(true);//fenetre visible a l affichage
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);//fermeture du programme avec la fenetre

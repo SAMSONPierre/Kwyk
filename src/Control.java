@@ -17,6 +17,9 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.LinkedList;
 import javax.imageio.ImageIO;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -30,15 +33,38 @@ public class Control implements Serializable{
     private Model model;
     private View view;
     final static private String secretKey="ssshhhhhhhhhhh!!!!";//gestion des mots de passe
+    private Clip clip=null;
+    private long clipTime=0;
     
-    Control(View view){
-        this.view=view;
-        this.model=this.view.getModel();
+    Control(){
+        this.view=new ViewLogin(this);
+        this.model=null;
+        try{
+            AudioInputStream audio=AudioSystem.getAudioInputStream(new File("sounds/8am.wav"));
+            clip=AudioSystem.getClip();
+            clip.open(audio);
+        }
+        catch(Exception e){}
     }
     
     void exitFrame(){//quand on change de fenetre
         view.setVisible(false);
         view.dispose();
+    }
+    
+    void musicChangeState(){
+        if(clip==null) return;//echec de chargement dans constructeur
+        if(clip.isRunning()){
+            clipTime=(clip.getMicrosecondPosition())%clip.getMicrosecondLength();
+            clip.stop();
+            return;
+        }
+        clip.setMicrosecondPosition(clipTime);
+        clip.loop(Clip.LOOP_CONTINUOUSLY);
+    }
+    
+    boolean musicIsActive(){
+        return clip.isRunning();
     }
     
     protected static void initializeAccount() throws IOException{
@@ -67,7 +93,7 @@ public class Control implements Serializable{
                 String decryptedPassword=AES.decrypt(p.password, secretKey);
                 if(decryptedPassword.equals(password)){
                     this.exitFrame();//quitte la fenetre courante
-                    this.view=new ViewSummaryTraining(p);//pour en ouvrir une autre
+                    this.view=new ViewSummaryTraining(this, p);//pour en ouvrir une autre
                     this.model=view.getModel();
                 }
                 else ((ViewLogin)view).errorLogin();//affichage du message d erreur
@@ -83,7 +109,7 @@ public class Control implements Serializable{
             Player p=new Player(username, AES.encrypt(password, secretKey));
             save(p);
             this.exitFrame();//quitte la fenetre courante
-            this.view=new ViewSummaryTraining(p);//pour en ouvrir une autre
+            this.view=new ViewSummaryTraining(this, p);//pour en ouvrir une autre
             this.model=view.getModel();
         }
     }
@@ -118,19 +144,19 @@ public class Control implements Serializable{
     
     void switchTraining(String name){
     	this.exitFrame();
-        this.view=new ViewSummaryTraining(this.model.getPlayer(), name);
+        this.view=new ViewSummaryTraining(this, this.model.getPlayer(), name);
         this.model=view.getModel();
     }
     
     void switchTraining(){
     	this.exitFrame();
-        this.view=new ViewSummaryTraining(this.model.getPlayer());
+        this.view=new ViewSummaryTraining(this, this.model.getPlayer());
         this.model=view.getModel();
     }
     
     void switchChallenge(){
         this.exitFrame();
-        this.view=new ViewSummaryChallenge(this.model.getPlayer());
+        this.view=new ViewSummaryChallenge(this, this.model.getPlayer());
         this.model=view.getModel();
     }
     
@@ -214,7 +240,7 @@ public class Control implements Serializable{
     
     void logout(){
         this.exitFrame();
-        this.view=new ViewLogin();
+        this.view=new ViewLogin(this);
         this.model=view.getModel();
     }
     
@@ -227,7 +253,7 @@ public class Control implements Serializable{
         try{
             this.model.getPlayer().setLevel(level);
             this.exitFrame();
-            this.view=new ViewPlaying(this.model.getPlayer(), isCreating);
+            this.view=new ViewPlaying(this, this.model.getPlayer(), isCreating);
             this.model=view.getModel();
         }
         catch(Exception e){}
