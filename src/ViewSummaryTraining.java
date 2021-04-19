@@ -36,7 +36,7 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
                 String name=arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length());
                 File[] arrayLevels2=nombreNiveau("levels/training/"+name+"/");
                 JButton jb;
-                if(arrayLevels.length!=0){
+                if(arrayLevels2.length!=0){
                     String name2=arrayLevels2[0].getName();
                     name2=name2.substring(0, name2.length()-3);
                     Image img=ImageIO.read(new File("preview/training/"+name+"/"+name2+"png"));
