@@ -15,6 +15,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseWheelEvent;
@@ -1709,6 +1711,15 @@ public class ViewPlaying extends ViewGame{
             CommandFor(int x, int y){
                 super("for", new Color(230, 138, 0), x, y);
                 super.input=new NumberField(this);//nombre de repetition a saisir
+                super.input.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandFor.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
                 
                 Component[] toAdd={new JLabel("  Repeat  "), input, new JLabel("  time  ")};
                 for(Component c : toAdd) this.add(c);
@@ -1740,6 +1751,35 @@ public class ViewPlaying extends ViewGame{
             CommandIf(int x, int y){
                 super("if", new Color(188, 28, 132), x, y);
                 super.input=new NumberField(this);//choix libre du joueur donc pas une liste
+                super.input.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandIf.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
+                
+                this.variableG.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
+                
+                this.operateur.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
                 
                 String[] tmp={"x", "y", "angle"};
                 for(String s : tmp) variableG.addItem(s);
@@ -1783,6 +1823,36 @@ public class ViewPlaying extends ViewGame{
             CommandWhile(int x, int y){
                 super("while", new Color(204, 102, 102), x, y);
                 super.input=new NumberField(this);
+                
+                super.input.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandWhile.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
+                
+                this.variableG.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandWhile.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
+                
+                this.operateur.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandWhile.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
 
                 this.variableG.addActionListener(this);
                 String[] tmp={"x", "y", "angle"};
@@ -2056,6 +2126,16 @@ public class ViewPlaying extends ViewGame{
                 super("drawLine", Color.CYAN.darker(), y);
                 super.input=new NumberField(this);
                 
+                super.input.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandDrawLine.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
+                
                 Component[] toAdd={new JLabel("  Draw a line of  "), input, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
@@ -2096,6 +2176,36 @@ public class ViewPlaying extends ViewGame{
             CommandDrawArc(int x, int y){
                 super("drawArc", Color.CYAN.darker(), y);
                 super.input=new NumberField(this);//radius
+                
+                super.input.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandDrawArc.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
+                
+                this.angleScan.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandDrawArc.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
+                
+                this.rightLeft.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandDrawArc.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
                 
                 rightLeft.addItemListener(new ItemListener(){
                     public void itemStateChanged(ItemEvent e){
@@ -2175,6 +2285,16 @@ public class ViewPlaying extends ViewGame{
                 raisePut.addItem(" Raise ");
                 raisePut.addItem(" Put ");
                 
+                this.raisePut.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandRaisePutBrush.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
+                
                 Component[] toAdd={new JLabel("  "), raisePut, new JLabel("  the pen  ")};
                 for(Component c : toAdd) this.add(c);
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
@@ -2197,6 +2317,26 @@ public class ViewPlaying extends ViewGame{
             CommandMoveTo(int x, int y){
                 super("moveTo", Color.LIGHT_GRAY.darker(), y);
                 super.input=new NumberField(this);//positionX
+                
+                super.input.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandMoveTo.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
+                
+                this.positionY.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandMoveTo.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
                 
                 Component[] toAdd={new JLabel("  Move pen to (  "), input, new JLabel("  ,  "), positionY, new JLabel("  )  ")};
                 for(Component c : toAdd) this.add(c);
@@ -2228,6 +2368,16 @@ public class ViewPlaying extends ViewGame{
                 super("setAngle", Color.LIGHT_GRAY.darker(), y);
                 super.input=new NumberField(this);
                 
+                super.input.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandSetAngle.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
+                
                 Component[] toAdd={new JLabel("  Set angle to  "), input, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
@@ -2247,6 +2397,16 @@ public class ViewPlaying extends ViewGame{
                 super("addAngle", Color.LIGHT_GRAY.darker(), y);
                 super.input=new NumberField(this);
                 
+                super.input.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandAddAngle.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
+                
                 Component[] toAdd={new JLabel("  Add  "), input, new JLabel("  to angle  ")};
                 for(Component c : toAdd) this.add(c);
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
@@ -2263,9 +2423,20 @@ public class ViewPlaying extends ViewGame{
 
         class CommandSetColor extends Command{//classe interne
             private ColorBox colorChoice=new ColorBox();
+            
 
             CommandSetColor(int x, int y){
                 super("setColor", Color.LIGHT_GRAY.darker(), y);
+                
+                this.colorChoice.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                		if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandSetColor.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                	}
+                });
                 
                 Component[] toAdd={new JLabel("  Set color to  "), colorChoice, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
@@ -2288,6 +2459,16 @@ public class ViewPlaying extends ViewGame{
             CommandShiftColor(int x, int y){
                 super("shiftColor", Color.LIGHT_GRAY.darker(), y);
                 super.input=new NumberField(this);
+                
+                super.input.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandShiftColor.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
                 
                 Component[] toAdd={new JLabel("  Add  "), input, new JLabel("  % to color  ")};
                 for(Component c : toAdd) this.add(c);
@@ -2329,6 +2510,16 @@ public class ViewPlaying extends ViewGame{
                 onOff.addItem(" on ");
                 onOff.addItem(" off ");
                 
+                this.onOff.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandSymmetry.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
+                
                 Component[] toAdd={new JLabel("  Turn  "), onOff, new JLabel("  vertical symmetry  ")};
                 for(Component c : toAdd) this.add(c);
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
@@ -2365,6 +2556,16 @@ public class ViewPlaying extends ViewGame{
                 this.setLayout(new GridBagLayout());
                 this.addMouseMotionListener(this);
                 this.addMouseListener(this);
+                
+                this.varChoice.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
                 
                 if(notCall){
                     varChoice.setBackground(color);
@@ -2525,6 +2726,26 @@ public class ViewPlaying extends ViewGame{
             CommandOperationV(String name, int x, int y, String sign){
                 super(name, new Color(255, 153, 194), y);
                 super.input=new NumberField(this);
+                
+                super.input.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandOperationV.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
+                
+                this.variableG.addKeyListener(new KeyAdapter() {
+                	public void keyPressed(KeyEvent e) {
+                    	if(e.getKeyCode()==KeyEvent.VK_ENTER && CommandOperationV.this.previous!=null) {
+                    		if(run.isVisible()) ViewPlaying.this.run.doClick();
+                    		else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
+                    		else ViewPlaying.this.reset.doClick();
+                    	}
+                    }
+                });
                 
                 for(String varName : variables.keySet()) variableG.addItem(varName);
                 Component[] toAdd={new JLabel("  "), variableG, new JLabel("  "+sign+"  "), input, new JLabel("  ")};
