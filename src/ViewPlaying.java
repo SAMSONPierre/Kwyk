@@ -351,7 +351,12 @@ public class ViewPlaying extends ViewGame{
         }
         catch(Exception e){}
         control.win(getNumberOfDirectory(level.name), level.name);
-        JOptionPane.showMessageDialog(this, "Victory !");
+        int retour = JOptionPane.showConfirmDialog(this,
+                "Come back to summary ?", 
+                "Victory",
+                JOptionPane.YES_NO_OPTION);
+        if(retour == JOptionPane.OK_OPTION && this.level.isTraining) super.control.switchTraining();
+        else if(retour == JOptionPane.OK_OPTION && !this.level.isTraining) super.control.switchChallenge();
         if(clip!=null) clip.stop();//arrete la musique
     }
     

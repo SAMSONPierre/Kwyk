@@ -27,7 +27,18 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
         for(int i=0; i<arrayLevels.length; i++){
             try{
                 String name=arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length());
-                JButton jb=new JButton(name.substring(name.indexOf("_")+1));
+                File[] arrayLevels2=nombreNiveau("levels/training/"+name+"/");
+                JButton jb;
+                if(arrayLevels2.length != 0) {
+                	String name2=arrayLevels2[0].getName().substring(0, arrayLevels2[0].getName().length()-3);
+                    Image img=ImageIO.read(new File("preview/training/"+name+"/"+name2+"png"));
+                    boolean done = isDone(i,arrayLevels2.length);
+                    jb=new CustomJButton(name.substring(name.indexOf("_")+1),img,done);
+                }
+                else {
+                	jb = new JButton(name.substring(name.indexOf("_")+1));
+                }
+                jb.setPreferredSize(new Dimension(200, 200));
                 jb.addActionListener((event)->super.control.switchTraining(name+"/"));
                 summary.add(jb);
             }
@@ -70,5 +81,13 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
             res[Integer.parseInt(name.substring(0, name.indexOf('-')-1))]=toChange[i];
         }
         return res;
+    }
+    
+    boolean isDone(int i,int length) {
+    	boolean[] array = this.getModel().getPlayer().getCurrentLevel()[i];
+    	for(int j=0;j<length+1;j++) {
+    		if(!array[j]) return false;
+    	}
+    	return true;
     }
 }
