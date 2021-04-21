@@ -273,7 +273,7 @@ public class Control implements Serializable{
     void submit(String name, boolean isT, Level level, String[] mainCode, String[] functions, String dest, int size){
     	ViewPlaying tmp=(ViewPlaying)this.view;
     	LinkedList<Vector> newPattern=level.getSimplifyDraw(level.getPlayerDraw());
-    	int[] numbers=tmp.getNumbersFromHead();
+    	int[] numbers=tmp.getNumbers();
     	String[] commandsAvailable=tmp.getCommandsArray();
         Rectangle screenRect=new Rectangle(tmp.getX()+tmp.getInsets().left+20,
                 tmp.getY()+tmp.getInsets().top+tmp.buttonH*2+20, size, size);

@@ -22,7 +22,7 @@ public class Main {
             //on lance le jeu
             EventQueue.invokeLater(()->{
                 Control control=new Control();//charge le menu de connexion
-                control.musicChangeState();//charge la musique
+                //control.musicChangeState();//charge la musique
             });
         }
         catch(Exception e){
