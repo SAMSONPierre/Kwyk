@@ -1720,6 +1720,7 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  Repeat  "), input, new JLabel("  time  ")};
                 for(Component c : toAdd) this.add(c);
+                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 super.commandW=getPreferredSize().width-input.getPreferredSize().width;
             }
@@ -1763,6 +1764,7 @@ public class ViewPlaying extends ViewGame{
 
                 Component[] toAdd={new JLabel("  If  "), variableG, operateur, new JLabel("  "), input, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
+                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 commandW=getPreferredSize().width-input.getPreferredSize().width-variableG.getPreferredSize().width;
             }
@@ -1808,6 +1810,7 @@ public class ViewPlaying extends ViewGame{
 
                 Component[] toAdd={new JLabel("  While  "), variableG, operateur, new JLabel("  "), input, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
+                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 commandW=getPreferredSize().width-input.getPreferredSize().width-variableG.getPreferredSize().width;
             }
@@ -1865,6 +1868,7 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  "), changeName, nameFunction, new JLabel("( "), input, new JLabel(" )  ")};
                 for(Component c : toAdd) this.add(c);
+                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
                 setBounds(x, y, getPreferredSize().width, commandH);
                 commandW=getPreferredSize().width;
             }
@@ -1930,6 +1934,7 @@ public class ViewPlaying extends ViewGame{
                 
                 input.setBackground(new Color(255, 204, 255));
                 input.setPreferredSize(new Dimension(input.fieldWidth, input.fieldHeight));
+                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
                 setBounds(x, y, getPreferredSize().width, commandH);                
                 
                 hookH.setBounds(hookH.getX(), hookH.getY(), commandW+input.fieldWidth, commandH);
@@ -2018,6 +2023,7 @@ public class ViewPlaying extends ViewGame{
                 initializeDisplay();
                 this.add(name);
                 this.add(new JLabel("( )  "));
+                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
@@ -2069,7 +2075,7 @@ public class ViewPlaying extends ViewGame{
                 initializeDisplay();
                 Component[] toAdd={name, new JLabel("(  "), input, new JLabel("  )  ")};
                 for(Component c : toAdd) this.add(c);
-                this.setBounds(x, y+deltaY, getPreferredSize().width, variableH);
+                this.setBounds(x, y+deltaY, getPreferredSize().width+10, variableH);
                 variableW=getPreferredSize().width-input.getPreferredSize().width;
             }
             
@@ -2093,6 +2099,7 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  Draw a line of  "), input, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
+                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 super.commandW=getPreferredSize().width-input.getPreferredSize().width;
             }
@@ -2143,6 +2150,7 @@ public class ViewPlaying extends ViewGame{
                 Component[] toAdd={new JLabel("  Draw an arc with a radius of  "), input,
                     new JLabel("  and an angle of  "), angleScan, new JLabel("  on the  "), rightLeft, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
+                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 commandW=getPreferredSize().width-input.getPreferredSize().width-angleScan.getPreferredSize().width;
             }
@@ -2211,6 +2219,7 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  "), raisePut, new JLabel("  the pen  ")};
                 for(Component c : toAdd) this.add(c);
+                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
@@ -2234,6 +2243,7 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  Move pen to (  "), input, new JLabel("  ,  "), positionY, new JLabel("  )  ")};
                 for(Component c : toAdd) this.add(c);
+                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 commandW=getPreferredSize().width-input.getPreferredSize().width-positionY.getPreferredSize().width;
             }
@@ -2264,6 +2274,7 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  Set angle to  "), input, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
+                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 super.commandW=getPreferredSize().width-input.getPreferredSize().width;
             }
@@ -2283,6 +2294,7 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  Add  "), input, new JLabel("  to angle  ")};
                 for(Component c : toAdd) this.add(c);
+                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 super.commandW=getPreferredSize().width-input.getPreferredSize().width;
             }
@@ -2303,7 +2315,8 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  Set color to  "), colorChoice, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
-                this.setBounds(x, y+deltaY, getPreferredSize().width+5, commandH);
+                this.setPreferredSize(new Dimension(getPreferredSize().width+15, getPreferredSize().height));
+                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
             boolean canExecute(HashMap<String, Integer> map){
@@ -2325,6 +2338,7 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  Add  "), input, new JLabel("  % to color  ")};
                 for(Component c : toAdd) this.add(c);
+                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 super.commandW=getPreferredSize().width-input.getPreferredSize().width;
             }
@@ -2409,7 +2423,7 @@ public class ViewPlaying extends ViewGame{
                 }
                 NumberField tmp=new NumberField(null);//juste pour la hauteur
                 variableH=tmp.fieldHeight;
-                this.setBounds(x, y+deltaY, getPreferredSize().width, variableH);
+                this.setBounds(x, y+deltaY, getPreferredSize().width+10, variableH);
                 variableW=getPreferredSize().width-varChoice.getPreferredSize().width;
             }
             
@@ -2563,6 +2577,7 @@ public class ViewPlaying extends ViewGame{
                 for(String varName : variables.keySet()) variableG.addItem(varName);
                 Component[] toAdd={new JLabel("  "), variableG, new JLabel("  "+sign+"  "), input, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
+                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 commandW=getPreferredSize().width-input.getPreferredSize().width-variableG.getPreferredSize().width;
             }
