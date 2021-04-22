@@ -129,12 +129,6 @@ public class ViewLogin extends View{
         this.setLayout(new BorderLayout());
         this.add(center);
         this.add(end, BorderLayout.SOUTH);
-        
-        this.addKeyListener(new KeyAdapter(){
-            public void keyPressed(KeyEvent e){
-                if(e.getKeyCode()==KeyEvent.VK_ENTER) login.doClick();
-            }
-        });
     }
     
     boolean canCreateAccount() {

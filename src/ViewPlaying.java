@@ -599,7 +599,7 @@ public class ViewPlaying extends ViewGame{
         void addLoadCode(String toLoad, LinkedList<Command> saveLast, Command last){
             Command toAdd=addLoad(toLoad);
             this.add(toAdd);//visible
-            commands.add(toAdd);//accessible
+            toAdd.newDrag(false);
             if(toAdd instanceof CommandWithCommands){
                 CommandWithCommands cwc=(CommandWithCommands)toAdd;
                 this.add(cwc.hookV);
@@ -615,10 +615,6 @@ public class ViewPlaying extends ViewGame{
             last.next=toAdd;
             if(last instanceof CommandWithCommands) saveLast.addLast(((CommandWithCommands)last).hookH);
             saveLast.addLast(toAdd);//prochain qui sera lie
-        }
-        
-        void addLoadFunction(){//ajout de fonctions a
-            
         }
         
         void setVariableButton(){
@@ -640,7 +636,7 @@ public class ViewPlaying extends ViewGame{
                 }
                 if(variables.size()==level.numberOfVariables){//max atteint
                     createV.setEnabled(false);
-                    createV.setBackground(Color.red);
+                    createV.setBackground(Color.RED.darker());
                 }
             });
             removeV.addActionListener((event)->{
@@ -674,7 +670,7 @@ public class ViewPlaying extends ViewGame{
                     if(name!=null) addFunction(name, width/2-20-dF.width, 70+4*dF.height, false);
                     if(nbOfFunV==level.numberOfFunctions){//max atteint
                         createF.setEnabled(false);
-                        createF.setBackground(Color.red);
+                        createF.setBackground(Color.RED.darker());
                     }
                 });
                 this.add(createF);
@@ -690,7 +686,7 @@ public class ViewPlaying extends ViewGame{
                     if(name!=null) addFunction(name, width/2-20-dF.width, 70+4*dF.height, true);
                     if(nbOfFunI==level.numberOfFunctionsInt){//max atteint
                         createF.setEnabled(false);
-                        createF.setBackground(Color.red);
+                        createF.setBackground(Color.RED.darker());
                     }
                 });
                 this.add(createF);
@@ -937,8 +933,8 @@ public class ViewPlaying extends ViewGame{
             if(firstSet) addFirstVariable();
             for(Component c : getComponents()){//ajout dans tous les comboBox
                 if(c instanceof CommandIf || c instanceof CommandWhile || ((c instanceof CommandOperationV || c instanceof Variable)
-                && (!firstSet || (c instanceof Variable)?((Variable)c).varChoice.getItemCount()<1:
-                ((CommandOperationV)c).variableG.getItemCount()<1))) resizeBox(c, name, true);
+                && (!firstSet || ((c instanceof Variable)?((Variable)c).varChoice.getItemCount()<1:
+                ((CommandOperationV)c).variableG.getItemCount()<1)))) resizeBox(c, name, true);
             }
             resizeCommand();
         }
@@ -1245,7 +1241,7 @@ public class ViewPlaying extends ViewGame{
             
             /***** Regeneration of Command *****/
             
-            void newDrag(){//nouvelle commande qu on drag pour la premiere fois
+            void newDrag(boolean regen){//nouvelle commande qu on drag pour la premiere fois
                 if(!inWhiteBoard(this) || commands.contains(this)) return;
                 commands.add(this);
                 if(this instanceof CommandWithCommands) commands.add(this.next);//ajout de HookH aussi
@@ -1255,6 +1251,7 @@ public class ViewPlaying extends ViewGame{
                         addField((this instanceof CommandDrawArc)?
                             ((CommandDrawArc)this).angleScan:((CommandMoveTo)this).positionY);
                 }
+                if(!regen) return;
                 //pour regenerer commande utilisee :
                 if(this instanceof CommandFunctionCall)
                     addCommandCall(((CommandFunctionCall)this).function, positionY);
@@ -1384,7 +1381,7 @@ public class ViewPlaying extends ViewGame{
             
             void updateAllLocation(){//met a jour localisation depuis tete de liste
                 Command head=getHead();
-                if(head!=this && head.next!=null) head.next.stick();//met a jour recursivement blocs apres head
+                if(head.next!=null) head.next.stick();//met a jour recursivement blocs apres head
             }
             
             LinkedList<CommandWithCommands> getTmpCwc(){//renvoie toutes les cwc liees a this
@@ -1534,7 +1531,7 @@ public class ViewPlaying extends ViewGame{
             public void mouseReleased(MouseEvent e){
                 if(toDelete(this)) this.deleteSteps();
                 else{
-                    newDrag();
+                    newDrag(true);
                     if(brightC!=null) foundPrevious();
                     switchOff();//eteint tout
                 }
@@ -1692,6 +1689,7 @@ public class ViewPlaying extends ViewGame{
                     add(c);
                 }
                 this.setBounds(x, y, hookW, commandH/2);
+                commandW=ret.getPreferredSize().width+10;
             }
             
             public void mouseDragged(MouseEvent e){}//ne peut pas etre dragged seul
@@ -1720,7 +1718,7 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  Repeat  "), input, new JLabel("  time  ")};
                 for(Component c : toAdd) this.add(c);
-                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
+                setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));//pb d affichage sinon
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 super.commandW=getPreferredSize().width-input.getPreferredSize().width;
             }
@@ -1764,7 +1762,7 @@ public class ViewPlaying extends ViewGame{
 
                 Component[] toAdd={new JLabel("  If  "), variableG, operateur, new JLabel("  "), input, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
-                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
+                setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));//pb d affichage sinon
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 commandW=getPreferredSize().width-input.getPreferredSize().width-variableG.getPreferredSize().width;
             }
@@ -1810,7 +1808,7 @@ public class ViewPlaying extends ViewGame{
 
                 Component[] toAdd={new JLabel("  While  "), variableG, operateur, new JLabel("  "), input, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
-                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
+                setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));//pb d affichage sinon
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 commandW=getPreferredSize().width-input.getPreferredSize().width-variableG.getPreferredSize().width;
             }
@@ -1860,7 +1858,8 @@ public class ViewPlaying extends ViewGame{
                 changeName.setPreferredSize(new Dimension(commandH-10, commandH-10));
                 changeName.addActionListener((event)->{
                     String newN=JOptionPane.showInputDialog(this, "New name ?", "Rename function", JOptionPane.QUESTION_MESSAGE);
-                    while(newN!=null && (newN.equals("") || String.valueOf(newN.charAt(0)).matches("[0-9]") || nameFUsed(newN)!=null || !newN.matches("^[a-zA-Z0-9]*$")))
+                    while(newN!=null && (newN.equals("") || String.valueOf(newN.charAt(0)).matches("[0-9]")
+                    || nameFUsed(newN)!=null || !newN.matches("^[a-zA-Z0-9]*$") || newN.length()>10))
                         newN=JOptionPane.showInputDialog(this, errorName, "Rename function", JOptionPane.QUESTION_MESSAGE);
                     if(newN!=null) rename(newN);
                 });
@@ -1868,22 +1867,20 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  "), changeName, nameFunction, new JLabel("( "), input, new JLabel(" )  ")};
                 for(Component c : toAdd) this.add(c);
-                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
-                setBounds(x, y, getPreferredSize().width, commandH);
-                commandW=getPreferredSize().width;
+                setBounds(x, y, getPreferredSize().width+10, commandH);
+                commandW=getPreferredSize().width+10;
             }
             
             void rename(String newName){
                 this.nameFunction.setText("  "+newName+"  ");
-                commandW=getPreferredSize().width;
+                commandW=getPreferredSize().width+10;
                 setBounds(getX(), getY(), commandW, commandH);
                 commandW-=input.getPreferredSize().width;
                 if(this instanceof CommandFunctionInitInt){
                     CommandFunctionInitInt init=(CommandFunctionInitInt)this;
+                    SwingUtilities.updateComponentTreeUI(init);
                     if(init.input.variable!=null) init.input.variable.stick(false);
-                    for(CommandFunctionCallInt c : init.caller){
-                        c.initializeDisplay();
-                    }
+                    for(CommandFunctionCallInt c : init.caller) c.initializeDisplay();
                     return;
                 }
                 for(CommandFunctionCall c : caller) c.initializeDisplay();
@@ -1934,11 +1931,9 @@ public class ViewPlaying extends ViewGame{
                 
                 input.setBackground(new Color(255, 204, 255));
                 input.setPreferredSize(new Dimension(input.fieldWidth, input.fieldHeight));
-                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
-                setBounds(x, y, getPreferredSize().width, commandH);                
+                setBounds(x, y, getPreferredSize().width+10, commandH);
                 
-                hookH.setBounds(hookH.getX(), hookH.getY(), commandW+input.fieldWidth, commandH);
-                hookH.commandW=commandW;
+                hookH.setBounds(hookH.getX(), hookH.getY(), hookH.commandW+input.fieldWidth, commandH);
             }
             
             boolean canExecute(HashMap<String, Integer> map){
@@ -2023,7 +2018,6 @@ public class ViewPlaying extends ViewGame{
                 initializeDisplay();
                 this.add(name);
                 this.add(new JLabel("( )  "));
-                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
             }
             
@@ -2076,12 +2070,12 @@ public class ViewPlaying extends ViewGame{
                 Component[] toAdd={name, new JLabel("(  "), input, new JLabel("  )  ")};
                 for(Component c : toAdd) this.add(c);
                 this.setBounds(x, y+deltaY, getPreferredSize().width+10, variableH);
-                variableW=getPreferredSize().width-input.getPreferredSize().width;
+                variableW=getPreferredSize().width-input.getPreferredSize().width+10;
             }
             
             void initializeDisplay(){
                 name.setText(function.nameFunction.getText());
-                variableW=getPreferredSize().width-input.getPreferredSize().width;
+                variableW=getPreferredSize().width-input.getPreferredSize().width+10;
                 this.resize();
                 if(input.variable!=null) input.variable.stick(false);
             }
@@ -2099,7 +2093,7 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  Draw a line of  "), input, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
-                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
+                setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));//pb d affichage sinon
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 super.commandW=getPreferredSize().width-input.getPreferredSize().width;
             }
@@ -2150,7 +2144,7 @@ public class ViewPlaying extends ViewGame{
                 Component[] toAdd={new JLabel("  Draw an arc with a radius of  "), input,
                     new JLabel("  and an angle of  "), angleScan, new JLabel("  on the  "), rightLeft, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
-                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
+                setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));//pb d affichage sinon
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 commandW=getPreferredSize().width-input.getPreferredSize().width-angleScan.getPreferredSize().width;
             }
@@ -2219,8 +2213,7 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  "), raisePut, new JLabel("  the pen  ")};
                 for(Component c : toAdd) this.add(c);
-                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
-                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+                this.setBounds(x, y+deltaY, getPreferredSize().width+10, commandH);
             }
             
             boolean canExecute(HashMap<String, Integer> map){
@@ -2243,7 +2236,7 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  Move pen to (  "), input, new JLabel("  ,  "), positionY, new JLabel("  )  ")};
                 for(Component c : toAdd) this.add(c);
-                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
+                setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));//pb d affichage sinon
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 commandW=getPreferredSize().width-input.getPreferredSize().width-positionY.getPreferredSize().width;
             }
@@ -2274,7 +2267,7 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  Set angle to  "), input, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
-                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
+                setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));//pb d affichage sinon
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 super.commandW=getPreferredSize().width-input.getPreferredSize().width;
             }
@@ -2294,7 +2287,7 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  Add  "), input, new JLabel("  to angle  ")};
                 for(Component c : toAdd) this.add(c);
-                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
+                setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));//pb d affichage sinon
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 super.commandW=getPreferredSize().width-input.getPreferredSize().width;
             }
@@ -2315,8 +2308,7 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  Set color to  "), colorChoice, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
-                this.setPreferredSize(new Dimension(getPreferredSize().width+15, getPreferredSize().height));
-                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+                this.setBounds(x, y+deltaY, getPreferredSize().width+10, commandH);
             }
             
             boolean canExecute(HashMap<String, Integer> map){
@@ -2338,7 +2330,7 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  Add  "), input, new JLabel("  % to color  ")};
                 for(Component c : toAdd) this.add(c);
-                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
+                setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));//pb d affichage sinon
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 super.commandW=getPreferredSize().width-input.getPreferredSize().width;
             }
@@ -2379,7 +2371,7 @@ public class ViewPlaying extends ViewGame{
                 
                 Component[] toAdd={new JLabel("  Turn  "), onOff, new JLabel("  vertical symmetry  ")};
                 for(Component c : toAdd) this.add(c);
-                this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
+                this.setBounds(x, y+deltaY, getPreferredSize().width+10, commandH);
             }
             
             boolean canExecute(HashMap<String, Integer> map){
@@ -2424,7 +2416,7 @@ public class ViewPlaying extends ViewGame{
                 NumberField tmp=new NumberField(null);//juste pour la hauteur
                 variableH=tmp.fieldHeight;
                 this.setBounds(x, y+deltaY, getPreferredSize().width+10, variableH);
-                variableW=getPreferredSize().width-varChoice.getPreferredSize().width;
+                variableW=getPreferredSize().width-varChoice.getPreferredSize().width+10;
             }
             
             
@@ -2577,7 +2569,7 @@ public class ViewPlaying extends ViewGame{
                 for(String varName : variables.keySet()) variableG.addItem(varName);
                 Component[] toAdd={new JLabel("  "), variableG, new JLabel("  "+sign+"  "), input, new JLabel("  ")};
                 for(Component c : toAdd) this.add(c);
-                this.setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
+                setPreferredSize(new Dimension(getPreferredSize().width+10, getPreferredSize().height));
                 this.setBounds(x, y+deltaY, getPreferredSize().width, commandH);
                 commandW=getPreferredSize().width-input.getPreferredSize().width-variableG.getPreferredSize().width;
             }
@@ -2670,7 +2662,7 @@ public class ViewPlaying extends ViewGame{
             void resizeField(){
                 if(container.getClass()==CommandFunctionInit.class) return;
                 setPreferredSize(new Dimension((variable!=null)?
-                    variable.getPreferredSize().width:fieldWidth, fieldHeight));
+                    variable.getPreferredSize().width+10:fieldWidth, fieldHeight));
             }
 
             int getNumber(HashMap<String, Integer> map){
@@ -2735,7 +2727,7 @@ public class ViewPlaying extends ViewGame{
 
             class UpperCaseDocument extends PlainDocument{
                 public void insertString(int offs, String s, AttributeSet a) throws BadLocationException{
-                    if(container instanceof CommandFunctionInitInt || variable!=null || s==null) return;
+                    if(stop.isVisible() || container instanceof CommandFunctionInitInt || variable!=null || s==null) return;
                     if(offs==0 && s.equals("-")) super.insertString(offs, s, a);//- en premier
                     else{
                         try{
@@ -2744,6 +2736,11 @@ public class ViewPlaying extends ViewGame{
                         }
                         catch(NumberFormatException e){}//pas un nombre
                     }
+                }
+                
+                public void remove(int offs, int l) throws BadLocationException{
+                    if(stop.isVisible()) return;
+                    super.remove(offs, l);
                 }
             }
         }//fin classe interne NumberField
