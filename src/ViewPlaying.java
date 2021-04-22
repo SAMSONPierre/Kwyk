@@ -536,16 +536,18 @@ public class ViewPlaying extends ViewGame{
         String[] convertFunctions(){
             int size=0;
             for(Command c : commands){//ne save pas FunctionInitInt
-                if(c.getClass()==CommandFunctionInit.class) size+=countConvert(c);
+                if(c.getClass()==CommandFunctionInit.class) size+=countConvert(c)+1;
             }
             String[] res=new String[size];
             size=0;
             for(Command c : commands){
                 if(c.getClass()==CommandFunctionInit.class){
+                    res[size++]="";//nouvelle fonction
                     res[size++]=((CommandFunctionInit)c).nameFunction.getText();
                     Command tmp=((CommandFunctionInit)c).next;
                     while(tmp!=null){
-                        res[size++]=tmp.name;
+                        res[size++]=(tmp instanceof CommandFunctionCall)?
+                            ((CommandFunctionCall)tmp).name.getText():tmp.name;
                         tmp=tmp.next;
                     }
                 }
@@ -558,36 +560,19 @@ public class ViewPlaying extends ViewGame{
             saveLast.add(commands.getFirst());
             LinkedList<Command> heads=new LinkedList<Command>();//tetes de fonction/Start
             if(isStart) heads.add(commands.getFirst());
+            else initializeAllFunction(toLoad, heads);//avant de remplir interieur des fonctions
             for(int i=0; i<toLoad.length; i++){
                 Command last=saveLast.removeLast();
-                if(toLoad[i].equals("hookHorizontal")){
+                if(toLoad[i].equals("")){//nouvelle fonction
+                    CommandFunctionInit tmp=nameFUsed(toLoad[++i]);
+                    saveLast.add(tmp.hookH);
+                    saveLast.add(tmp);
+                }
+                else if(toLoad[i].equals("hookHorizontal")){
                     saveLast.getLast().previous=last;
                     last.next=saveLast.getLast();
                 }
-                else{
-                    Command command=addLoad(toLoad[i]);
-                    this.add(command);//visible
-                    commands.add(command);//accessible
-                    if(command instanceof CommandWithCommands){
-                        CommandWithCommands cwc=(CommandWithCommands)command;
-                        this.add(cwc.hookV);
-                        this.add(cwc.hookH);
-                        if(!(cwc instanceof CommandFunctionInit)) commands.add(cwc.hookH);
-                        else if(isStart){
-                            command=new CommandFunctionCall((CommandFunctionInit)command, 0, 0);
-                            this.add(command);
-                            commands.add(command);
-                        }
-                        else{
-                            heads.add(((CommandFunctionInit)command));
-                            lastPositionY+=addCommandCall((CommandFunctionInit)command, lastPositionY);
-                        }
-                    }
-                    command.previous=last;//liens
-                    last.next=command;
-                    if(last instanceof CommandWithCommands) saveLast.addLast(((CommandWithCommands)last).hookH);
-                    saveLast.addLast(command);//prochain qui sera lie
-                }
+                else addLoadCode(toLoad[i], saveLast, last);
             }
             for(Command c : heads){//placer correctement
                 if(c.previous!=null) c.previous.next=null;
@@ -595,6 +580,45 @@ public class ViewPlaying extends ViewGame{
                 c.updateHookVRec(c.getTmpCwc());//met a jour les hookV
                 c.next.updateAllLocation();//accroche correctement
             }
+        }
+        
+        void initializeAllFunction(String[] toLoad, LinkedList<Command> heads){//avant de remplir interieur des fonctions
+            for(int i=0; i<toLoad.length; i++){
+                if(toLoad[i].equals("")){//""==seperatif entre les fonctions
+                    CommandFunctionInit c=(CommandFunctionInit)addLoad(toLoad[++i]);
+                    lastPositionY+=addCommandCall(c, lastPositionY);
+                    heads.add(c);
+                    this.add(c);
+                    commands.add(c);
+                    this.add(c.hookH);
+                    this.add(c.hookV);
+                }
+            }
+        }
+        
+        void addLoadCode(String toLoad, LinkedList<Command> saveLast, Command last){
+            Command toAdd=addLoad(toLoad);
+            this.add(toAdd);//visible
+            commands.add(toAdd);//accessible
+            if(toAdd instanceof CommandWithCommands){
+                CommandWithCommands cwc=(CommandWithCommands)toAdd;
+                this.add(cwc.hookV);
+                this.add(cwc.hookH);
+                if(!(cwc instanceof CommandFunctionInit)) commands.add(cwc.hookH);
+                else{//ajout du call de toAdd dans mainCode
+                    toAdd=new CommandFunctionCall((CommandFunctionInit)toAdd, 0, 0);
+                    this.add(toAdd);
+                    commands.add(toAdd);
+                }
+            }
+            toAdd.previous=last;//liens
+            last.next=toAdd;
+            if(last instanceof CommandWithCommands) saveLast.addLast(((CommandWithCommands)last).hookH);
+            saveLast.addLast(toAdd);//prochain qui sera lie
+        }
+        
+        void addLoadFunction(){//ajout de fonctions a
+            
         }
         
         void setVariableButton(){
@@ -645,7 +669,7 @@ public class ViewPlaying extends ViewGame{
                 createF.setBounds(width/2-20-dF.width, 50+2*dF.height, dF.width, dF.height);
                 createF.addActionListener((event)->{
                     String name=JOptionPane.showInputDialog(this, "Name of this fonction ?", "Create function", JOptionPane.QUESTION_MESSAGE);
-                    while(name!=null && (name.equals("") || String.valueOf(name.charAt(0)).matches("[0-9]") || nameFunAlreadySet(name) || !name.matches("^[a-zA-Z0-9]*$")))
+                    while(name!=null && (name.equals("") || String.valueOf(name.charAt(0)).matches("[0-9]") || nameFUsed(name)!=null || !name.matches("^[a-zA-Z0-9]*$")))
                         name=JOptionPane.showInputDialog(this, errorName, "Create function", JOptionPane.QUESTION_MESSAGE);
                     if(name!=null) addFunction(name, width/2-20-dF.width, 70+4*dF.height, false);
                     if(nbOfFunV==level.numberOfFunctions){//max atteint
@@ -661,7 +685,7 @@ public class ViewPlaying extends ViewGame{
                 createF.setBounds(width/2-20-dF.width, 60+3*dF.height, dF.width, dF.height);
                 createF.addActionListener((event)->{
                     String name=JOptionPane.showInputDialog(this, "Name of this fonction ?", "Create function with return", JOptionPane.QUESTION_MESSAGE);
-                    while(name!=null && (name.equals("") || String.valueOf(name.charAt(0)).matches("[0-9]") || nameFunAlreadySet(name) || !name.matches("^[a-zA-Z0-9]*$")))
+                    while(name!=null && (name.equals("") || String.valueOf(name.charAt(0)).matches("[0-9]") || nameFUsed(name)!=null || !name.matches("^[a-zA-Z0-9]*$")))
                         name=JOptionPane.showInputDialog(this, errorName, "Create function with return", JOptionPane.QUESTION_MESSAGE);
                     if(name!=null) addFunction(name, width/2-20-dF.width, 70+4*dF.height, true);
                     if(nbOfFunI==level.numberOfFunctionsInt){//max atteint
@@ -673,13 +697,13 @@ public class ViewPlaying extends ViewGame{
             }
         }
         
-        boolean nameFunAlreadySet(String name){
+        CommandFunctionInit nameFUsed(String name){
             name="  "+name+"  ";//comme dans les labels
             for(Command c : commands){
-                if(c instanceof CommandFunctionInit
-                && ((CommandFunctionInit)c).nameFunction.getText().equals(name)) return true;
+                if(c instanceof CommandFunctionInit  &&
+                    ((CommandFunctionInit)c).nameFunction.getText().equals(name)) return (CommandFunctionInit)c;
             }
-            return false;
+            return null;
         }
 
         public void mouseWheelMoved(MouseWheelEvent e){
@@ -855,17 +879,13 @@ public class ViewPlaying extends ViewGame{
                 case "division":
                     return new CommandDivision(0, 0);
                 default ://fonction void
-                    if(!nameFunAlreadySet(name)){//init
+                    CommandFunctionInit init=nameFUsed(name);
+                    if(init==null){//init
                         nbOfFunV++;
                         return new CommandFunctionInit(name, width/2-200, 60+3*ViewPlaying.this.buttonH);
                     }
-                    for(Command c : commands){//trouve initialisateur
-                        if(c instanceof CommandFunctionInit
-                        && ((CommandFunctionInit)c).nameFunction.getText().equals("  "+name+"  "))
-                            return new CommandFunctionCall((CommandFunctionInit)c, 0, 0);
-                    }
+                    return new CommandFunctionCall(init, 0, 0);
             }
-            return null;//a priori jamais atteint
         }
         
         void addFunction(String name, int x, int y, boolean withArg){//nouvelle fonction, ajout dans WhiteBoard
@@ -908,7 +928,7 @@ public class ViewPlaying extends ViewGame{
             if(firstSet){
                 setBorderV(true);
                 for(Component c : getComponents()){
-                    if(c instanceof CommandOperationV){//deja initialise une fois
+                    if(c instanceof CommandOperationV && !inWhiteBoard(c)){//deja initialise une fois
                         firstSet=false;
                         break;
                     }
@@ -916,8 +936,9 @@ public class ViewPlaying extends ViewGame{
             }
             if(firstSet) addFirstVariable();
             for(Component c : getComponents()){//ajout dans tous les comboBox
-                if((!firstSet && (c instanceof CommandOperationV || c instanceof Variable))
-                || c instanceof CommandIf || c instanceof CommandWhile) resizeBox(c, name, true);
+                if(c instanceof CommandIf || c instanceof CommandWhile || ((c instanceof CommandOperationV || c instanceof Variable)
+                && (!firstSet || (c instanceof Variable)?((Variable)c).varChoice.getItemCount()<1:
+                ((CommandOperationV)c).variableG.getItemCount()<1))) resizeBox(c, name, true);
             }
             resizeCommand();
         }
@@ -1836,7 +1857,7 @@ public class ViewPlaying extends ViewGame{
                 changeName.setPreferredSize(new Dimension(commandH-10, commandH-10));
                 changeName.addActionListener((event)->{
                     String newN=JOptionPane.showInputDialog(this, "New name ?", "Rename function", JOptionPane.QUESTION_MESSAGE);
-                    while(newN!=null && (newN.equals("") || String.valueOf(newN.charAt(0)).matches("[0-9]") || nameFunAlreadySet(newN) || !newN.matches("^[a-zA-Z0-9]*$")))
+                    while(newN!=null && (newN.equals("") || String.valueOf(newN.charAt(0)).matches("[0-9]") || nameFUsed(newN)!=null || !newN.matches("^[a-zA-Z0-9]*$")))
                         newN=JOptionPane.showInputDialog(this, errorName, "Rename function", JOptionPane.QUESTION_MESSAGE);
                     if(newN!=null) rename(newN);
                 });
