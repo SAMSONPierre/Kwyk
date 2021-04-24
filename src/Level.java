@@ -77,12 +77,15 @@ public class Level implements Serializable{
     }
     
     boolean addToDraw(Vector vector){
-        boolean sizeOk=!vector.tooLong();
-        if(vector.moving() && sizeOk) playerDraw.add(vector);
-        else if(!sizeOk){
-            JOptionPane.showMessageDialog(null, "You are out of bounds!", "Warning!", JOptionPane.WARNING_MESSAGE);
+        if(!vector.moving()){
+            JOptionPane.showMessageDialog(null, "Line so small !", "Warning!", JOptionPane.WARNING_MESSAGE);
             return false;
         }
+        if(vector.tooLong()){
+            JOptionPane.showMessageDialog(null, "You are out of bounds !", "Warning!", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        playerDraw.add(vector);
         return true;
     }
     

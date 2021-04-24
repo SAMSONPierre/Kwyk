@@ -155,7 +155,7 @@ class Vector implements Serializable{
         }
         
         boolean moving(){//ne prend pas en compte les traits fixes ou trop petits
-            return (x1!=x2 || y1!=y2) && (Math.abs(x1-x2)>1 || Math.abs(y1-y2)>1);
+            return distance(new Point(x1, y1), new Point(x2, y2))>1;
         }
         
         boolean tooLong(){
@@ -251,7 +251,7 @@ class Vector implements Serializable{
         }
         
         boolean moving(){
-            return scanAngle>0;
+            return scanAngle>1;
         }
         
         boolean tooLong(){

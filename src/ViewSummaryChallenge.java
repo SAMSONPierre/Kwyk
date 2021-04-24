@@ -16,10 +16,10 @@ public class ViewSummaryChallenge extends ViewGame{//sommaire des defis
     
     void listeNiveau(LinkedList<String> clear){
         JPanel summary=new JPanel(new WrapLayout(WrapLayout.CENTER, 50, 50));
-        JScrollPane scrollP=new JScrollPane(summary, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollP.setBounds(0,50+buttonHeight,widthFS,heightFS);
+        JScrollPane scrollP=new JScrollPane(summary, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollP.setBounds(0,50+buttonHeight,widthFS,heightFS-50-buttonHeight);
         scrollP.getVerticalScrollBar().setUnitIncrement(12);//vitesse de scroll
-        File[] arrayLevels=nombreNiveau("levels/challenge/");
+        File[] arrayLevels=randomFiles();//mise en place aleatoire des challenges
         for(int i=0; i<arrayLevels.length; i++){
             try{
                 String name=arrayLevels[i].getName().substring(0, arrayLevels[i].getName().length()-4);
@@ -34,5 +34,16 @@ public class ViewSummaryChallenge extends ViewGame{//sommaire des defis
             }
         }
         this.add(scrollP);
+    }
+    
+    File[] randomFiles(){//sinon niveau 11 avant niveau 2 par exemple
+        File[] toChange=nombreNiveau("levels/challenge/");
+        for(int i=0; i<toChange.length/2; i++){
+            File tmp=toChange[i];
+            int random=(int)(Math.random()*(toChange.length));
+            toChange[i]=toChange[random];
+            toChange[random]=tmp;
+        }
+        return toChange;
     }
 }

@@ -2,6 +2,7 @@ import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Image;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 
 class CustomJButton extends JButton{
@@ -12,7 +13,6 @@ class CustomJButton extends JButton{
     CustomJButton(String text, Image image){
         this.text=text;
         this.image=image;
-        done = true;
     }
 
     CustomJButton(String text, Image image, boolean done){
@@ -30,11 +30,14 @@ class CustomJButton extends JButton{
         if(image==null) return;
         g.drawImage(image, 0, 0, getWidth(), getHeight(), this);
         if(text!=null){
-            if(done) g.setColor(Color.GREEN);
-            else g.setColor(Color.GRAY);
+            if(done){
+                setBorder(BorderFactory.createLineBorder(Color.GREEN.darker(), 2));
+                g.setColor(Color.GREEN.darker());
+            }
+            else g.setColor(Color.WHITE);
             FontMetrics metric=g.getFontMetrics();
             int width=metric.stringWidth(text);
-            g.drawString(text, (getWidth()-width)/2, (getHeight()+70)/2);
+            g.drawString(text, (getWidth()-width)/2, 190);
         }
     }
 }

@@ -67,7 +67,7 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
     void listeNiveau(String path, boolean[][] currentL){
         JPanel summary=new JPanel(new WrapLayout(WrapLayout.CENTER, 50, 50));
         JScrollPane scrollP=new JScrollPane(summary, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollP.setBounds(0, 50+buttonH, widthFS, heightFS);
+        scrollP.setBounds(0, 50+buttonH, widthFS, heightFS-50-buttonH);
         scrollP.getVerticalScrollBar().setUnitIncrement(12);//vitesse de scroll
         int directory=Integer.parseInt(path.charAt(0)+"")-1;
         File[] arrayLevels=sortedFiles(path);

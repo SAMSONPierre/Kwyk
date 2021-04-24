@@ -120,7 +120,7 @@ public class ViewPlaying extends ViewGame{
             features.setBounds(size+60, blackBoard.getY(), widthFS-size-100, features.getHeight());
             varPanel.setBounds(size+60, blackBoard.getY()+features.getHeight()+40,
                 features.getWidth(), heightFS-blackBoard.getY()-features.getHeight()-60);
-            varPanel.setVisible(!run.isVisible() && varPanel.getHeight()>50 && variables.size()>0);
+            varPanel.setVisible(varPanel.getHeight()>50);
             sizeS.setEnabled(true);
             sizeM.setEnabled(true);
             sizeL.setEnabled(false);
@@ -147,7 +147,7 @@ public class ViewPlaying extends ViewGame{
         features.setBounds(20, n+40+buttonH*2, n, features.getHeight());
         varPanel.setBounds(20, n+60+buttonH*2+features.getHeight(),
             n, heightFS-n-80-buttonH*2-features.getHeight());
-        varPanel.setVisible(!run.isVisible() && varPanel.getHeight()>50 && variables.size()>0);
+        varPanel.setVisible(varPanel.getHeight()>50);
         sizeS.setEnabled(n!=400);
         sizeM.setEnabled(n!=600);
         sizeL.setEnabled(true);
@@ -263,9 +263,9 @@ public class ViewPlaying extends ViewGame{
         features.setBackground(new Color(0, 0, 128));
         this.add(features);
         
-        varPanel.setVisible(false);
         varPanel.setBounds(20, 460+buttonH*2+featuresH, 400, heightFS-480-buttonH*2-featuresH);
         varPanel.setBorder(BorderFactory.createLineBorder(Color.MAGENTA.darker(), 3));
+        varPanel.setVisible(varPanel.getHeight()>50);
         this.add(varPanel);
     }
     
@@ -274,10 +274,6 @@ public class ViewPlaying extends ViewGame{
         stop.setVisible(true);
         runC=dragDrop.commands.getFirst();
         runC=runC.canExecute(variables)?runC.next:null;
-        if(variables.size()>0){
-            updateVariableDisplay();
-            if(varPanel.getHeight()>50) varPanel.setVisible(true);
-        }
         ActionListener taskPerformed=new ActionListener(){
             public void actionPerformed(ActionEvent e){
                 if(runC!=null) runC=runC.execute(variables);
@@ -303,7 +299,6 @@ public class ViewPlaying extends ViewGame{
         blackBoard.brush.resetBrush();//remet le pinceau a l'emplacement initial
         if(!variables.isEmpty()){
             for(String key : variables.keySet()) variables.replace(key, 0);
-            varPanel.setVisible(false);
         }
         for(PanelDragDropBoard.Command c : dragDrop.commands) c.reset();
         repaint();
@@ -823,6 +818,9 @@ public class ViewPlaying extends ViewGame{
                 case "division":
                     toAdd=new CommandDivision(width/2+20, positionY);
                     break;
+                case "modulo":
+                    toAdd=new CommandModulo(width/2+20, positionY);
+                    break;
                 default ://hookHorizontal
                     return 0;
             }
@@ -874,6 +872,8 @@ public class ViewPlaying extends ViewGame{
                     return new CommandMultiplication(0, 0);
                 case "division":
                     return new CommandDivision(0, 0);
+                case "modulo":
+                    return new CommandModulo(0, 0);
                 default ://fonction void
                     CommandFunctionInit init=nameFUsed(name);
                     if(init==null){//init
@@ -945,6 +945,7 @@ public class ViewPlaying extends ViewGame{
             lastPositionY+=addCommand("soustraction", lastPositionY);
             lastPositionY+=addCommand("multiplication", lastPositionY);
             lastPositionY+=addCommand("division", lastPositionY);
+            lastPositionY+=addCommand("modulo", lastPositionY);
             Variable variable=new Variable(width/2+20, lastPositionY, true);
             this.add(variable);
             lastPositionY+=variable.getHeight()+10;
@@ -964,7 +965,7 @@ public class ViewPlaying extends ViewGame{
             for(Component c : varPanel.getComponents()){
                 if(c instanceof VariablePanel && ((VariablePanel)c).getVarName().equals(name)){
                     varPanel.remove(c);
-                    SwingUtilities.updateComponentTreeUI(features);
+                    SwingUtilities.updateComponentTreeUI(varPanel);
                     break;
                 }
             }
@@ -1046,7 +1047,7 @@ public class ViewPlaying extends ViewGame{
         }
             
         void addField(NumberField field){//fonction annexe
-            fields.add(field);
+            if(field.container.getClass()!=CommandFunctionInit.class) fields.add(field);
             if(!variables.isEmpty() || nbOfFunI>0) field.setBorder(borderV);
         }
         
@@ -1130,7 +1131,16 @@ public class ViewPlaying extends ViewGame{
                         getCommands(call.function.next, commands, functions);//ajout interne
                     }
                 }
-                else if(!(tmp instanceof CommandOperationV || commands.contains(tmp.name))) commands.add(tmp.name);
+                else{
+                    if(!(tmp instanceof CommandOperationV || commands.contains(tmp.name))) commands.add(tmp.name);
+                    if(tmp.input!=null && tmp.input.variable!=null && tmp.input.variable instanceof CommandFunctionCallInt){
+                        CommandFunctionCallInt var=(CommandFunctionCallInt)tmp.input.variable;
+                        if(!functions.contains(var.name.getText())){
+                            functions.add(var.name.getText());
+                            getCommands(var.function.next, commands, functions);//ajout interne
+                        }
+                    }
+                }
                 tmp=tmp.next;
             }
             return commands;
@@ -1563,10 +1573,8 @@ public class ViewPlaying extends ViewGame{
                 boolean ok=true;
                 while(tmp!=null){
                     if(!(tmp.canExecute(map))) ok=false;//on ne s arrete pas
-                    else if(ok && tmp instanceof CommandOperationV) tmp.execute(map);
                     tmp=tmp.next;
                 }
-                for(String s : variables.keySet()) variables.replace(s, 0);
                 return ok;
             }
         }//fin classe interne Start
@@ -1840,7 +1848,7 @@ public class ViewPlaying extends ViewGame{
         
         class CommandFunctionInit extends CommandWithCommands implements MouseListener{
             protected JLabel nameFunction;
-            private CustomJButton changeName=new CustomJButton("", null, true);//pop up pour changer
+            private CustomJButton changeName=new CustomJButton("", null);//pop up pour changer
             private LinkedList<CommandFunctionCall> caller=new LinkedList<CommandFunctionCall>();
             private boolean alreadyCall;
             
@@ -2107,7 +2115,11 @@ public class ViewPlaying extends ViewGame{
                 if(blackBoard.drawing){
                     Vector.VectorLine trait=v.new VectorLine(blackBoard.x,
                         blackBoard.y, p.x, p.y, blackBoard.angle, blackBoard.brushColor);
-                    if(!level.addToDraw(trait)) return null;//sort du tableau, on arrete
+                    if(!level.addToDraw(trait)){//sort du tableau/trait trop petit, on arrete
+                        input.border(true);
+                        return null;
+                    }
+                    input.border(false);//on enleve l erreur, si elle s est affichee precedemment
                     if(blackBoard.brush2){//symetrie
                         Vector.VectorLine trait2=v.new VectorLine(400-blackBoard.x,
                             blackBoard.y, 400-p.x, p.y, blackBoard.angle, blackBoard.brushColor);
@@ -2150,21 +2162,18 @@ public class ViewPlaying extends ViewGame{
             }
             
             boolean canExecute(HashMap<String, Integer> map){
-                boolean ok=!input.isEmpty(map) && !angleScan.isEmpty(map);
-                if(input.getNumber(map)<2){//si vide, renvoie 0
-                    input.border(true);
-                    ok=false;
-                }
-                if(Math.abs(angleScan.getNumber(map))<2){
-                    angleScan.border(true);
-                    ok=false;
-                }
-                return ok;
+                return !input.isEmpty(map) && !angleScan.isEmpty(map);
             }
 
             Command execute(HashMap<String, Integer> map){
                 int rad=input.getNumber(map);
                 int angleS=angleScan.getNumber(map);
+                if(rad<2){//rayon trop petit, on arrete
+                    input.border(true);
+                    JOptionPane.showMessageDialog(null, "Radius so small !", "Warning!", JOptionPane.WARNING_MESSAGE);
+                    return null;
+                }
+                input.border(false);//on enleve l erreur, si elle s est affichee precedemment
                 Vector v=new Vector();
                 Point center=v.destinationLine(blackBoard.x, blackBoard.y, 180+blackBoard.angle, rad);//milieu du cercle
                 Point origin=v.destinationLine(center.x, center.y, blackBoard.angle-sens*90, rad);//-90 pour gauche, +90 pour droite
@@ -2177,7 +2186,11 @@ public class ViewPlaying extends ViewGame{
                     Vector.VectorArc arc=v.new VectorArc(square.x, square.y, rad*2, 
                         blackBoard.angle-90*sens, sens*angleS, blackBoard.brushColor);//-90*sens car translation
                     arc.center=new Point(center.x+translation.x, center.y+translation.y);//pour verifier si trop long
-                    if(!level.addToDraw(arc)) return null;//sort du tableau, on arrete
+                    if(!level.addToDraw(arc)){//sort du tableau/trait trop petit, on arrete
+                        angleScan.border(true);
+                        return null;
+                    }
+                    angleScan.border(false);//on enleve l erreur, si elle s est affichee precedemment
                     if(blackBoard.brush2){
                         Vector.VectorArc arc2=v.new VectorArc(400-square.x-rad*2, square.y, rad*2, 
                             180-(blackBoard.angle-90*sens), -sens*angleS, blackBoard.brushColor);
@@ -2542,13 +2555,13 @@ public class ViewPlaying extends ViewGame{
             public void mouseReleased(MouseEvent e){
                 if(toDelete(this)) this.deleteSteps();
                 else{
-                    if(inWhiteBoard(this) && lastCreated){
+                    if(brightF!=null) stick(true);//accroche
+                    if((inWhiteBoard(this) || linkedTo!=null) && lastCreated){
                         lastCreated=false;
                         CommandFunctionCallInt call=(this instanceof CommandFunctionCallInt)?(CommandFunctionCallInt)this:null;
                         addSettedVariables(positionY, (call!=null)?call.function:null);
                         if(call!=null) addField(call.input);
                     }
-                    if(brightF!=null) stick(true);//accroche
                 }
             }
             
@@ -2637,6 +2650,17 @@ public class ViewPlaying extends ViewGame{
                 map.replace(name, map.get(name)/input.getNumber(map));
             }
         }//fin de classe interne Division
+
+
+        class CommandModulo extends CommandOperationV{//classe interne
+            CommandModulo(int x, int y){
+                super("modulo", x, y, "%");
+            }
+
+            void operation(HashMap<String, Integer> map, String name){
+                map.replace(name, map.get(name)%input.getNumber(map));
+            }
+        }//fin de classe interne Division
         
         
         class NumberField extends JTextField{
@@ -2705,8 +2729,7 @@ public class ViewPlaying extends ViewGame{
                     else call.setBackground(call.color);
                     return call.input.isEmpty(map) || empty;
                 }
-                if(container instanceof CommandDrawLine) empty=Math.abs(getNumber(map))<3;
-                else if(container instanceof CommandDivision) empty=getNumber(map)==0;
+                if(container instanceof CommandDivision) empty=getNumber(map)==0;
                 if(empty){
                     border(true);
                     return true;
