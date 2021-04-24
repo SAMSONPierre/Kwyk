@@ -36,9 +36,9 @@ public class ViewSummaryChallenge extends ViewGame{//sommaire des defis
         this.add(scrollP);
     }
     
-    File[] randomFiles(){//sinon niveau 11 avant niveau 2 par exemple
+    File[] randomFiles(){//permutation aleatoire
         File[] toChange=nombreNiveau("levels/challenge/");
-        for(int i=0; i<toChange.length/2; i++){
+        for(int i=0; i<toChange.length; i++){
             File tmp=toChange[i];
             int random=(int)(Math.random()*(toChange.length));
             toChange[i]=toChange[random];
