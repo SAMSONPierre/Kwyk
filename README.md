@@ -1,1 +1,0 @@
-Cahier des charges : https://docs.google.com/document/d/1sz2GuABkuvMOMiyGl-5VNK7ukjiEI1cBDi0V4gH_9ZQ/edit
