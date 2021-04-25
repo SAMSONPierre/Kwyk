@@ -2261,10 +2261,16 @@ public class ViewPlaying extends ViewGame{
 
             Command execute(HashMap<String, Integer> map){
                 int[] newValues={input.getNumber(map), positionY.getNumber(map)};//x, y
-                if(newValues[0]<0 || newValues[0]>400 || newValues[1]<0 || newValues[1]>400){
-                    JOptionPane.showMessageDialog(this, "You are out of bounds!", "Warning!", JOptionPane.WARNING_MESSAGE);
+                boolean x=newValues[0]<0 || newValues[0]>400;
+                boolean y=newValues[1]<0 || newValues[1]>400;
+                if(x || y){
+                    JOptionPane.showMessageDialog(this, "You are out of bounds !", "Warning!", JOptionPane.WARNING_MESSAGE);
+                    input.border(x);
+                    positionY.border(y);
                     return null;
                 }
+                input.border(false);
+                positionY.border(false);
                 blackBoard.x=input.getNumber(map);
                 blackBoard.y=positionY.getNumber(map);
                 ViewPlaying.this.blackBoard.repaint();
