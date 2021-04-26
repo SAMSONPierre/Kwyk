@@ -1303,7 +1303,7 @@ public class ViewPlaying extends ViewGame{
             Command closeCommand(){//this et command sont assez proches pour se coller
                 if(this instanceof CommandFunctionInit) return null;//initialisateur de fonction sans previous
                 for(Command c : commands){
-                    if(canStickFunctionInt(c)){
+                    if(canStickFunctionInt(c) && canStickFunction(c)){
                         if(c instanceof CommandWithCommands){
                             if(closeHeight(c) && closeWidthIntern((CommandWithCommands)c)) return c;
                         }
@@ -1313,10 +1313,33 @@ public class ViewPlaying extends ViewGame{
                 return null;
             }
             
+            CommandFunctionCall nextCall(Command c){//prochain caller
+                while(c!=null){
+                    if(c instanceof CommandFunctionCall) return (CommandFunctionCall)c;
+                    c=c.next;
+                }
+                return null;
+            }
+            
+            boolean canStickFunction(Command c){//interdit recurrence dans fonctions de dessin
+                if(c instanceof CommandFunctionInit){
+                    CommandFunctionCall tmp=nextCall(this);
+                    while(tmp!=null){
+                        if(tmp.function==c) return false;
+                        tmp=nextCall(tmp.next);
+                    }
+                }
+                return true;
+            }
+            
             boolean canStickFunctionInt(Command c){//restriction de stick possible dans FunctionInt
-                if(this instanceof CommandFor || this instanceof CommandIf || this instanceof CommandWhile
-                    || this instanceof CommandOperationV) return true;
-                return !(c.getHead() instanceof CommandFunctionInitInt);
+                if(c instanceof CommandFunctionInitInt){
+                    if(nextCall(this)!=null) return false;//ne permet pas stick de dessin
+                    if(this instanceof CommandFor || this instanceof CommandIf || this instanceof CommandWhile
+                        || this instanceof CommandOperationV) return true;
+                    return !(c.getHead() instanceof CommandFunctionInitInt);
+                }
+                return true;
             }
 
             boolean closeHeight(Command c){//distance entre bas de c et haut de this
