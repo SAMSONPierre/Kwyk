@@ -208,7 +208,7 @@ public class ViewPlaying extends ViewGame{
             JCheckBox saveFun=new JCheckBox("Save functions");
             JButton submit=new JButton("Submit");
             submit.addActionListener((event)->{
-                if(level.getPlayerDraw().isEmpty()) return;//on n enregistre pas un dessin vide
+                if(stop.isVisible() || level.getPlayerDraw().isEmpty()) return;//on n enregistre pas un dessin vide ou en cours
                 String name=JOptionPane.showInputDialog(this, "Level's name ?", "Submit level", JOptionPane.QUESTION_MESSAGE);
                 while(name!=null && (name.equals("") || !name.matches("^[a-zA-Z0-9]*$")))
                     name=JOptionPane.showInputDialog(this, errorName, "Submit level", JOptionPane.QUESTION_MESSAGE);
