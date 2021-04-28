@@ -1,8 +1,19 @@
+import java.awt.Color;
 import java.awt.EventQueue;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.plaf.ColorUIResource;
+
 public class Main {
+    /**
+     * @param a
+     */
+    /**
+     * @param a
+     */
     public static void main(String[]a){
         try{
             //repertoires a initialiser avant de pouvoir jouer, quitte a ne pas avoir de niveaux
@@ -21,8 +32,15 @@ public class Main {
             
             //on lance le jeu
             EventQueue.invokeLater(()->{
-                Control control=new Control();//charge le menu de connexion
-                control.musicChangeState();//charge la musique
+            	UIManager.put("Button.background", ColorUIResource.DARK_GRAY);
+            	UIManager.put("Button.foreground", ColorUIResource.white);
+            	UIManager.put("Panel.background", new ColorUIResource(219,252,161));
+            	UIManager.put("OptionPane.background", new ColorUIResource(219,252,161)); 
+            	UIManager.put("ProgressBar.foreground", new ColorUIResource(254, 201, 245));
+            	UIManager.put("ProgressBar.selectionForeground", new ColorUIResource(Color.black));
+            	UIManager.put("Label.foreground", new ColorUIResource(Color.BLACK));
+            	Control control=new Control();//charge le menu de connexion
+               // control.musicChangeState();//charge la musique
             });
         }
         catch(Exception e){

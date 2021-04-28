@@ -91,6 +91,8 @@ public class ViewLogin extends View{
     	tryWithoutAccount=new JButton("Try without account");
     	tryWithoutAccount.setFont(new Font("Arial", Font.ITALIC, 16)); 	   	
     	tryWithoutAccount.addActionListener((event)->super.control.login("default", "default"));
+    	
+    	changeButtonColor(this, control.darkModeOn());
     }
     
     void setPage(){

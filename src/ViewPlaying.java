@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedList;
+
 import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -45,10 +46,12 @@ import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.MouseInputListener;
+import javax.swing.plaf.ColorUIResource;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
@@ -74,6 +77,7 @@ public class ViewPlaying extends ViewGame{
         super(control, player);
         this.level=player.getLevel();
         errorName.setForeground(Color.RED);
+    	UIManager.put("Label.foreground", ColorUIResource.black);
         addBoard();//ajout des tableaux, avec des marges de 20 (haut, bas et entre tableaux)
         addFeatures(isCreating, player.username.equals("GM"));//ajout des fonctionnalites
         addTopFeatures();//ajout des boutons en rapport avec blackBoard
@@ -82,6 +86,8 @@ public class ViewPlaying extends ViewGame{
             dragDrop.loadCode(level.mainCode, true);
             limite.setValue(dragDrop.getNumberFromHead());
         }
+        
+        changeButtonColor(this, control.darkModeOn());
     }
     
     void addBoard() throws IOException{
@@ -208,7 +214,7 @@ public class ViewPlaying extends ViewGame{
             JCheckBox saveFun=new JCheckBox("Save functions");
             JButton submit=new JButton("Submit");
             submit.addActionListener((event)->{
-                if(stop.isVisible() || level.getPlayerDraw().isEmpty()) return;//on n enregistre pas un dessin vide ou en cours
+                if(level.getPlayerDraw().isEmpty()) return;//on n enregistre pas un dessin vide
                 String name=JOptionPane.showInputDialog(this, "Level's name ?", "Submit level", JOptionPane.QUESTION_MESSAGE);
                 while(name!=null && (name.equals("") || !name.matches("^[a-zA-Z0-9]*$")))
                     name=JOptionPane.showInputDialog(this, errorName, "Submit level", JOptionPane.QUESTION_MESSAGE);
@@ -500,6 +506,7 @@ public class ViewPlaying extends ViewGame{
             this.addMouseWheelListener(this);
             
             this.bin=new Bin();
+            bin.setOpaque(false);
             this.add(bin);
             if(level.numberOfVariables!=0) setVariableButton();
             this.setFunctionButton();
@@ -719,10 +726,12 @@ public class ViewPlaying extends ViewGame{
         protected void paintComponent(Graphics g){
             super.paintComponent(g);
             Graphics2D g2=(Graphics2D)g;
-            g2.setColor(Color.WHITE);//WhiteBoard a gauche
+            if(!control.darkModeOn()) g2.setColor(Color.WHITE);//WhiteBoard a gauche
+            else g2.setColor(new Color(231, 224, 203));
             g2.fillRect(0, 0, width/2, height);
-            g2.setColor(Color.LIGHT_GRAY);//CommandBoard a droite
-            g2.fillRect(width, 0, width/2, height);
+            if(!control.darkModeOn()) g2.setColor(new Color(213, 227, 255));//CommandBoard a droite
+            else g2.setColor(new Color(163, 156, 137));
+            g2.fillRect(width/2, 0, width/2, height);
         }
             
         public boolean isOptimizedDrawingEnabled(){//empecher foreground automatique
@@ -757,10 +766,11 @@ public class ViewPlaying extends ViewGame{
         
         void addTrigoCircle() throws IOException{//sert de guide au joueur
             JPanel pane=new JPanel();
+            pane.setOpaque(false);
             JLabel circle=new JLabel(new ImageIcon("images/cercleTrigo.png"));
             pane.add(circle);
             pane.setBounds(3, height-303, 300, 300);
-            pane.setBackground(Color.WHITE);
+            //pane.setBackground(ViewPlaying.super.control.darkModeOn()?new Color(231, 224, 203):Color.white);
             this.add(pane);
         }
         
@@ -1303,7 +1313,7 @@ public class ViewPlaying extends ViewGame{
             Command closeCommand(){//this et command sont assez proches pour se coller
                 if(this instanceof CommandFunctionInit) return null;//initialisateur de fonction sans previous
                 for(Command c : commands){
-                    if(canStickFunctionInt(c) && canStickFunction(c)){
+                    if(canStickFunctionInt(c)){
                         if(c instanceof CommandWithCommands){
                             if(closeHeight(c) && closeWidthIntern((CommandWithCommands)c)) return c;
                         }
@@ -1313,33 +1323,10 @@ public class ViewPlaying extends ViewGame{
                 return null;
             }
             
-            CommandFunctionCall nextCall(Command c){//prochain caller
-                while(c!=null){
-                    if(c instanceof CommandFunctionCall) return (CommandFunctionCall)c;
-                    c=c.next;
-                }
-                return null;
-            }
-            
-            boolean canStickFunction(Command c){//interdit recurrence dans fonctions de dessin
-                if(c instanceof CommandFunctionInit){
-                    CommandFunctionCall tmp=nextCall(this);
-                    while(tmp!=null){
-                        if(tmp.function==c) return false;
-                        tmp=nextCall(tmp.next);
-                    }
-                }
-                return true;
-            }
-            
             boolean canStickFunctionInt(Command c){//restriction de stick possible dans FunctionInt
-                if(c instanceof CommandFunctionInitInt){
-                    if(nextCall(this)!=null) return false;//ne permet pas stick de dessin
-                    if(this instanceof CommandFor || this instanceof CommandIf || this instanceof CommandWhile
-                        || this instanceof CommandOperationV) return true;
-                    return !(c.getHead() instanceof CommandFunctionInitInt);
-                }
-                return true;
+                if(this instanceof CommandFor || this instanceof CommandIf || this instanceof CommandWhile
+                    || this instanceof CommandOperationV) return true;
+                return !(c.getHead() instanceof CommandFunctionInitInt);
             }
 
             boolean closeHeight(Command c){//distance entre bas de c et haut de this

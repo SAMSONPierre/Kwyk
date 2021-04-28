@@ -20,6 +20,7 @@ public class ViewSummaryTraining extends ViewGame{//sommaire des exercices
     ViewSummaryTraining(Control control, Player player, String path){
         super(control, player);
         listeNiveau(path, player.getCurrentLevel());
+
     }
     
     void sommaire(boolean[][] currentL){

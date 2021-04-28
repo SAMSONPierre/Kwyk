@@ -28,6 +28,9 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.plaf.ColorUIResource;
 
 public class Control implements Serializable{
     private Model model;
@@ -35,6 +38,7 @@ public class Control implements Serializable{
     final static private String secretKey="ssshhhhhhhhhhh!!!!";//gestion des mots de passe
     private Clip clip=null;
     private long clipTime=0;
+    private boolean darkMode=false;
     
     Control(){
         this.view=new ViewLogin(this);
@@ -65,6 +69,32 @@ public class Control implements Serializable{
     
     boolean musicIsActive(){
         return clip.isRunning();
+    }
+    
+    boolean darkModeOn(){
+    	return this.darkMode;
+    }
+    
+    void themeChangeState(){
+    	darkMode=!darkMode;
+    	if(darkMode) darkMode();
+    	else lightMode();
+    }
+    
+    void lightMode(){
+    	UIManager.put("Panel.background", new ColorUIResource(219,252,161));
+    	UIManager.put("OptionPane.background", new ColorUIResource(219,252,161)); 
+    	UIManager.put("ProgressBar.foreground", new ColorUIResource(254, 201, 245));
+    	UIManager.put("ProgressBar.selectionForeground", new ColorUIResource(Color.black));
+    	UIManager.put("Label.foreground", new ColorUIResource(Color.BLACK));
+    }
+    
+    void darkMode(){
+    	UIManager.put("Panel.background", new ColorUIResource(Color.DARK_GRAY));
+    	UIManager.put("OptionPane.background", new ColorUIResource(Color.DARK_GRAY));
+    	UIManager.put("ProgressBar.foreground", new ColorUIResource(188, 177, 250));
+    	UIManager.put("ProgressBar.selectionForeground", new ColorUIResource(Color.black));
+    	UIManager.put("Label.foreground", new ColorUIResource(251, 236, 174));
     }
     
     protected static void initializeAccount() throws IOException{
