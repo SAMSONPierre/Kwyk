@@ -21,6 +21,7 @@ public class ViewGame extends View{//a une barre de controle superieur en plus
         super(control, player);
         setButton(!player.username.equals("default"));
         setTop(player.getCurrentLevel());
+        changeButtonColor(this, control.darkModeOn());
     }
     
     void setButton(boolean canCreate){
@@ -40,7 +41,7 @@ public class ViewGame extends View{//a une barre de controle superieur en plus
         
         music=new CustomJButton("", null);
         changeMusicState();//bonne image
-        music.setBackground(Color.WHITE);
+        music.setOpaque(false);
         music.addActionListener((event)->{
             super.control.musicChangeState();
             changeMusicState();
@@ -55,7 +56,6 @@ public class ViewGame extends View{//a une barre de controle superieur en plus
         logout.setPreferredSize(size);      
         music.setPreferredSize(new Dimension(getButtonHeight(), getButtonHeight()));
         
-        changeButtonColor(this, control.darkModeOn());
     }
     
     private void changeMusicState(){

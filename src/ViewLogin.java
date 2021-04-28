@@ -28,6 +28,7 @@ public class ViewLogin extends View{
         error=new JLabel("");//vide au debut
     	error.setForeground(Color.red);//les erreurs seront ecrites en rouge
         setPage();//ajout de tous les elements
+        changeButtonColor(this, control.darkModeOn());
     }
     
     void initialisationFieldsProperties(){
@@ -92,7 +93,6 @@ public class ViewLogin extends View{
     	tryWithoutAccount.setFont(new Font("Arial", Font.ITALIC, 16)); 	   	
     	tryWithoutAccount.addActionListener((event)->super.control.login("default", "default"));
     	
-    	changeButtonColor(this, control.darkModeOn());
     }
     
     void setPage(){

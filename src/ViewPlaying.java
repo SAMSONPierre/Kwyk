@@ -506,7 +506,6 @@ public class ViewPlaying extends ViewGame{
             this.addMouseWheelListener(this);
             
             this.bin=new Bin();
-            bin.setOpaque(false);
             this.add(bin);
             if(level.numberOfVariables!=0) setVariableButton();
             this.setFunctionButton();
@@ -1174,6 +1173,7 @@ public class ViewPlaying extends ViewGame{
             Bin() throws IOException{
                 this.setBounds(width/2-45, height-50, 40, 40);
                 this.loadBin("images/closedBin.png");
+                this.setOpaque(false);
             }
 
             void loadBin(String path) throws IOException{//ouverte ou fermee
@@ -1183,7 +1183,7 @@ public class ViewPlaying extends ViewGame{
 
             public void paintComponent(Graphics g){
                 super.paintComponent(g);
-                g.drawImage(this.state, 0, 0, 40, 40, Color.WHITE, null);
+                g.drawImage(this.state, 0, 0, 40, 40, null);
             }
         }
 
