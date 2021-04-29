@@ -29,6 +29,7 @@ public class ViewLogin extends View{
         setPage();//ajout de tous les elements
         changeButtonColor(this, control.darkModeOn());
         changeLabelColor(this, control.darkModeOn());
+        this.getRootPane().setDefaultButton(login);
     }
     
     void initialisationFieldsProperties(){
@@ -40,10 +41,6 @@ public class ViewLogin extends View{
                 else if(!containsSpecialChar(username) && usernameStartOk() && !error.getText().equals(""))
                     resetError(username);
             }
-            
-            public void keyPressed(KeyEvent e){
-                if(e.getKeyCode()==KeyEvent.VK_ENTER) login.doClick();
-            }
     	});
         
     	password=new JPasswordField();
@@ -52,10 +49,6 @@ public class ViewLogin extends View{
                 if(containsSpecialChar(password) && !isDeleteKey(e)) errorSpecialChar(password);
                 else if(!containsSpecialChar(password) && isDeleteKey(e) && !error.getText().equals("")) 
                     resetError(password);
-            }
-            
-            public void keyPressed(KeyEvent e){
-                if(e.getKeyCode()==KeyEvent.VK_ENTER) login.doClick();
             }
     	});
     	
@@ -83,11 +76,6 @@ public class ViewLogin extends View{
             if(!usernameS.equals("") && password.getPassword().length!=0) control.login(usernameS, passwordS);
             else errorLogin();
     	});
-        login.addKeyListener(new KeyAdapter(){
-            public void keyPressed(KeyEvent e){
-                if(e.getKeyCode()==KeyEvent.VK_ENTER) login.doClick();
-            }
-        });
         
     	tryWithoutAccount=new JButton("Try without account");
     	tryWithoutAccount.setFont(new Font("Arial", Font.ITALIC, 16)); 	   	

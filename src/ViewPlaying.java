@@ -15,8 +15,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseWheelEvent;
@@ -85,6 +83,7 @@ public class ViewPlaying extends ViewGame{
             limite.setValue(dragDrop.getNumberFromHead());
         }
         changeButtonColor(this, control.darkModeOn());
+        this.getRootPane().setDefaultButton(run);
     }
     
     void addBoard() throws IOException{
@@ -273,6 +272,7 @@ public class ViewPlaying extends ViewGame{
     void run(){
         run.setVisible(false);
         stop.setVisible(true);
+        this.getRootPane().setDefaultButton(stop);
         runC=dragDrop.commands.getFirst();
         runC=runC.canExecute(variables)?runC.next:null;
         canSubmit=true;
@@ -293,6 +293,7 @@ public class ViewPlaying extends ViewGame{
         timer.stop();
         stop.setVisible(false);
         reset.setVisible(true);
+        this.getRootPane().setDefaultButton(reset);
         submit.setEnabled(canSubmit);
         for(ActionListener action : timer.getActionListeners()) timer.removeActionListener(action);
     }
@@ -307,6 +308,7 @@ public class ViewPlaying extends ViewGame{
         repaint();
         reset.setVisible(false);
         run.setVisible(true);
+        this.getRootPane().setDefaultButton(run);
     }
             
     void updateVariableDisplay(){
@@ -2710,15 +2712,6 @@ public class ViewPlaying extends ViewGame{
                 super();
                 setPreferredSize(new Dimension(fieldWidth, fieldHeight));
                 this.container=c;
-                this.addKeyListener(new KeyAdapter(){
-                    public void keyPressed(KeyEvent e){
-                        if(e.getKeyCode()==KeyEvent.VK_ENTER){
-                            if(run.isVisible()) ViewPlaying.this.run.doClick();
-                            else if(stop.isVisible()) ViewPlaying.this.stop.doClick();
-                            else ViewPlaying.this.reset.doClick();
-                        }
-                    }
-                });
             }
             
             void resizeField(){
