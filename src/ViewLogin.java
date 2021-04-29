@@ -19,16 +19,16 @@ public class ViewLogin extends View{
     private JPasswordField password;//champ pour remplir le mot de passe
     //boutons pour se connecter, creer un compte, jouer sans compte :
     private JButton login, createAccount, tryWithoutAccount;
-    private JLabel error;//message qui s affiche en cas d erreur d username/password
+    private JLabel error=new JLabel("");//message qui s affiche en cas d erreur d username/password
     
     ViewLogin(Control control){//aucun Player pour l instant
         super(control, null);
         initialisationFieldsProperties();//initialisation des champs de saisie id et pwd
         initialisationButtons();//initialisation des boutons login et create account
-        error=new JLabel("");//vide au debut
     	error.setForeground(Color.red);//les erreurs seront ecrites en rouge
         setPage();//ajout de tous les elements
         changeButtonColor(this, control.darkModeOn());
+        changeLabelColor(this, control.darkModeOn());
     }
     
     void initialisationFieldsProperties(){
@@ -92,7 +92,6 @@ public class ViewLogin extends View{
     	tryWithoutAccount=new JButton("Try without account");
     	tryWithoutAccount.setFont(new Font("Arial", Font.ITALIC, 16)); 	   	
     	tryWithoutAccount.addActionListener((event)->super.control.login("default", "default"));
-    	
     }
     
     void setPage(){

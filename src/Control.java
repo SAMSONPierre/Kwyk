@@ -28,7 +28,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.plaf.ColorUIResource;
 
@@ -41,20 +40,37 @@ public class Control implements Serializable{
     private boolean darkMode=false;
     
     Control(){
-        this.view=new ViewLogin(this);
-        this.model=null;
         try{
             AudioInputStream audio=AudioSystem.getAudioInputStream(new File("sounds/8am.wav"));
             clip=AudioSystem.getClip();
             clip.open(audio);
+            musicChangeState();//charge la musique
         }
         catch(Exception e){}
+        this.view=new ViewLogin(this);
+        this.model=null;
+    }
+    
+    protected static void initializeAccount() throws IOException{
+        Player[] players={new Player("GM", AES.encrypt("Azozo", secretKey)), 
+                new Player("default", AES.encrypt("default", secretKey))};
+        for(Player p : players){
+            File file=new File("players/"+p.username+".player");
+            ObjectOutputStream oos=new ObjectOutputStream(new FileOutputStream(file));
+            oos.writeObject(p);
+            oos.close();
+        }
     }
     
     void exitFrame(){//quand on change de fenetre
         view.setVisible(false);
         view.dispose();
     }
+    
+    
+    /******************
+    *      Music      *
+    ******************/
     
     void musicChangeState(){
         if(clip==null) return;//echec de chargement dans constructeur
@@ -68,8 +84,13 @@ public class Control implements Serializable{
     }
     
     boolean musicIsActive(){
-        return clip.isRunning();
+        return clip!=null && clip.isRunning();
     }
+    
+    
+    /******************
+    *      Theme      *
+    ******************/
     
     boolean darkModeOn(){
     	return this.darkMode;
@@ -83,29 +104,18 @@ public class Control implements Serializable{
     
     void lightMode(){
     	UIManager.put("Panel.background", new ColorUIResource(219,252,161));
-    	UIManager.put("OptionPane.background", new ColorUIResource(219,252,161)); 
+    	UIManager.put("OptionPane.background", new ColorUIResource(219,252,161));
+        UIManager.put("OptionPane.messageForeground", new ColorUIResource(Color.BLACK));
     	UIManager.put("ProgressBar.foreground", new ColorUIResource(254, 201, 245));
-    	UIManager.put("ProgressBar.selectionForeground", new ColorUIResource(Color.black));
-    	UIManager.put("Label.foreground", new ColorUIResource(Color.BLACK));
+    	UIManager.put("ProgressBar.selectionForeground", new ColorUIResource(Color.BLACK));
     }
     
     void darkMode(){
     	UIManager.put("Panel.background", new ColorUIResource(Color.DARK_GRAY));
     	UIManager.put("OptionPane.background", new ColorUIResource(Color.DARK_GRAY));
+        UIManager.put("OptionPane.messageForeground", new ColorUIResource(251, 236, 174));
     	UIManager.put("ProgressBar.foreground", new ColorUIResource(188, 177, 250));
-    	UIManager.put("ProgressBar.selectionForeground", new ColorUIResource(Color.black));
-    	UIManager.put("Label.foreground", new ColorUIResource(251, 236, 174));
-    }
-    
-    protected static void initializeAccount() throws IOException{
-        Player[] players={new Player("GM", AES.encrypt("Azozo", secretKey)), 
-                new Player("default", AES.encrypt("default", secretKey))};
-        for(Player p : players){
-            File file=new File("players/"+p.username+".player");
-            ObjectOutputStream oos=new ObjectOutputStream(new FileOutputStream(file));
-            oos.writeObject(p);
-            oos.close();
-        }
+    	UIManager.put("ProgressBar.selectionForeground", new ColorUIResource(Color.BLACK));
     }
     
     
@@ -252,6 +262,7 @@ public class Control implements Serializable{
                 popup.setSize(300, 250);
                 popup.setLocationRelativeTo(view);
                 popup.setVisible(true);
+                view.changeLabelColor(popup, darkMode);
             }
             else playLevel(new Level(), true);
         }

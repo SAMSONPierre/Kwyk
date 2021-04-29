@@ -2,18 +2,10 @@ import java.awt.Color;
 import java.awt.EventQueue;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.plaf.ColorUIResource;
 
-public class Main {
-    /**
-     * @param a
-     */
-    /**
-     * @param a
-     */
+public class Main{
     public static void main(String[]a){
         try{
             //repertoires a initialiser avant de pouvoir jouer, quitte a ne pas avoir de niveaux
@@ -32,15 +24,15 @@ public class Main {
             
             //on lance le jeu
             EventQueue.invokeLater(()->{
-            	UIManager.put("Button.background", ColorUIResource.DARK_GRAY);
-            	UIManager.put("Button.foreground", ColorUIResource.white);
             	UIManager.put("Panel.background", new ColorUIResource(219,252,161));
-            	UIManager.put("OptionPane.background", new ColorUIResource(219,252,161)); 
+            	UIManager.put("OptionPane.background", new ColorUIResource(219,252,161));
+                UIManager.put("OptionPane.messageForeground", new ColorUIResource(Color.BLACK));
             	UIManager.put("ProgressBar.foreground", new ColorUIResource(254, 201, 245));
-            	UIManager.put("ProgressBar.selectionForeground", new ColorUIResource(Color.black));
-            	UIManager.put("Label.foreground", new ColorUIResource(Color.BLACK));
-            	Control control=new Control();//charge le menu de connexion
-               // control.musicChangeState();//charge la musique
+            	UIManager.put("ProgressBar.selectionForeground", new ColorUIResource(Color.BLACK));
+            	UIManager.put("Button.foreground", new Color(251, 236, 174));
+            	UIManager.put("Button.background", Color.BLACK);
+            	UIManager.put("ComboBox.background", Color.WHITE);
+            	new Control();//charge le menu de connexion
             });
         }
         catch(Exception e){

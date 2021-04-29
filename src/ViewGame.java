@@ -4,24 +4,20 @@ import java.awt.FlowLayout;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
 import java.io.File;
-
-import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
-import javax.swing.UIManager;
-import javax.swing.plaf.basic.BasicProgressBarUI;
 
 public class ViewGame extends View{//a une barre de controle superieur en plus
     private JButton training, challenge, create, logout;//boutons pour acceder aux autres pages
-    private CustomJButton music;
     
     ViewGame(Control control, Player player){
         super(control, player);
         setButton(!player.username.equals("default"));
         setTop(player.getCurrentLevel());
         changeButtonColor(this, control.darkModeOn());
+        changeLabelColor(this, control.darkModeOn());
     }
     
     void setButton(boolean canCreate){
@@ -39,31 +35,13 @@ public class ViewGame extends View{//a une barre de controle superieur en plus
         logout=new JButton("Log out");
         logout.addActionListener((event)->super.control.logout());
         
-        music=new CustomJButton("", null);
-        changeMusicState();//bonne image
-        music.setOpaque(false);
-        music.addActionListener((event)->{
-            super.control.musicChangeState();
-            changeMusicState();
-        });
-        
         //largeur des boutons
         Dimension size=challenge.getPreferredSize();//le plus large
         size.width+=size.width/3;
         training.setPreferredSize(size);
         challenge.setPreferredSize(size);
         create.setPreferredSize(size);
-        logout.setPreferredSize(size);      
-        music.setPreferredSize(new Dimension(getButtonHeight(), getButtonHeight()));
-        
-    }
-    
-    private void changeMusicState(){
-        try{
-            File f=new File("images/"+(control.musicIsActive()?"musicOff":"musicOn")+".png");
-            music.addImage(ImageIO.read(f));
-        }
-        catch(Exception e){}
+        logout.setPreferredSize(size);
     }
     
     void setTop(boolean[][] playerBool){
@@ -77,7 +55,6 @@ public class ViewGame extends View{//a une barre de controle superieur en plus
         left.add(training);
         left.add(challenge);
         left.add(create);
-        left.add(music);
         topBar.add(left);
         
         //panel de droite
@@ -94,7 +71,6 @@ public class ViewGame extends View{//a une barre de controle superieur en plus
     	JProgressBar res=new JProgressBar();
     	res.setStringPainted(true);
     	res.setBackground(Color.black);
-    	//UIManager.put("ProgressBar.selectionBackground", Color.black);
     	int nbLvl=0;
         File[] arrayLevels=nombreNiveau("levels/training/");
         for(int i=0; i<arrayLevels.length; i++)
