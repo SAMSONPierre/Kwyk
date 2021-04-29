@@ -28,7 +28,7 @@ public class View extends JFrame{
         
         //mettre en plein ecran et interdire le changement de taille de la fenetre
         Rectangle r=GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
-        this.heightFS=r.height-this.getInsets().top-35;
+        this.heightFS=r.height-this.getInsets().top-this.getInsets().bottom-35;
         this.widthFS=r.width;
         this.setBounds(0, 0, r.width, r.height);
         this.setResizable(false);
