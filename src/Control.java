@@ -46,6 +46,7 @@ public class Control implements Serializable{
         }
         catch(Exception e){}
         this.view=new ViewLogin(this);
+        view.setVisible(true);
         this.model=null;
     }
     
@@ -60,9 +61,11 @@ public class Control implements Serializable{
         }
     }
     
-    void exitFrame(){//quand on change de fenetre
-        view.setVisible(false);
-        view.dispose();
+    void changeFrame(View tmp){//quand on change de fenetre courante
+        tmp.setVisible(true);
+        view.dispose();//enleve la vue precedente
+        view=tmp;//remplace la vue
+        this.model=tmp.getModel();
     }
     
     
@@ -129,11 +132,7 @@ public class Control implements Serializable{
                 ObjectInputStream ois=new ObjectInputStream(fis);
                 Player p=(Player)ois.readObject();
                 String decryptedPassword=AES.decrypt(p.password, secretKey);
-                if(decryptedPassword.equals(password)){
-                    this.exitFrame();//quitte la fenetre courante
-                    this.view=new ViewSummaryTraining(this, p);//pour en ouvrir une autre
-                    this.model=view.getModel();
-                }
+                if(decryptedPassword.equals(password)) changeFrame(new ViewSummaryTraining(this, p));
                 else ((ViewLogin)view).errorLogin();//affichage du message d erreur
                 ois.close();
             }
@@ -146,9 +145,7 @@ public class Control implements Serializable{
         else{
             Player p=new Player(username, AES.encrypt(password, secretKey));
             save(p);
-            this.exitFrame();//quitte la fenetre courante
-            this.view=new ViewSummaryTraining(this, p);//pour en ouvrir une autre
-            this.model=view.getModel();
+            changeFrame(new ViewSummaryTraining(this, p));
         }
     }
     
@@ -175,27 +172,25 @@ public class Control implements Serializable{
     	return false;
     }
     
+    void logout(){
+        changeFrame(new ViewLogin(this));
+    }
+    
     
     /******************
     *   Switch page   *
     ******************/
     
     void switchTraining(String name){
-    	this.exitFrame();
-        this.view=new ViewSummaryTraining(this, this.model.getPlayer(), name);
-        this.model=view.getModel();
+    	changeFrame(new ViewSummaryTraining(this, model.getPlayer(), name));
     }
     
     void switchTraining(){
-    	this.exitFrame();
-        this.view=new ViewSummaryTraining(this, this.model.getPlayer());
-        this.model=view.getModel();
+    	changeFrame(new ViewSummaryTraining(this, model.getPlayer()));
     }
     
     void switchChallenge(){
-        this.exitFrame();
-        this.view=new ViewSummaryChallenge(this, this.model.getPlayer());
-        this.model=view.getModel();
+        changeFrame(new ViewSummaryChallenge(this, model.getPlayer()));
     }
     
     void switchCreate(){
@@ -266,12 +261,6 @@ public class Control implements Serializable{
         panel.add(textField, c);
     }
     
-    void logout(){
-        this.exitFrame();
-        this.view=new ViewLogin(this);
-        this.model=view.getModel();
-    }
-    
     
     /*****************
     *   Play Level   *
@@ -280,9 +269,7 @@ public class Control implements Serializable{
     void playLevel(Level level, boolean isCreating){//quand on appuie sur un bouton pour commencer un niveau
         try{
             this.model.getPlayer().setLevel(level);
-            this.exitFrame();
-            this.view=new ViewPlaying(this, this.model.getPlayer(), isCreating);
-            this.model=view.getModel();
+            changeFrame(new ViewPlaying(this, model.getPlayer(), isCreating));
         }
         catch(Exception e){}
     }

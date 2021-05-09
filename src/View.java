@@ -23,12 +23,12 @@ public class View extends JFrame{
         this.model=new Model(this, player);
         this.control=control;
         
-        this.setVisible(true);//fenetre visible a l affichage
+        this.setVisible(true);//fenetre visible pour placer les boutons
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);//fermeture du programme avec la fenetre
         
         //mettre en plein ecran et interdire le changement de taille de la fenetre
         Rectangle r=GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
-        this.heightFS=r.height-this.getInsets().top-this.getInsets().bottom-35;
+        heightFS=r.height-this.getInsets().top-this.getInsets().bottom-35;
         this.widthFS=r.width;
         this.setBounds(0, 0, r.width, r.height);
         this.setResizable(false);
@@ -55,6 +55,7 @@ public class View extends JFrame{
         });
         colorMode.setBounds(10, heightFS, 60, 35);
         this.add(colorMode);
+        this.setVisible(false);
     }
     
     private void changeMusicState(){
